@@ -36,6 +36,7 @@ public class JeddictItem extends JavaCompletionItem {
     private static ImageIcon icon;
 
     private String varName;
+    private String description;
     private List<String> imports;
     private boolean newVarName;
     private boolean smartType;
@@ -46,10 +47,11 @@ public class JeddictItem extends JavaCompletionItem {
     private CharSequence assignToVarText;
     int caretToEndLength;
 
-    public JeddictItem(CompilationInfo info, TypeMirror type, String varName, List<String> imports, int substitutionOffset, int caretToEndLength, boolean newVarName, boolean smartType, int assignToVarOffset) {
+    public JeddictItem(CompilationInfo info, TypeMirror type, String varName,String description, List<String> imports, int substitutionOffset, int caretToEndLength, boolean newVarName, boolean smartType, int assignToVarOffset) {
         super(substitutionOffset);
         this.varName = varName;
         this.imports = imports;
+        this.description = description;
         this.caretToEndLength = caretToEndLength;
         this.newVarName = newVarName;
         this.smartType = true;
@@ -58,9 +60,10 @@ public class JeddictItem extends JavaCompletionItem {
         this.assignToVarText = assignToVarOffset < 0 ? null : createAssignToVarText(info, type, varName);
     }
 
-    public JeddictItem(CompilationInfo info, TypeMirror type, String varName, List<String> imports, int substitutionOffset, boolean newVarName, boolean smartType, int assignToVarOffset) {
+    public JeddictItem(CompilationInfo info, TypeMirror type, String varName, String description,List<String> imports, int substitutionOffset, boolean newVarName, boolean smartType, int assignToVarOffset) {
         super(substitutionOffset);
         this.varName = varName;
+        this.description = description;
         this.imports = imports;
         this.caretToEndLength = -1;
         this.newVarName = newVarName;
@@ -180,8 +183,22 @@ public class JeddictItem extends JavaCompletionItem {
                             .replace("<", "&lt;")
                             .replace(">", "&gt;");
 
-                    String htmlFormattedString = "<html><body><pre>" + escapedString + "</pre></body></html>";
-                    return htmlFormattedString;
+                    String keywordsPattern = "\\b("
+                            + "public|private|protected|static|final|abstract|synchronized|native|strictfp|transient|volatile|"
+                            + "boolean|byte|char|short|int|long|float|double|void|"
+                            + "if|else|switch|case|default|break|continue|return|for|while|do|"
+                            + "try|catch|finally|throw|throws|assert|"
+                            + "class|interface|extends|implements|new|this|super|"
+                            + "import|package|enum|instanceof"
+                            + ")\\b|[{}]";
+                    escapedString = escapedString.replaceAll(keywordsPattern, "<b>$0</b>");
+                    escapedString = escapedString.replaceAll("System\\.out\\.println", "<i>System.out.println</i>");
+
+                    if (description != null && !description.isEmpty()) {
+                        return "<html><body><pre>" + escapedString + "\n\n\n" + description.replaceAll("<\br>", "\n") + "</pre></body></html>";
+                    } else {
+                        return "<html><body><pre>" + escapedString + "</pre></body></html>";
+                    }
                 }
 
                 @Override

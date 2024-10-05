@@ -38,7 +38,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         jLayeredPane4 = new javax.swing.JLayeredPane();
         aiAssistantActivationCheckBox = new javax.swing.JCheckBox();
         enableHintCheckBox = new javax.swing.JCheckBox();
+        jLayeredPane9 = new javax.swing.JLayeredPane();
         enableSmartCodeCheckBox = new javax.swing.JCheckBox();
+        showDescriptionCheckBox = new javax.swing.JCheckBox();
         jLayeredPane3 = new javax.swing.JLayeredPane();
         resetKeyButton = new javax.swing.JButton();
         cleanDataButton = new javax.swing.JButton();
@@ -116,11 +118,24 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         });
         jLayeredPane4.add(enableHintCheckBox);
 
+        jLayeredPane1.add(jLayeredPane4);
+
+        jLayeredPane9.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+
         org.openide.awt.Mnemonics.setLocalizedText(enableSmartCodeCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.text")); // NOI18N
         enableSmartCodeCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.toolTipText")); // NOI18N
-        jLayeredPane4.add(enableSmartCodeCheckBox);
+        jLayeredPane9.add(enableSmartCodeCheckBox);
 
-        jLayeredPane1.add(jLayeredPane4);
+        org.openide.awt.Mnemonics.setLocalizedText(showDescriptionCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.showDescriptionCheckBox.text")); // NOI18N
+        showDescriptionCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.showDescriptionCheckBox.toolTipText")); // NOI18N
+        showDescriptionCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                showDescriptionCheckBoxActionPerformed(evt);
+            }
+        });
+        jLayeredPane9.add(showDescriptionCheckBox);
+
+        jLayeredPane1.add(jLayeredPane9);
 
         jLayeredPane3.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
 
@@ -162,7 +177,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 613, Short.MAX_VALUE)
+                .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 592, Short.MAX_VALUE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -213,6 +228,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         JOptionPane.showMessageDialog(this, "Cache has been cleared successfully!", "Information", JOptionPane.INFORMATION_MESSAGE);
     }//GEN-LAST:event_cleanDataButtonActionPerformed
 
+    private void showDescriptionCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showDescriptionCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_showDescriptionCheckBoxActionPerformed
+
     private final PreferencesManager preferencesManager = PreferencesManager.getInstance();
 
     void load() {
@@ -229,6 +248,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             enableHintCheckBox.setEnabled(true);
             enableSmartCodeCheckBox.setEnabled(true);
         }
+        
+        showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
     }
 
     void store() {
@@ -237,6 +258,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setGptModel((GPTModel) gptModelComboBox.getSelectedItem());
         preferencesManager.setHintsEnabled(enableHintCheckBox.isSelected());
         preferencesManager.setSmartCodeEnabled(enableSmartCodeCheckBox.isSelected());
+        preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
     }
 
     boolean valid() {
@@ -262,6 +284,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane jLayeredPane6;
     private javax.swing.JLayeredPane jLayeredPane7;
     private javax.swing.JLayeredPane jLayeredPane8;
+    private javax.swing.JLayeredPane jLayeredPane9;
     private javax.swing.JButton resetKeyButton;
+    private javax.swing.JCheckBox showDescriptionCheckBox;
     // End of variables declaration//GEN-END:variables
 }

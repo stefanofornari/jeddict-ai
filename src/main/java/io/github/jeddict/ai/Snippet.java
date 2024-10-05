@@ -16,6 +16,14 @@ public class Snippet {
     List<String> imports = new ArrayList<>();
 
     String snippet;
+    
+    String description;
+
+    public Snippet(String snippet, String description, List<String> imports) {
+        this.snippet = snippet;
+        this.description = description;
+        this.imports = imports;
+    }
 
     public Snippet(String snippet, List<String> imports) {
         this.snippet = snippet;
@@ -32,6 +40,10 @@ public class Snippet {
 
     public String getSnippet() {
         return snippet;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
 }

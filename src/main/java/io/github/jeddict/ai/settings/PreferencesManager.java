@@ -146,4 +146,12 @@ public class PreferencesManager {
     public void setSmartCodeEnabled(boolean enabled) {
         preferences.putBoolean("enableSmartCode", enabled);
     }
+
+    public boolean isDescriptionEnabled() {
+        return preferences.getBoolean("showDecription", true);
+    }
+
+    public void setDescriptionEnabled(boolean enabled) {
+        preferences.putBoolean("showDecription", enabled);
+    }
 }
