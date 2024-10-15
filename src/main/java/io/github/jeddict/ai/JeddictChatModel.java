@@ -24,7 +24,10 @@ package io.github.jeddict.ai;
  */
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import io.github.jeddict.ai.settings.GenAIProvider;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
@@ -43,20 +46,33 @@ import org.json.JSONObject;
 
 public class JeddictChatModel {
 
-    private final OpenAiChatModel aiChatModel;
+    private ChatLanguageModel model;
     private int cachedClassDatasLength = -1; // Cache the length of classDatas
     PreferencesManager preferencesManager = PreferencesManager.getInstance();
 
     public JeddictChatModel() {
-        aiChatModel = OpenAiChatModel.builder()
-                .apiKey(preferencesManager.getApiKey())
-                .modelName(preferencesManager.getModelName())
-                .build();
+        if (preferencesManager.getModel().getProvider() == GenAIProvider.GOOGLE) {
+            model = GoogleAiGeminiChatModel.builder()
+                    .apiKey(preferencesManager.getApiKey())
+                    .modelName(preferencesManager.getModelName())
+                    .build();
+        } else if (preferencesManager.getModel().getProvider() == GenAIProvider.OPEN_AI) {
+            model = OpenAiChatModel.builder()
+                    .apiKey(preferencesManager.getApiKey())
+                    .modelName(preferencesManager.getModelName())
+                    .build();
+        } 
     }
 
     private String generate(String prompt) {
+        if(model == null) {
+                JOptionPane.showMessageDialog(null,
+                        "AI assistance model not intitalized.",
+                        "Error in AI Assistance",
+                        JOptionPane.ERROR_MESSAGE);
+        }
         try {
-            return aiChatModel.generate(prompt);
+            return model.generate(prompt);
         } catch (Exception e) {
             String errorMessage = e.getMessage();
             if (e.getCause() != null

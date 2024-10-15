@@ -1,6 +1,20 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/template_mypluginPanel.java to edit this template
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package io.github.jeddict.ai.settings;
 
@@ -34,7 +48,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         jLayeredPane6 = new javax.swing.JLayeredPane();
         gptModelLabel = new javax.swing.JLabel();
         gptModelHelp = new javax.swing.JLabel();
-        gptModelComboBox = new javax.swing.JComboBox<>();
+        jLayeredPane10 = new javax.swing.JLayeredPane();
+        providerComboBox = new javax.swing.JComboBox<>();
+        modelComboBox = new javax.swing.JComboBox<>();
         jLayeredPane4 = new javax.swing.JLayeredPane();
         aiAssistantActivationCheckBox = new javax.swing.JCheckBox();
         enableHintCheckBox = new javax.swing.JCheckBox();
@@ -44,13 +60,14 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         jLayeredPane3 = new javax.swing.JLayeredPane();
         resetKeyButton = new javax.swing.JButton();
         cleanDataButton = new javax.swing.JButton();
-        jLayeredPane8 = new javax.swing.JLayeredPane();
 
-        jLayeredPane1.setLayout(new java.awt.GridLayout(0, 1, 0, 15));
+        jLayeredPane1.setLayout(new java.awt.GridLayout(0, 1, 0, 10));
 
+        jLayeredPane2.setPreferredSize(new java.awt.Dimension(125, 75));
         jLayeredPane2.setLayout(new java.awt.GridLayout(0, 1));
 
-        jLayeredPane7.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        jLayeredPane7.setPreferredSize(new java.awt.Dimension(125, 40));
+        jLayeredPane7.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 5, 0));
 
         org.openide.awt.Mnemonics.setLocalizedText(classContextLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextLabel.text")); // NOI18N
         jLayeredPane7.add(classContextLabel);
@@ -64,6 +81,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         classContextComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(AIClassContext.values()));
         classContextComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextComboBox.toolTipText")); // NOI18N
+        classContextComboBox.setPreferredSize(new java.awt.Dimension(72, 35));
         classContextComboBox.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 classContextComboBoxActionPerformed(evt);
@@ -87,14 +105,27 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jLayeredPane5.add(jLayeredPane6);
 
-        gptModelComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(GPTModel.values()));
-        gptModelComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.gptModelComboBox.toolTipText")); // NOI18N
-        gptModelComboBox.addActionListener(new java.awt.event.ActionListener() {
+        jLayeredPane10.setLayout(new java.awt.GridLayout(1, 0));
+
+        providerComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(GenAIProvider.values()));
+        providerComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerComboBox.toolTipText")); // NOI18N
+        providerComboBox.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                gptModelComboBoxActionPerformed(evt);
+                providerComboBoxActionPerformed(evt);
             }
         });
-        jLayeredPane5.add(gptModelComboBox);
+        jLayeredPane10.add(providerComboBox);
+
+        modelComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(GenAIModel.values()));
+        modelComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelComboBox.toolTipText")); // NOI18N
+        modelComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                modelComboBoxActionPerformed(evt);
+            }
+        });
+        jLayeredPane10.add(modelComboBox);
+
+        jLayeredPane5.add(jLayeredPane10);
 
         jLayeredPane1.add(jLayeredPane5);
 
@@ -158,19 +189,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jLayeredPane1.add(jLayeredPane3);
 
-        javax.swing.GroupLayout jLayeredPane8Layout = new javax.swing.GroupLayout(jLayeredPane8);
-        jLayeredPane8.setLayout(jLayeredPane8Layout);
-        jLayeredPane8Layout.setHorizontalGroup(
-            jLayeredPane8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        jLayeredPane8Layout.setVerticalGroup(
-            jLayeredPane8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        jLayeredPane1.add(jLayeredPane8);
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -184,8 +202,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 286, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(90, Short.MAX_VALUE))
+                .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 376, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -211,12 +228,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_enableHintCheckBoxActionPerformed
 
-    private void gptModelComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_gptModelComboBoxActionPerformed
-        GPTModel selectedContext = (GPTModel) gptModelComboBox.getSelectedItem();
+    private void modelComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modelComboBoxActionPerformed
+        GenAIModel selectedContext = (GenAIModel) modelComboBox.getSelectedItem();
         if (selectedContext != null) {
             gptModelHelp.setText(selectedContext.getDescription());
         }
-    }//GEN-LAST:event_gptModelComboBoxActionPerformed
+    }//GEN-LAST:event_modelComboBoxActionPerformed
 
     private void resetKeyButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetKeyButtonActionPerformed
         preferencesManager.clearApiKey();
@@ -232,12 +249,32 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_showDescriptionCheckBoxActionPerformed
 
+    private void providerComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_providerComboBoxActionPerformed
+        GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
+        if (selectedProvider != null) {
+            updateModelComboBox(selectedProvider);
+        }
+    }//GEN-LAST:event_providerComboBoxActionPerformed
+
+    private void updateModelComboBox(GenAIProvider selectedProvider) {
+        modelComboBox.removeAllItems();
+        for (GenAIModel model : GenAIModel.values()) {
+            if (model.getProvider() == selectedProvider) {
+                modelComboBox.addItem(model);
+            }
+        }
+        // Optionally, you can select the first model after filtering
+        if (modelComboBox.getItemCount() > 0) {
+            modelComboBox.setSelectedIndex(0);
+        }
+    }
+    
     private final PreferencesManager preferencesManager = PreferencesManager.getInstance();
 
     void load() {
         aiAssistantActivationCheckBox.setSelected(preferencesManager.isAiAssistantActivated());
         classContextComboBox.setSelectedItem(preferencesManager.getClassContext());
-        gptModelComboBox.setSelectedItem(preferencesManager.getGptModel());
+        modelComboBox.setSelectedItem(preferencesManager.getModel());
         enableHintCheckBox.setSelected(preferencesManager.isHintsEnabled());
         enableSmartCodeCheckBox.setSelected(preferencesManager.isSmartCodeEnabled());
 
@@ -255,7 +292,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     void store() {
         preferencesManager.setAiAssistantActivated(aiAssistantActivationCheckBox.isSelected());
         preferencesManager.setClassContext((AIClassContext) classContextComboBox.getSelectedItem());
-        preferencesManager.setGptModel((GPTModel) gptModelComboBox.getSelectedItem());
+        preferencesManager.setGptModel((GenAIModel) modelComboBox.getSelectedItem());
         preferencesManager.setHintsEnabled(enableHintCheckBox.isSelected());
         preferencesManager.setSmartCodeEnabled(enableSmartCodeCheckBox.isSelected());
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
@@ -273,18 +310,19 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JButton cleanDataButton;
     private javax.swing.JCheckBox enableHintCheckBox;
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
-    private javax.swing.JComboBox<GPTModel> gptModelComboBox;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
     private javax.swing.JLayeredPane jLayeredPane1;
+    private javax.swing.JLayeredPane jLayeredPane10;
     private javax.swing.JLayeredPane jLayeredPane2;
     private javax.swing.JLayeredPane jLayeredPane3;
     private javax.swing.JLayeredPane jLayeredPane4;
     private javax.swing.JLayeredPane jLayeredPane5;
     private javax.swing.JLayeredPane jLayeredPane6;
     private javax.swing.JLayeredPane jLayeredPane7;
-    private javax.swing.JLayeredPane jLayeredPane8;
     private javax.swing.JLayeredPane jLayeredPane9;
+    private javax.swing.JComboBox<io.github.jeddict.ai.settings.GenAIModel> modelComboBox;
+    private javax.swing.JComboBox<io.github.jeddict.ai.settings.GenAIProvider> providerComboBox;
     private javax.swing.JButton resetKeyButton;
     private javax.swing.JCheckBox showDescriptionCheckBox;
     // End of variables declaration//GEN-END:variables
