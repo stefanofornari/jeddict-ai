@@ -292,6 +292,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.GOOGLE 
                 || selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.MISTRAL
                 || selectedProvider == GenAIProvider.ANTHROPIC) {
             providerKeyLabel.setText("API Key:");
             providerLocationField.setText("");
@@ -377,6 +378,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.GOOGLE 
                 || selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.MISTRAL
                 || selectedProvider == GenAIProvider.ANTHROPIC) {
             apiKeyField.setText(preferencesManager.getApiKey(true));
         } else if (selectedProvider == GenAIProvider.OLLAMA
@@ -398,6 +400,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.GOOGLE 
                 || selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.MISTRAL
                 || selectedProvider == GenAIProvider.ANTHROPIC) {
             preferencesManager.setApiKey(new String(apiKeyField.getPassword()));
         } else if (selectedProvider == GenAIProvider.OLLAMA

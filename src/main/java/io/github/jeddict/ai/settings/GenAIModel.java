@@ -20,6 +20,7 @@ package io.github.jeddict.ai.settings;
 
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.GOOGLE;
+import static io.github.jeddict.ai.settings.GenAIProvider.MISTRAL;
 import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import java.util.HashMap;
@@ -52,13 +53,20 @@ public class GenAIModel {
 
         MODELS.put("claude-3-5-sonnet-20240620", new GenAIModel(ANTHROPIC, "claude-3-5-sonnet-20240620", "A sonnet model offering refined conversational capabilities.", 3.00, 15.00));
         MODELS.put("claude-3-haiku-20240307", new GenAIModel(ANTHROPIC, "claude-3-haiku-20240307", "A haiku model designed for concise and creative expression.", 0.25, 1.25));
-    
-        MODELS.put("llama3.1:latest", new GenAIModel(OLLAMA, "llama3.1:latest", "Optimized for lightweight tasks that require quick responses.", 0.0, 0.0));
-        MODELS.put("llama3.2:latest", new GenAIModel(OLLAMA, "llama3.2:latest", "Efficient for tasks needing fast turnaround without heavy resources.", 0.0, 0.0));
-        MODELS.put("gemma2:latest", new GenAIModel(OLLAMA, "gemma2:latest", "Designed for speed and quality in lightweight applications.", 0.0, 0.0));
-        MODELS.put("qwen2.5:latest", new GenAIModel(OLLAMA, "qwen2.5:latest", "Compact and efficient, ideal for responsive tasks.", 0.0, 0.0));
-        MODELS.put("deepseek-coder-v2:latest", new GenAIModel(OLLAMA, "deepseek-coder-v2:latest", "Specialized for coding tasks, offering quick assistance.", 0.0, 0.0));
-}
+
+        MODELS.put("open-codestral-mamba", new GenAIModel(MISTRAL, "open-codestral-mamba", "The first Mamba 2 open-source model, ideal for diverse tasks.", 0.0, 0.0));
+        MODELS.put("pixtral-12b", new GenAIModel(MISTRAL, "pixtral-12b", "Version-capable small model.", 0.15, 0.15));
+        MODELS.put("mistral-nemo", new GenAIModel(MISTRAL, "mistral-nemo", "State-of-the-art Mistral model trained specifically for code tasks.", 0.15, 0.15));
+        MODELS.put("pixtral-12b-2409", new GenAIModel(MISTRAL, "pixtral-12b-2409", "A 12B model with image understanding capabilities in addition to text.", 0.0, 0.0));
+        MODELS.put("open-mistral-nemo", new GenAIModel(MISTRAL, "open-mistral-nemo", "A multilingual open-source model released in July 2024.", 0.0, 0.0));
+
+        MODELS.put("mistral-large-latest", new GenAIModel(MISTRAL, "mistral-large-latest", "Top-tier reasoning for high-complexity tasks, for your most sophisticated needs.", 2.00, 6.00));
+        MODELS.put("mistral-small-latest", new GenAIModel(MISTRAL, "mistral-small-latest", "Cost-efficient, fast, and reliable option for translation, summarization, and sentiment analysis.", 0.20, 0.60));
+        MODELS.put("codestral-latest", new GenAIModel(MISTRAL, "codestral-latest", "State-of-the-art Mistral model trained specifically for code tasks.", 0.20, 0.60));
+        MODELS.put("mistral-embed", new GenAIModel(MISTRAL, "mistral-embed", "State-of-the-art semantic model for extracting text representations.", 0.10, 0.00)); // No output price provided
+        MODELS.put("ministral-3b-latest", new GenAIModel(MISTRAL, "ministral-3b-latest", "Most efficient edge model.", 0.04, 0.04));
+        MODELS.put("ministral-8b-latest", new GenAIModel(MISTRAL, "ministral-8b-latest", "Powerful model for on-device use cases.", 0.10, 0.10));
+    }
 
     private final GenAIProvider provider;
     private final String name;

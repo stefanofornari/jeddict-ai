@@ -25,6 +25,7 @@ package io.github.jeddict.ai.settings;
 public enum GenAIProvider {
     OPEN_AI,
     GOOGLE,
+    MISTRAL,
     OLLAMA,
     ANTHROPIC,
     LM_STUDIO,
