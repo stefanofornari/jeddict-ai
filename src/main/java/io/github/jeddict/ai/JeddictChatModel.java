@@ -35,6 +35,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import io.github.jeddict.ai.models.LMStudioChatModel;
 import static io.github.jeddict.ai.settings.GenAIProvider.LM_STUDIO;
+import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
@@ -65,6 +66,11 @@ public class JeddictChatModel {
                             .modelName(preferencesManager.getModelName())
                             .build();
                 case OPEN_AI -> model = OpenAiChatModel.builder()
+                            .apiKey(preferencesManager.getApiKey())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+                case DEEPINFRA -> model = OpenAiChatModel.builder()
+                            .baseUrl("https://api.deepinfra.com/v1/openai")
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
@@ -564,8 +570,15 @@ public class JeddictChatModel {
         }
         List<Snippet> snippets = new ArrayList<>();
 
-        // Parse the JSON response
-        JSONArray jsonArray = new JSONArray(removeCodeBlockMarkers(jsonResponse));
+        JSONArray jsonArray;
+        try {
+            // Parse the JSON response
+            jsonArray = new JSONArray(removeCodeBlockMarkers(jsonResponse));
+        } catch (org.json.JSONException jsone) {
+            JSONObject jsonObject = new JSONObject(removeCodeBlockMarkers(jsonResponse));
+            jsonArray = new JSONArray();
+            jsonArray.put(jsonObject);
+        }
 
         // Loop through each element in the JSON array
         for (int i = 0; i < jsonArray.length(); i++) {

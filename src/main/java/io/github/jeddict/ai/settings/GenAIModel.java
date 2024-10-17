@@ -19,9 +19,9 @@
 package io.github.jeddict.ai.settings;
 
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
+import static io.github.jeddict.ai.settings.GenAIProvider.DEEPINFRA;
 import static io.github.jeddict.ai.settings.GenAIProvider.GOOGLE;
 import static io.github.jeddict.ai.settings.GenAIProvider.MISTRAL;
-import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,6 +66,12 @@ public class GenAIModel {
         MODELS.put("mistral-embed", new GenAIModel(MISTRAL, "mistral-embed", "State-of-the-art semantic model for extracting text representations.", 0.10, 0.00)); // No output price provided
         MODELS.put("ministral-3b-latest", new GenAIModel(MISTRAL, "ministral-3b-latest", "Most efficient edge model.", 0.04, 0.04));
         MODELS.put("ministral-8b-latest", new GenAIModel(MISTRAL, "ministral-8b-latest", "Powerful model for on-device use cases.", 0.10, 0.10));
+
+        MODELS.put("meta-llama/Llama-3.2-3B-Instruct", new GenAIModel(DEEPINFRA, "meta-llama/Llama-3.2-3B-Instruct", "A 3B instruct model by Meta for instructional tasks.", 0.15, 0.45));
+        MODELS.put("Qwen/Qwen2.5-72B-Instruct", new GenAIModel(DEEPINFRA, "Qwen/Qwen2.5-72B-Instruct", "A large instruct model for various applications.", 0.20, 0.50));
+        MODELS.put("google/gemma-2-9b-it", new GenAIModel(DEEPINFRA, "google/gemma-2-9b-it", "Gemini model specialized for IT tasks, with a focus on performance.", 0.10, 0.30));
+        MODELS.put("microsoft/WizardLM-2-8x22B", new GenAIModel(DEEPINFRA, "microsoft/WizardLM-2-8x22B", "An 8x22B model designed for advanced conversational applications.", 0.25, 0.75));
+        MODELS.put("mistralai/Mistral-7B-Instruct-v0.3", new GenAIModel(DEEPINFRA, "mistralai/Mistral-7B-Instruct-v0.3", "A 7B instruct model optimized for general tasks.", 0.15, 0.45));
     }
 
     private final GenAIProvider provider;
