@@ -27,6 +27,7 @@ public enum GenAIProvider {
     GOOGLE,
     OLLAMA,
     ANTHROPIC,
-    LM_STUDIO;
+    LM_STUDIO,
+    GPT4ALL;
 
 }

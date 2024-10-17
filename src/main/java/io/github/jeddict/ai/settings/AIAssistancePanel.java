@@ -18,6 +18,7 @@
  */
 package io.github.jeddict.ai.settings;
 
+import io.github.jeddict.ai.models.GPT4AllModelFetcher;
 import io.github.jeddict.ai.models.OllamaModelFetcher;
 import io.github.jeddict.ai.models.LMStudioModelFetcher;
 import io.github.jeddict.ai.scanner.ProjectClassScanner;
@@ -308,6 +309,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             providerLocationField.setText(fetcher.getAPIUrl());
             providerLocationField.setVisible(true);
             apiKeyField.setVisible(false);
+        } else if (selectedProvider == GenAIProvider.GPT4ALL) {
+            providerKeyLabel.setText("Location:");
+            GPT4AllModelFetcher fetcher = new GPT4AllModelFetcher();
+            providerLocationField.setText(fetcher.getAPIUrl());
+            providerLocationField.setVisible(true);
+            apiKeyField.setVisible(false);
         }
         if (selectedProvider != null) {
             updateModelComboBox(selectedProvider);
@@ -332,6 +339,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         } else if (selectedProvider == GenAIProvider.LM_STUDIO 
                 && !providerLocationField.getText().isEmpty()) {
             LMStudioModelFetcher fetcher = new LMStudioModelFetcher();
+            return fetcher.fetchModelNames(providerLocationField.getText());
+        }else if (selectedProvider == GenAIProvider.GPT4ALL 
+                && !providerLocationField.getText().isEmpty()) {
+            GPT4AllModelFetcher fetcher = new GPT4AllModelFetcher();
             return fetcher.fetchModelNames(providerLocationField.getText());
         }
         return MODELS.values().stream()
@@ -369,7 +380,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 || selectedProvider == GenAIProvider.ANTHROPIC) {
             apiKeyField.setText(preferencesManager.getApiKey(true));
         } else if (selectedProvider == GenAIProvider.OLLAMA
-                || selectedProvider == GenAIProvider.LM_STUDIO) {
+                || selectedProvider == GenAIProvider.LM_STUDIO
+                || selectedProvider == GenAIProvider.GPT4ALL) {
             providerLocationField.setText(preferencesManager.getProviderLocation());
         }
     }
@@ -389,7 +401,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 || selectedProvider == GenAIProvider.ANTHROPIC) {
             preferencesManager.setApiKey(new String(apiKeyField.getPassword()));
         } else if (selectedProvider == GenAIProvider.OLLAMA
-                || selectedProvider == GenAIProvider.LM_STUDIO) {
+                || selectedProvider == GenAIProvider.LM_STUDIO
+                || selectedProvider == GenAIProvider.GPT4ALL) {
             preferencesManager.setProviderLocation(providerLocationField.getText());
         }
     }
