@@ -28,6 +28,7 @@ import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
+import dev.langchain4j.model.mistralai.MistralAiChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
@@ -67,6 +68,10 @@ public class JeddictChatModel {
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
+                case MISTRAL -> model = MistralAiChatModel.builder()
+                        .apiKey(preferencesManager.getApiKey())
+                        .modelName(preferencesManager.getModelName())
+                        .build();
                 case ANTHROPIC -> model = AnthropicChatModel.builder()
                         .apiKey(preferencesManager.getApiKey())
                         .modelName(preferencesManager.getModelName())
