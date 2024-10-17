@@ -19,10 +19,10 @@
 package io.github.jeddict.ai.settings;
 
 import io.github.jeddict.ai.scanner.ProjectClassScanner;
-import static io.github.jeddict.ai.settings.GenAIModel.models;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
+import static io.github.jeddict.ai.settings.GenAIModel.MODELS;
 
 final class AIAssistancePanel extends javax.swing.JPanel {
 
@@ -287,7 +287,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
     private void providerComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_providerComboBoxActionPerformed
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
-        if (selectedProvider == GenAIProvider.GOOGLE || selectedProvider == GenAIProvider.OPEN_AI) {
+        if (selectedProvider == GenAIProvider.GOOGLE 
+                || selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.ANTHROPIC) {
             providerKeyLabel.setText("API Key:");
             providerLocationField.setText("");
             providerLocationField.setVisible(false);
@@ -323,14 +325,14 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 return names;
             }
         }
-        return models.values().stream()
+        return MODELS.values().stream()
                 .filter(model -> model.getProvider().equals(selectedProvider))
                 .map(GenAIModel::getName)
                 .collect(Collectors.toList());
     }
     
     private GenAIModel getModel(String modelName) {
-        return models.get(modelName);
+        return MODELS.get(modelName);
     }
 
     private final PreferencesManager preferencesManager = PreferencesManager.getInstance();
@@ -350,10 +352,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
 
         providerComboBox.setSelectedItem(preferencesManager.getProvider());
-        modelComboBox.setSelectedItem(preferencesManager.getModel().getName());
+        modelComboBox.setSelectedItem(preferencesManager.getModel());
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
-        if (selectedProvider == GenAIProvider.GOOGLE || selectedProvider == GenAIProvider.OPEN_AI) {
+        if (selectedProvider == GenAIProvider.GOOGLE 
+                || selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.ANTHROPIC) {
             apiKeyField.setText(preferencesManager.getApiKey(true));
         } else if (selectedProvider == GenAIProvider.OLLAMA) {
             providerLocationField.setText(preferencesManager.getProviderLocation());
@@ -370,7 +374,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
         
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
-        if (selectedProvider == GenAIProvider.GOOGLE || selectedProvider == GenAIProvider.OPEN_AI) {
+        if (selectedProvider == GenAIProvider.GOOGLE 
+                || selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.ANTHROPIC) {
             preferencesManager.setApiKey(new String(apiKeyField.getPassword()));
         } else if (selectedProvider == GenAIProvider.OLLAMA) {
             preferencesManager.setProviderLocation(providerLocationField.getText());

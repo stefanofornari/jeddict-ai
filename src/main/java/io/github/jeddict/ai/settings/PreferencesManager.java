@@ -122,7 +122,7 @@ public class PreferencesManager {
         }
         if (modelName == null || modelName.isEmpty()) {
             // Fallback to default model name
-            modelName = getModel().getName();
+            modelName = getModel();
         }
         return modelName;
     }
@@ -151,16 +151,8 @@ public class PreferencesManager {
         preferences.put("classContext", context != null ? context.name() : null);
     }
 
-    public GenAIModel getModel() {
-        String gptModel = preferences.get(MODEL_PREFERENCE, null);
-        if (gptModel != null) {
-            try {
-                return GenAIModel.findByName(gptModel);
-            } catch (IllegalArgumentException iae) {
-                // .. skip
-            }
-        }
-        return GenAIModel.findByName(DEFAULT_MODEL);
+    public String getModel() {
+       return preferences.get(MODEL_PREFERENCE, DEFAULT_MODEL);
     }
 
     public void setModel(String model) {

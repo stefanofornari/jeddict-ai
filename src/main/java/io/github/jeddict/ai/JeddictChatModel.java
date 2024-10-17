@@ -24,6 +24,7 @@ package io.github.jeddict.ai;
  */
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
@@ -51,8 +52,8 @@ public class JeddictChatModel {
     PreferencesManager preferencesManager = PreferencesManager.getInstance();
 
     public JeddictChatModel() {
-        if (null != preferencesManager.getModel().getProvider()) {
-            switch (preferencesManager.getModel().getProvider()) {
+        if (null != preferencesManager.getModel()) {
+            switch (preferencesManager.getProvider()) {
                 case GOOGLE -> model = GoogleAiGeminiChatModel.builder()
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
@@ -65,6 +66,10 @@ public class JeddictChatModel {
                             .baseUrl(preferencesManager.getProviderLocation())
                             .modelName(preferencesManager.getModelName())
                             .build();
+                case ANTHROPIC -> model = AnthropicChatModel.builder()
+                        .apiKey(preferencesManager.getApiKey())
+                        .modelName(preferencesManager.getModelName())
+                        .build();
             }
         }
     }
