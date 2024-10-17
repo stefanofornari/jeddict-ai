@@ -20,6 +20,7 @@ package io.github.jeddict.ai.settings;
 
 import static io.github.jeddict.ai.models.Constant.DEEPINFRA_URL;
 import io.github.jeddict.ai.models.GPT4AllModelFetcher;
+import io.github.jeddict.ai.models.GroqModelFetcher;
 import io.github.jeddict.ai.models.OllamaModelFetcher;
 import io.github.jeddict.ai.models.LMStudioModelFetcher;
 import io.github.jeddict.ai.scanner.ProjectClassScanner;
@@ -157,6 +158,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         apiKeyPane.add(jLayeredPane2);
 
         apiKeyField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyField.text")); // NOI18N
+        apiKeyField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                apiKeyFieldFocusLost(evt);
+            }
+        });
         apiKeyPane.add(apiKeyField);
 
         providerPane.add(apiKeyPane);
@@ -304,6 +310,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private void providerComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_providerComboBoxActionPerformed
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.DEEPINFRA
+                || selectedProvider == GenAIProvider.GROQ
                 || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
             apiKeyLabel.setVisible(true);
             apiKeyField.setVisible(true);
@@ -311,6 +318,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             providerLocationLabel.setVisible(true);
             if (selectedProvider == GenAIProvider.DEEPINFRA) {
                 providerLocationField.setText(DEEPINFRA_URL);
+            } else if (selectedProvider == GenAIProvider.GROQ) {
+                providerLocationField.setText(new GroqModelFetcher().getAPIUrl());
             } else {
                 providerLocationField.setText("");
             }
@@ -404,6 +413,13 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_providerComboBoxActionPerformed
 
+    private void apiKeyFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_apiKeyFieldFocusLost
+        GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
+        if (selectedProvider != null) {
+            updateModelComboBox(selectedProvider);
+        }
+    }//GEN-LAST:event_apiKeyFieldFocusLost
+
     private void updateModelComboBox(GenAIProvider selectedProvider) {
         modelComboBox.removeAllItems();
         for (String model : getModelList(selectedProvider)) {
@@ -427,6 +443,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 && !providerLocationField.getText().isEmpty()) {
             GPT4AllModelFetcher fetcher = new GPT4AllModelFetcher();
             return fetcher.fetchModelNames(providerLocationField.getText());
+        }else if (selectedProvider == GenAIProvider.GROQ
+                && !providerLocationField.getText().isEmpty()) {
+            GroqModelFetcher fetcher = new GroqModelFetcher();
+            return fetcher.fetchModels(providerLocationField.getText(), new String(apiKeyField.getPassword()));
         }
         return MODELS.values().stream()
                 .filter(model -> model.getProvider().equals(selectedProvider))
@@ -459,7 +479,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
-                || selectedProvider == GenAIProvider.DEEPINFRA) {
+                || selectedProvider == GenAIProvider.DEEPINFRA
+                || selectedProvider == GenAIProvider.GROQ) {
             apiKeyField.setText(preferencesManager.getApiKey(true));
             providerLocationField.setText(preferencesManager.getProviderLocation());
         } else if (selectedProvider == GenAIProvider.GOOGLE
@@ -485,7 +506,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
-                || selectedProvider == GenAIProvider.DEEPINFRA) {
+                || selectedProvider == GenAIProvider.DEEPINFRA
+                || selectedProvider == GenAIProvider.GROQ) {
             preferencesManager.setApiKey(new String(apiKeyField.getPassword()));
             preferencesManager.setProviderLocation(providerLocationField.getText());
         } else if (selectedProvider == GenAIProvider.GOOGLE
