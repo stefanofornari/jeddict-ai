@@ -75,6 +75,11 @@ public class JeddictChatModel {
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
+                case GROQ -> model = OpenAiChatModel.builder()
+                            .baseUrl(preferencesManager.getProviderLocation())
+                            .apiKey(preferencesManager.getApiKey())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
                 case CUSTOM_OPEN_AI -> model = OpenAiChatModel.builder()
                             .baseUrl(preferencesManager.getProviderLocation())
                             .apiKey(preferencesManager.getApiKey())
