@@ -26,6 +26,7 @@ public enum GenAIProvider {
     OPEN_AI,
     GOOGLE,
     OLLAMA,
-    ANTHROPIC;
+    ANTHROPIC,
+    LM_STUDIO;
 
 }
