@@ -26,8 +26,8 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import io.github.jeddict.ai.settings.GenAIProvider;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
@@ -51,17 +51,22 @@ public class JeddictChatModel {
     PreferencesManager preferencesManager = PreferencesManager.getInstance();
 
     public JeddictChatModel() {
-        if (preferencesManager.getModel().getProvider() == GenAIProvider.GOOGLE) {
-            model = GoogleAiGeminiChatModel.builder()
-                    .apiKey(preferencesManager.getApiKey())
-                    .modelName(preferencesManager.getModelName())
-                    .build();
-        } else if (preferencesManager.getModel().getProvider() == GenAIProvider.OPEN_AI) {
-            model = OpenAiChatModel.builder()
-                    .apiKey(preferencesManager.getApiKey())
-                    .modelName(preferencesManager.getModelName())
-                    .build();
-        } 
+        if (null != preferencesManager.getModel().getProvider()) {
+            switch (preferencesManager.getModel().getProvider()) {
+                case GOOGLE -> model = GoogleAiGeminiChatModel.builder()
+                            .apiKey(preferencesManager.getApiKey())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+                case OPEN_AI -> model = OpenAiChatModel.builder()
+                            .apiKey(preferencesManager.getApiKey())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+                case OLLAMA -> model = OllamaChatModel.builder()
+                            .baseUrl(preferencesManager.getProviderLocation())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+            }
+        }
     }
 
     private String generate(String prompt) {
