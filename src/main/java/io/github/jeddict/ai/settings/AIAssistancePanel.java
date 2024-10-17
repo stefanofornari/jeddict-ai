@@ -18,6 +18,8 @@
  */
 package io.github.jeddict.ai.settings;
 
+import io.github.jeddict.ai.models.OllamaModelFetcher;
+import io.github.jeddict.ai.models.LMStudioModelFetcher;
 import io.github.jeddict.ai.scanner.ProjectClassScanner;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -300,6 +302,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             providerLocationField.setText(fetcher.getAPIUrl());
             providerLocationField.setVisible(true);
             apiKeyField.setVisible(false);
+        } else if (selectedProvider == GenAIProvider.LM_STUDIO) {
+            providerKeyLabel.setText("Location:");
+            LMStudioModelFetcher fetcher = new LMStudioModelFetcher();
+            providerLocationField.setText(fetcher.getAPIUrl());
+            providerLocationField.setVisible(true);
+            apiKeyField.setVisible(false);
         }
         if (selectedProvider != null) {
             updateModelComboBox(selectedProvider);
@@ -320,10 +328,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         if (selectedProvider == GenAIProvider.OLLAMA 
                 && !providerLocationField.getText().isEmpty()) {
             OllamaModelFetcher fetcher = new OllamaModelFetcher();
-            List<String> names = fetcher.fetchModelNames(providerLocationField.getText());
-            if (!names.isEmpty()) {
-                return names;
-            }
+            return fetcher.fetchModelNames(providerLocationField.getText());
+        } else if (selectedProvider == GenAIProvider.LM_STUDIO 
+                && !providerLocationField.getText().isEmpty()) {
+            LMStudioModelFetcher fetcher = new LMStudioModelFetcher();
+            return fetcher.fetchModelNames(providerLocationField.getText());
         }
         return MODELS.values().stream()
                 .filter(model -> model.getProvider().equals(selectedProvider))
@@ -359,7 +368,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 || selectedProvider == GenAIProvider.OPEN_AI
                 || selectedProvider == GenAIProvider.ANTHROPIC) {
             apiKeyField.setText(preferencesManager.getApiKey(true));
-        } else if (selectedProvider == GenAIProvider.OLLAMA) {
+        } else if (selectedProvider == GenAIProvider.OLLAMA
+                || selectedProvider == GenAIProvider.LM_STUDIO) {
             providerLocationField.setText(preferencesManager.getProviderLocation());
         }
     }
@@ -378,7 +388,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 || selectedProvider == GenAIProvider.OPEN_AI
                 || selectedProvider == GenAIProvider.ANTHROPIC) {
             preferencesManager.setApiKey(new String(apiKeyField.getPassword()));
-        } else if (selectedProvider == GenAIProvider.OLLAMA) {
+        } else if (selectedProvider == GenAIProvider.OLLAMA
+                || selectedProvider == GenAIProvider.LM_STUDIO) {
             preferencesManager.setProviderLocation(providerLocationField.getText());
         }
     }

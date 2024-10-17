@@ -29,6 +29,9 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
+import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
+import io.github.jeddict.ai.models.LMStudioChatModel;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
@@ -63,6 +66,10 @@ public class JeddictChatModel {
                             .modelName(preferencesManager.getModelName())
                             .build();
                 case OLLAMA -> model = OllamaChatModel.builder()
+                            .baseUrl(preferencesManager.getProviderLocation())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+                case LM_STUDIO -> model = LMStudioChatModel.builder()
                             .baseUrl(preferencesManager.getProviderLocation())
                             .modelName(preferencesManager.getModelName())
                             .build();
