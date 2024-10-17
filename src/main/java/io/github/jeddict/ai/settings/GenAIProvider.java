@@ -24,6 +24,7 @@ package io.github.jeddict.ai.settings;
  */
 public enum GenAIProvider {
     OPEN_AI,
-    GOOGLE;
+    GOOGLE,
+    OLLAMA;
 
 }

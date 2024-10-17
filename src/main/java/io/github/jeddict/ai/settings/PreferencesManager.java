@@ -22,6 +22,7 @@ package io.github.jeddict.ai.settings;
  *
  * @author Gaurav Gupta
  */
+import static io.github.jeddict.ai.settings.GenAIModel.DEFAULT_MODEL;
 import org.openide.util.NbPreferences;
 import java.util.prefs.Preferences;
 import javax.swing.JOptionPane;
@@ -34,6 +35,9 @@ public class PreferencesManager {
     private static final String MODEL_ENV_VAR = "OPENAI_MODEL";
     private static final String MODEL_SYS_PROP = "openai.model";
     private static final String API_KEY_PREFERENCES = "api_key";
+    private static final String PROVIDER_LOCATION_PREFERENCES = "provider_location";
+    private static final String PROVIDER_PREFERENCE = "provider";
+    private static final String MODEL_PREFERENCE = "model";
 
     private PreferencesManager() {
         preferences = NbPreferences.forModule(AIAssistancePanel.class);
@@ -57,6 +61,10 @@ public class PreferencesManager {
     }
 
     public String getApiKey() {
+        return getApiKey(false);
+    }
+
+    public String getApiKey(boolean headless) {
         // First, try to get the API key from the environment variable
         String apiKey = System.getenv(API_KEY_ENV_VAR);
         if (apiKey == null || apiKey.isEmpty()) {
@@ -70,25 +78,39 @@ public class PreferencesManager {
 
         if (apiKey == null || apiKey.isEmpty()) {
             // If still not found, show input dialog to enter API key
-            apiKey = JOptionPane.showInputDialog(null,
-                    "Your OpenAI API key is not configured. Please enter it now.",
-                    "OpenAI API Key Required",
-                    JOptionPane.WARNING_MESSAGE);
+            if (!headless) {
+                apiKey = JOptionPane.showInputDialog(null,
+                        "Your OpenAI API key is not configured. Please enter it now.",
+                        "OpenAI API Key Required",
+                        JOptionPane.WARNING_MESSAGE);
+            }
 
             if (apiKey != null && !apiKey.isEmpty()) {
                 // Save the entered API key in Preferences for future use
                 preferences.put(API_KEY_PREFERENCES, apiKey);
             } else {
-                // If user didn't provide a valid key, show error and throw exception
-                JOptionPane.showMessageDialog(null,
-                        "OpenAI API key setup is incomplete. Please provide a valid key.",
-                        "API Key Not Configured",
-                        JOptionPane.ERROR_MESSAGE);
-                throw new IllegalStateException("A valid OpenAI API key is necessary for this feature.");
+                if (!headless) {
+                    // If user didn't provide a valid key, show error and throw exception
+                    JOptionPane.showMessageDialog(null,
+                            "OpenAI API key setup is incomplete. Please provide a valid key.",
+                            "API Key Not Configured",
+                            JOptionPane.ERROR_MESSAGE);
+                    throw new IllegalStateException("A valid OpenAI API key is necessary for this feature.");
+                } else {
+                    return null;
+                }
             }
         }
 
         return apiKey;
+    }
+    
+    public void setProviderLocation(String providerLocation) {
+        preferences.put(PROVIDER_LOCATION_PREFERENCES, providerLocation);
+    }
+
+    public String getProviderLocation() {
+        return preferences.get(PROVIDER_LOCATION_PREFERENCES, null);
     }
 
     public String getModelName() {
@@ -100,7 +122,7 @@ public class PreferencesManager {
         }
         if (modelName == null || modelName.isEmpty()) {
             // Fallback to default model name
-            modelName = GenAIModel.GPT_4O_MINI.getDisplayName();
+            modelName = getModel().getName();
         }
         return modelName;
     }
@@ -115,10 +137,10 @@ public class PreferencesManager {
 
     public AIClassContext getClassContext() {
         String classContext = preferences.get("classContext", null);
-        if( classContext != null){
+        if (classContext != null) {
             try {
-            return AIClassContext.valueOf(classContext);
-            } catch(IllegalArgumentException iae) {
+                return AIClassContext.valueOf(classContext);
+            } catch (IllegalArgumentException iae) {
                 // .. skip
             }
         }
@@ -130,19 +152,37 @@ public class PreferencesManager {
     }
 
     public GenAIModel getModel() {
-        String gptModel = preferences.get("gptModel", null);
-        if( gptModel != null){
+        String gptModel = preferences.get(MODEL_PREFERENCE, null);
+        if (gptModel != null) {
             try {
-            return GenAIModel.valueOf(gptModel);
-            } catch(IllegalArgumentException iae) {
+                return GenAIModel.findByName(gptModel);
+            } catch (IllegalArgumentException iae) {
                 // .. skip
             }
         }
-        return GenAIModel.GPT_4O_MINI;
+        return GenAIModel.findByName(DEFAULT_MODEL);
     }
 
-    public void setGptModel(GenAIModel model) {
-        preferences.put("gptModel", model != null ? model.toString() : null);
+    public void setModel(String model) {
+        preferences.put(MODEL_PREFERENCE, model);
+    }
+
+    public void setProvider(GenAIProvider provider) {
+        if (provider != null) {
+            preferences.put(PROVIDER_PREFERENCE, provider.name());
+        }
+    }
+
+    public GenAIProvider getProvider() {
+        String providerName = preferences.get(PROVIDER_PREFERENCE, null);
+        if (providerName != null) {
+            try {
+                return GenAIProvider.valueOf(providerName);
+            } catch (IllegalArgumentException e) {
+                System.err.println("Unknown provider: " + providerName + ". Falling back to default.");
+            }
+        }
+        return GenAIProvider.OPEN_AI;
     }
 
     public boolean isHintsEnabled() {

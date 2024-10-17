@@ -39,8 +39,7 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="jLayeredPane1" pref="592" max="32767" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
+              <Component id="jLayeredPane1" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -48,7 +47,7 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="jLayeredPane1" pref="376" max="32767" attributes="0"/>
+              <Component id="jLayeredPane1" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -59,7 +58,6 @@
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
         <Property name="columns" type="int" value="1"/>
         <Property name="rows" type="int" value="0"/>
-        <Property name="verticalGap" type="int" value="10"/>
       </Layout>
       <SubComponents>
         <Container class="javax.swing.JLayeredPane" name="jLayeredPane2">
@@ -129,48 +127,28 @@
             </Component>
           </SubComponents>
         </Container>
-        <Container class="javax.swing.JLayeredPane" name="jLayeredPane5">
+        <Container class="javax.swing.JLayeredPane" name="jLayeredPane16">
 
           <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
-            <Property name="columns" type="int" value="1"/>
+            <Property name="columns" type="int" value="3"/>
+            <Property name="horizontalGap" type="int" value="5"/>
             <Property name="rows" type="int" value="0"/>
           </Layout>
           <SubComponents>
-            <Container class="javax.swing.JLayeredPane" name="jLayeredPane6">
-
-              <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
-                <Property name="alignment" type="int" value="0"/>
-              </Layout>
-              <SubComponents>
-                <Component class="javax.swing.JLabel" name="gptModelLabel">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.gptModelLabel.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
-                    </Property>
-                  </Properties>
-                </Component>
-                <Component class="javax.swing.JLabel" name="gptModelHelp">
-                  <Properties>
-                    <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-                      <Font name="Segoe UI" size="10" style="0"/>
-                    </Property>
-                    <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-                      <Color blue="64" green="64" red="64" type="rgb"/>
-                    </Property>
-                    <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.gptModelHelp.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
-                    </Property>
-                  </Properties>
-                </Component>
-              </SubComponents>
-            </Container>
-            <Container class="javax.swing.JLayeredPane" name="jLayeredPane10">
+            <Container class="javax.swing.JLayeredPane" name="jLayeredPane8">
 
               <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
-                <Property name="columns" type="int" value="0"/>
-                <Property name="rows" type="int" value="1"/>
+                <Property name="columns" type="int" value="1"/>
+                <Property name="rows" type="int" value="0"/>
               </Layout>
               <SubComponents>
+                <Component class="javax.swing.JLabel" name="providerLabel">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.providerLabel.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                    </Property>
+                  </Properties>
+                </Component>
                 <Component class="javax.swing.JComboBox" name="providerComboBox">
                   <Properties>
                     <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
@@ -187,10 +165,65 @@
                     <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;io.github.jeddict.ai.settings.GenAIProvider&gt;"/>
                   </AuxValues>
                 </Component>
+              </SubComponents>
+            </Container>
+            <Container class="javax.swing.JLayeredPane" name="jLayeredPane13">
+
+              <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
+                <Property name="columns" type="int" value="1"/>
+                <Property name="rows" type="int" value="0"/>
+              </Layout>
+              <SubComponents>
+                <Component class="javax.swing.JLabel" name="providerKeyLabel">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.providerKeyLabel.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                    </Property>
+                  </Properties>
+                </Component>
+                <Container class="javax.swing.JLayeredPane" name="jLayeredPane6">
+
+                  <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBoxLayout">
+                    <Property name="axis" type="int" value="1"/>
+                  </Layout>
+                  <SubComponents>
+                    <Component class="javax.swing.JTextField" name="providerLocationField">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                          <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.providerLocationField.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                        </Property>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JPasswordField" name="apiKeyField">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                          <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.apiKeyField.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                        </Property>
+                      </Properties>
+                    </Component>
+                  </SubComponents>
+                </Container>
+              </SubComponents>
+            </Container>
+            <Container class="javax.swing.JLayeredPane" name="jLayeredPane5">
+
+              <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
+                <Property name="columns" type="int" value="1"/>
+                <Property name="rows" type="int" value="0"/>
+              </Layout>
+              <SubComponents>
+                <Component class="javax.swing.JLabel" name="gptModelLabel">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.gptModelLabel.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                    </Property>
+                  </Properties>
+                </Component>
                 <Component class="javax.swing.JComboBox" name="modelComboBox">
                   <Properties>
+                    <Property name="editable" type="boolean" value="true"/>
                     <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                      <Connection code="new javax.swing.DefaultComboBoxModel&lt;&gt;(GenAIModel.values())" type="code"/>
+                      <Connection code="new javax.swing.DefaultComboBoxModel&lt;&gt;(getModelList((GenAIProvider)providerComboBox.getSelectedItem()).toArray(new String[0]))" type="code"/>
                     </Property>
                     <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
                       <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.modelComboBox.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
@@ -200,45 +233,67 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="modelComboBoxActionPerformed"/>
                   </Events>
                   <AuxValues>
-                    <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;io.github.jeddict.ai.settings.GenAIModel&gt;"/>
+                    <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
                   </AuxValues>
                 </Component>
               </SubComponents>
             </Container>
           </SubComponents>
         </Container>
-        <Container class="javax.swing.JLayeredPane" name="jLayeredPane4">
+        <Container class="javax.swing.JLayeredPane" name="jLayeredPane17">
 
-          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
-            <Property name="alignment" type="int" value="0"/>
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
+            <Property name="columns" type="int" value="1"/>
+            <Property name="rows" type="int" value="2"/>
           </Layout>
           <SubComponents>
-            <Component class="javax.swing.JCheckBox" name="aiAssistantActivationCheckBox">
+            <Component class="javax.swing.JLabel" name="gptModelHelp">
               <Properties>
-                <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.aiAssistantActivationCheckBox.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+                  <Font name="Segoe UI" size="10" style="0"/>
                 </Property>
-                <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.aiAssistantActivationCheckBox.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                  <Color blue="64" green="64" red="64" type="rgb"/>
+                </Property>
+                <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                  <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.gptModelHelp.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
                 </Property>
               </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="aiAssistantActivationCheckBoxActionPerformed"/>
-              </Events>
             </Component>
-            <Component class="javax.swing.JCheckBox" name="enableHintCheckBox">
-              <Properties>
-                <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.enableHintCheckBox.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
-                </Property>
-                <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.enableHintCheckBox.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
-                </Property>
-              </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="enableHintCheckBoxActionPerformed"/>
-              </Events>
-            </Component>
+            <Container class="javax.swing.JLayeredPane" name="jLayeredPane4">
+
+              <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
+                <Property name="alignment" type="int" value="0"/>
+              </Layout>
+              <SubComponents>
+                <Component class="javax.swing.JCheckBox" name="aiAssistantActivationCheckBox">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.aiAssistantActivationCheckBox.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                    </Property>
+                    <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.aiAssistantActivationCheckBox.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                    </Property>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="aiAssistantActivationCheckBoxActionPerformed"/>
+                  </Events>
+                </Component>
+                <Component class="javax.swing.JCheckBox" name="enableHintCheckBox">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.enableHintCheckBox.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                    </Property>
+                    <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                      <ResourceString bundle="io/github/jeddict/ai/settings/Bundle.properties" key="AIAssistancePanel.enableHintCheckBox.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+                    </Property>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="enableHintCheckBoxActionPerformed"/>
+                  </Events>
+                </Component>
+              </SubComponents>
+            </Container>
           </SubComponents>
         </Container>
         <Container class="javax.swing.JLayeredPane" name="jLayeredPane9">
