@@ -34,6 +34,7 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import io.github.jeddict.ai.models.LMStudioChatModel;
+import static io.github.jeddict.ai.settings.GenAIProvider.DEEPINFRA;
 import static io.github.jeddict.ai.settings.GenAIProvider.LM_STUDIO;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import io.github.jeddict.ai.settings.PreferencesManager;
@@ -70,7 +71,12 @@ public class JeddictChatModel {
                             .modelName(preferencesManager.getModelName())
                             .build();
                 case DEEPINFRA -> model = OpenAiChatModel.builder()
-                            .baseUrl("https://api.deepinfra.com/v1/openai")
+                            .baseUrl(preferencesManager.getProviderLocation())
+                            .apiKey(preferencesManager.getApiKey())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+                case CUSTOM_OPEN_AI -> model = OpenAiChatModel.builder()
+                            .baseUrl(preferencesManager.getProviderLocation())
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
