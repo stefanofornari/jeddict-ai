@@ -27,11 +27,13 @@ import com.sun.source.util.TreePath;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.localai.LocalAiChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import io.github.jeddict.ai.models.LMStudioChatModel;
+import static io.github.jeddict.ai.settings.GenAIProvider.LM_STUDIO;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
@@ -65,6 +67,10 @@ public class JeddictChatModel {
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
+                case ANTHROPIC -> model = AnthropicChatModel.builder()
+                        .apiKey(preferencesManager.getApiKey())
+                        .modelName(preferencesManager.getModelName())
+                        .build();
                 case OLLAMA -> model = OllamaChatModel.builder()
                             .baseUrl(preferencesManager.getProviderLocation())
                             .modelName(preferencesManager.getModelName())
@@ -73,10 +79,10 @@ public class JeddictChatModel {
                             .baseUrl(preferencesManager.getProviderLocation())
                             .modelName(preferencesManager.getModelName())
                             .build();
-                case ANTHROPIC -> model = AnthropicChatModel.builder()
-                        .apiKey(preferencesManager.getApiKey())
-                        .modelName(preferencesManager.getModelName())
-                        .build();
+                case GPT4ALL -> model = LocalAiChatModel.builder()
+                            .baseUrl(preferencesManager.getProviderLocation())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
             }
         }
     }
@@ -443,13 +449,13 @@ public class JeddictChatModel {
         } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
            && path.getParentPath() != null
            && path.getParentPath().getLeaf().getKind() == Tree.Kind.METHOD) {
-    prompt = "You are an API server that suggests Java code modifications for a method. "
-            + "At the placeholder location ${SUGGEST_CODE_LIST}, suggest method-level modifiers such as 'public', 'protected', 'private', 'abstract', 'static', 'final', 'synchronized', or relevant method-level annotations. "
-            + "Additionally, you may suggest method-specific annotations like '@Override', '@Deprecated', '@Transactional', etc. "
-            + "Ensure that the suggestions are appropriate for the method context provided. "
-            + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
-            + "Java Method Content:\n" + classContent;
-} else if (path.getLeaf().getKind() == Tree.Kind.CLASS
+            prompt = "You are an API server that suggests Java code modifications for a method. "
+                    + "At the placeholder location ${SUGGEST_CODE_LIST}, suggest method-level modifiers such as 'public', 'protected', 'private', 'abstract', 'static', 'final', 'synchronized', or relevant method-level annotations. "
+                    + "Additionally, you may suggest method-specific annotations like '@Override', '@Deprecated', '@Transactional', etc. "
+                    + "Ensure that the suggestions are appropriate for the method context provided. "
+                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + "Java Method Content:\n" + classContent;
+        } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
                 && path.getParentPath() != null
                 && path.getParentPath().getLeaf().getKind() == Tree.Kind.CLASS) {
             prompt = "You are an API server that suggests Java code for an inner class at the placeholder location ${SUGGEST_CODE_LIST}. "
@@ -468,12 +474,12 @@ public class JeddictChatModel {
         } else if (path.getLeaf().getKind() == Tree.Kind.PARENTHESIZED
                && path.getParentPath() != null
                && path.getParentPath().getLeaf().getKind() == Tree.Kind.IF) {
-        prompt = "You are an API server that suggests Java code to enhance an if-statement. "
-                + "At the placeholder location ${SUGGEST_IF_CONDITIONS}, suggest additional conditional checks or actions within the if-statement. "
-                + "Ensure that the suggestions are contextually appropriate for the condition. "
-                + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
-                + "Java If Statement Content:\n" + classContent;
-    } else {
+            prompt = "You are an API server that suggests Java code to enhance an if-statement. "
+                    + "At the placeholder location ${SUGGEST_IF_CONDITIONS}, suggest additional conditional checks or actions within the if-statement. "
+                    + "Ensure that the suggestions are contextually appropriate for the condition. "
+                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + "Java If Statement Content:\n" + classContent;
+        } else {
             prompt = "You are an API server that suggests Java code for a specific context in a given Java class at the placeholder location ${SUGGEST_CODE_LIST}. "
                     + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a relevant single line of code or a multi-line code block as appropriate for the context represented by the placeholder ${SUGGEST_CODE_LIST} in the Java class. "
                     + "Ensure that the suggestions are relevant to the context. "
