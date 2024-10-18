@@ -10,6 +10,7 @@ public enum GenAIProvider {
     CUSTOM_OPEN_AI("", ""),
     GOOGLE("https://ai.google.dev/gemini-api/docs/models/gemini", "https://console.cloud.google.com/apis/credentials"),
     DEEPINFRA("https://deepinfra.com/models", "https://deepinfra.com/dash/api_keys"),
+    DEEPSEEK("https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com/api_keys"),
     GROQ("https://console.groq.com/docs/models", "https://console.groq.com/keys"),
     MISTRAL("https://docs.mistral.ai/getting-started/models/models_overview/", "https://console.mistral.ai/api-keys/"),
     OLLAMA("https://ollama.com/models", ""),

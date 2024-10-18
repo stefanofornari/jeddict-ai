@@ -20,6 +20,7 @@ package io.github.jeddict.ai.settings;
 
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.DEEPINFRA;
+import static io.github.jeddict.ai.settings.GenAIProvider.DEEPSEEK;
 import static io.github.jeddict.ai.settings.GenAIProvider.GOOGLE;
 import static io.github.jeddict.ai.settings.GenAIProvider.MISTRAL;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
@@ -72,6 +73,8 @@ public class GenAIModel {
         MODELS.put("google/gemma-2-9b-it", new GenAIModel(DEEPINFRA, "google/gemma-2-9b-it", "Gemini model specialized for IT tasks, with a focus on performance.", 0.10, 0.30));
         MODELS.put("microsoft/WizardLM-2-8x22B", new GenAIModel(DEEPINFRA, "microsoft/WizardLM-2-8x22B", "An 8x22B model designed for advanced conversational applications.", 0.25, 0.75));
         MODELS.put("mistralai/Mistral-7B-Instruct-v0.3", new GenAIModel(DEEPINFRA, "mistralai/Mistral-7B-Instruct-v0.3", "A 7B instruct model optimized for general tasks.", 0.15, 0.45));
+    
+        MODELS.put("deepseek-chat", new GenAIModel(DEEPSEEK, "deepseek-chat", "", 0.014, 0.28));
     }
 
     private final GenAIProvider provider;

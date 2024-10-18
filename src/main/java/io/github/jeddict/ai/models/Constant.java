@@ -25,4 +25,5 @@ package io.github.jeddict.ai.models;
 public interface Constant {
 
     String DEEPINFRA_URL = "https://api.deepinfra.com/v1/openai";
+    String DEEPSEEK_URL = "https://api.deepseek.com/";
 }

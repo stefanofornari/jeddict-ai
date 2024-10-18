@@ -19,6 +19,7 @@
 package io.github.jeddict.ai.settings;
 
 import static io.github.jeddict.ai.models.Constant.DEEPINFRA_URL;
+import static io.github.jeddict.ai.models.Constant.DEEPSEEK_URL;
 import io.github.jeddict.ai.models.GPT4AllModelFetcher;
 import io.github.jeddict.ai.models.GroqModelFetcher;
 import io.github.jeddict.ai.models.OllamaModelFetcher;
@@ -310,6 +311,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private void providerComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_providerComboBoxActionPerformed
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.DEEPINFRA
+                || selectedProvider == GenAIProvider.DEEPSEEK
                 || selectedProvider == GenAIProvider.GROQ
                 || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
             apiKeyLabel.setVisible(true);
@@ -318,6 +320,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             providerLocationLabel.setVisible(true);
             if (selectedProvider == GenAIProvider.DEEPINFRA) {
                 providerLocationField.setText(DEEPINFRA_URL);
+            } else if (selectedProvider == GenAIProvider.DEEPSEEK) {
+                providerLocationField.setText(DEEPSEEK_URL);
             } else if (selectedProvider == GenAIProvider.GROQ) {
                 providerLocationField.setText(new GroqModelFetcher().getAPIUrl());
             } else {
@@ -480,6 +484,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
                 || selectedProvider == GenAIProvider.DEEPINFRA
+                || selectedProvider == GenAIProvider.DEEPSEEK
                 || selectedProvider == GenAIProvider.GROQ) {
             apiKeyField.setText(preferencesManager.getApiKey(true));
             providerLocationField.setText(preferencesManager.getProviderLocation());
@@ -507,6 +512,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
                 || selectedProvider == GenAIProvider.DEEPINFRA
+                || selectedProvider == GenAIProvider.DEEPSEEK
                 || selectedProvider == GenAIProvider.GROQ) {
             preferencesManager.setApiKey(new String(apiKeyField.getPassword()));
             preferencesManager.setProviderLocation(providerLocationField.getText());
