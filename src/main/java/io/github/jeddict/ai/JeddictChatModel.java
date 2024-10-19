@@ -62,11 +62,13 @@ public class JeddictChatModel {
     public JeddictChatModel() {
         if (null != preferencesManager.getModel()) {
             switch (preferencesManager.getProvider()) {
-                case GOOGLE -> model = GoogleAiGeminiChatModel.builder()
+                case GOOGLE ->
+                    model = GoogleAiGeminiChatModel.builder()
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
-                case OPEN_AI -> model = OpenAiChatModel.builder()
+                case OPEN_AI ->
+                    model = OpenAiChatModel.builder()
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
@@ -76,23 +78,28 @@ public class JeddictChatModel {
                             .apiKey(preferencesManager.getApiKey())
                             .modelName(preferencesManager.getModelName())
                             .build();
-                case MISTRAL -> model = MistralAiChatModel.builder()
-                        .apiKey(preferencesManager.getApiKey())
-                        .modelName(preferencesManager.getModelName())
-                        .build();
-                case ANTHROPIC -> model = AnthropicChatModel.builder()
-                        .apiKey(preferencesManager.getApiKey())
-                        .modelName(preferencesManager.getModelName())
-                        .build();
-                case OLLAMA -> model = OllamaChatModel.builder()
+                case MISTRAL ->
+                    model = MistralAiChatModel.builder()
+                            .apiKey(preferencesManager.getApiKey())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+                case ANTHROPIC ->
+                    model = AnthropicChatModel.builder()
+                            .apiKey(preferencesManager.getApiKey())
+                            .modelName(preferencesManager.getModelName())
+                            .build();
+                case OLLAMA ->
+                    model = OllamaChatModel.builder()
                             .baseUrl(preferencesManager.getProviderLocation())
                             .modelName(preferencesManager.getModelName())
                             .build();
-                case LM_STUDIO -> model = LMStudioChatModel.builder()
+                case LM_STUDIO ->
+                    model = LMStudioChatModel.builder()
                             .baseUrl(preferencesManager.getProviderLocation())
                             .modelName(preferencesManager.getModelName())
                             .build();
-                case GPT4ALL -> model = LocalAiChatModel.builder()
+                case GPT4ALL ->
+                    model = LocalAiChatModel.builder()
                             .baseUrl(preferencesManager.getProviderLocation())
                             .modelName(preferencesManager.getModelName())
                             .build();
@@ -101,11 +108,11 @@ public class JeddictChatModel {
     }
 
     private String generate(String prompt) {
-        if(model == null) {
-                JOptionPane.showMessageDialog(null,
-                        "AI assistance model not intitalized.",
-                        "Error in AI Assistance",
-                        JOptionPane.ERROR_MESSAGE);
+        if (model == null) {
+            JOptionPane.showMessageDialog(null,
+                    "AI assistance model not intitalized.",
+                    "Error in AI Assistance",
+                    JOptionPane.ERROR_MESSAGE);
         }
         try {
             return model.generate(prompt);
@@ -460,8 +467,8 @@ public class JeddictChatModel {
                     + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                     + "Java Class Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
-           && path.getParentPath() != null
-           && path.getParentPath().getLeaf().getKind() == Tree.Kind.METHOD) {
+                && path.getParentPath() != null
+                && path.getParentPath().getLeaf().getKind() == Tree.Kind.METHOD) {
             prompt = "You are an API server that suggests Java code modifications for a method. "
                     + "At the placeholder location ${SUGGEST_CODE_LIST}, suggest method-level modifiers such as 'public', 'protected', 'private', 'abstract', 'static', 'final', 'synchronized', or relevant method-level annotations. "
                     + "Additionally, you may suggest method-specific annotations like '@Override', '@Deprecated', '@Transactional', etc. "
@@ -485,8 +492,8 @@ public class JeddictChatModel {
                     + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                     + "Java Class Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.PARENTHESIZED
-               && path.getParentPath() != null
-               && path.getParentPath().getLeaf().getKind() == Tree.Kind.IF) {
+                && path.getParentPath() != null
+                && path.getParentPath().getLeaf().getKind() == Tree.Kind.IF) {
             prompt = "You are an API server that suggests Java code to enhance an if-statement. "
                     + "At the placeholder location ${SUGGEST_IF_CONDITIONS}, suggest additional conditional checks or actions within the if-statement. "
                     + "Ensure that the suggestions are contextually appropriate for the condition. "
@@ -509,7 +516,7 @@ public class JeddictChatModel {
         List<Snippet> nextLines = parseJsonToSnippets(jsonResponse);
         return nextLines;
     }
- 
+
     public List<String> suggestJavaComment(String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests appropriate Java comments for a specific context in a given Java class at the placeholder location ${SUGGEST_JAVA_COMMENT}. "
                 + "Based on the provided Java class content and the line of comment: \"" + lineText + " ${SUGGEST_JAVA_COMMENT} \", suggest relevant Java comment as appropriate for the context represented by the placeholder ${SUGGEST_JAVA_COMMENT} in the Java Class. "
@@ -543,8 +550,7 @@ public class JeddictChatModel {
             + "'imports' should be an array of required Java import statements (if no imports are required, return an empty array). "
             + "'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. "
             + "Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid. \n\n";
-            
-            
+
     String jsonRequestWithDescription = "Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing three fields: 'imports', 'snippet', and 'description'. "
             + "'imports' should be an array of required Java import statements (if no imports are required, return an empty array). "
             + "'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. "
@@ -567,7 +573,7 @@ public class JeddictChatModel {
     }
 
     public List<Snippet> parseJsonToSnippets(String jsonResponse) {
-        if(jsonResponse == null) {
+        if (jsonResponse == null) {
             return Collections.EMPTY_LIST;
         }
         List<Snippet> snippets = new ArrayList<>();
@@ -597,7 +603,7 @@ public class JeddictChatModel {
 
             // Extract the "snippet" field
             String snippet = jsonObject.getString("snippet");
-            if(jsonObject.has("description")){
+            if (jsonObject.has("description")) {
                 String descripion = jsonObject.getString("description");
                 Snippet snippetObj = new Snippet(snippet, descripion, importsList);
                 snippets.add(snippetObj);
@@ -638,7 +644,7 @@ public class JeddictChatModel {
 
     private List<String> parseJsonToListWithSplit(String json) {
         List<String> variableNames = new ArrayList<>();
-        if(json == null || json.isEmpty()){
+        if (json == null || json.isEmpty()) {
             return variableNames;
         }
 
@@ -715,9 +721,26 @@ public class JeddictChatModel {
         return enhanced;
     }
 
+    public String generateHtmlDescriptionForProject(String projectContent, String query) {
+        String prompt = "You are an API server that provides answer to query of following project in HTML. "
+                + "Do not include additional text or explanations outside of the HTML content.\n\n"
+                + "Do not include text in <code> block.\n\n"
+                + "If Full Java Class is in response then wrap it in <pre><code type=\"full\" class=\"java\"></pre>. "
+                + "If partial snippet of Java Class are in response then wrap it in <pre><code type=\"snippet\" class=\"java\"></pre>. "
+                + "Projects Content:\n" + projectContent + "\n\n"
+                + "Query:\n" + query;
+
+        // Generate the HTML description
+        String answer = generate(prompt);
+        System.out.println(answer);
+        return answer;
+    }
+
     public String generateHtmlDescriptionForClass(String classContent) {
         String prompt = "You are an API server that provides description of following class in HTML. "
                 + "Do not include additional text or explanations outside of the HTML content.\n\n"
+                + "If Full Java Class is in response then wrap it in <pre><code type=\"full\" class=\"java\"></pre>. "
+                + "If partial snippet of Java Class are in response then wrap it in <pre><code type=\"snippet\" class=\"java\"></pre>. "
                 + "Java Class Content:\n" + classContent;
 
         // Generate the HTML description
@@ -725,10 +748,12 @@ public class JeddictChatModel {
         System.out.println(answer);
         return answer;
     }
-    
+
     public String generateHtmlDescriptionForMethod(String methodContent) {
         String prompt = "You are an API server that provides description of following Method in HTML. "
                 + "Do not include additional text or explanations outside of the HTML content.\n\n"
+                + "If Full Java Class is in response then wrap it in <pre><code type=\"full\" class=\"java\"></pre>. "
+                + "If partial snippet of Java Class are in response then wrap it in <pre><code type=\"snippet\" class=\"java\"></pre>. "
                 + "Java Method Content:\n" + methodContent;
 
         // Generate the HTML description
@@ -737,12 +762,19 @@ public class JeddictChatModel {
         return answer;
     }
 
-    public String generateHtmlDescription(String classContent, String methodContent, String previousChatResponse, String userQuery) {
+    public String generateHtmlDescription(
+            String projectContent, String classContent, String methodContent, 
+            String previousChatResponse, String userQuery) {
         String prompt;
         String promptExtend;
         if (methodContent != null) {
             promptExtend = "Method Content:\n" + methodContent + "\n\n"
                     + "Do not return complete Java Class, return only Method and wrap it in <code type=\"full\" class=\"java\">. \n";
+        } else if (projectContent != null) {
+              promptExtend = "Project Full Content:\n" + classContent + "\n\n"
+                    + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
+                    + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. ";
+        
         } else {
             promptExtend = "Orignal Java Class Content:\n" + classContent + "\n\n"
                     + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "

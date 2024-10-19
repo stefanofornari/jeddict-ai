@@ -4,6 +4,7 @@
  */
 package io.github.jeddict.ai.completion;
 
+import io.github.jeddict.ai.components.AssistantTopComponent;
 import io.github.jeddict.ai.util.Utilities;
 import static io.github.jeddict.ai.util.Utilities.getHTMLColor;
 import io.github.jeddict.ai.util.SourceUtil;
@@ -23,7 +24,6 @@ import org.netbeans.modules.editor.java.JavaCompletionItem;
 import org.netbeans.spi.editor.completion.CompletionDocumentation;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
 import org.netbeans.spi.editor.completion.CompletionTask;
-import org.openide.util.ImageUtilities;
 import org.openide.xml.XMLUtil;
 
 /**
@@ -151,10 +151,7 @@ public class JeddictItem extends JavaCompletionItem {
 
     @Override
     protected ImageIcon getIcon() {
-        if (icon == null) {
-            icon = ImageUtilities.loadImageIcon(LOCAL_VARIABLE, false);
-        }
-        return null;
+        return AssistantTopComponent.icon;
     }
 
     @Override

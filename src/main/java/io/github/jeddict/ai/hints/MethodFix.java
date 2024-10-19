@@ -15,7 +15,6 @@ import io.github.jeddict.ai.util.SourceUtil;
 import static io.github.jeddict.ai.util.FileUtil.saveOpenEditor;
 import static io.github.jeddict.ai.util.SourceUtil.geIndentaion;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
-import static io.github.jeddict.ai.util.UIUtil.askQuery;
 import javax.lang.model.element.Element;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,6 +25,7 @@ import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.util.NbBundle;
+import static io.github.jeddict.ai.util.UIUtil.queryToEnhance;
 
 /**
  *
@@ -85,7 +85,7 @@ public class MethodFix extends JavaFix {
             } else if (action == Action.ENHANCE) {
                 content = new JeddictChatModel().enhanceMethodFromMethodContent(treePath.getParentPath().getLeaf().toString(), leaf.toString());
             } else {
-                String query = askQuery();
+                String query = queryToEnhance();
                 if (query == null) {
                     return;
                 }
