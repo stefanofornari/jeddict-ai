@@ -2,9 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package io.github.jeddict.ai;
+package io.github.jeddict.ai.completion;
 
-import static io.github.jeddict.ai.Utilities.getHTMLColor;
+import io.github.jeddict.ai.util.Utilities;
+import static io.github.jeddict.ai.util.Utilities.getHTMLColor;
 import io.github.jeddict.ai.util.SourceUtil;
 import java.net.URL;
 import java.util.List;

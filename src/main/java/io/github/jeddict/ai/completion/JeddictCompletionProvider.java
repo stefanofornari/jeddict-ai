@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.github.jeddict.ai;
+package io.github.jeddict.ai.completion;
 
 import io.github.jeddict.ai.scanner.MyTreePathScanner;
 import com.sun.source.tree.ClassTree;
@@ -48,6 +48,7 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.DocTrees;
+import io.github.jeddict.ai.Snippet;
 import static io.github.jeddict.ai.scanner.ProjectClassScanner.getFileObjectFromEditor;
 import io.github.jeddict.ai.scanner.ClassData;
 import java.util.stream.Collectors;

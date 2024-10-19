@@ -2,13 +2,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package io.github.jeddict.ai.fix;
+package io.github.jeddict.ai.hints;
 
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.Tree;
 import static com.sun.source.tree.Tree.Kind.STRING_LITERAL;
 import com.sun.source.util.TreePath;
-import io.github.jeddict.ai.Action;
+import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.JeddictChatModel;
 import static io.github.jeddict.ai.util.FileUtil.saveOpenEditor;
 import org.netbeans.api.java.source.JavaSource;
