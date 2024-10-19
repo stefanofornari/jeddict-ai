@@ -273,14 +273,16 @@ public class JeddictCompletionProvider implements CompletionProvider {
             
             String snippetWOSpace = removeAllSpaces(varName.getSnippet());
             String tlLine = trimLeadingSpaces(line);
-             String tlLineTextBeforeCaret = trimLeadingSpaces(lineTextBeforeCaret);
+            String tlLineTextBeforeCaret = trimLeadingSpaces(lineTextBeforeCaret);
 
             // Handle line and snippet first words safely
             String firstWordLine = "";
+            String lastWordLine = "";
             if (lineTextBeforeCaret != null && !lineTextBeforeCaret.trim().isEmpty()) {
-                String[] textSegments = lineTextBeforeCaret.trim().split("[^a-zA-Z0-9]+");
+                String[] textSegments = lineTextBeforeCaret.trim().split("[^a-zA-Z0-9<]+");
                 if(textSegments.length > 0) {
-                firstWordLine = textSegments[0]; // Split by any non-alphanumeric character
+                    firstWordLine = textSegments[0];
+                    lastWordLine = textSegments[textSegments.length - 1];
                 }
             }
 
@@ -292,26 +294,30 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 }
             }
 
+            boolean midWordMatched = false;
             if (firstWordLine.equalsIgnoreCase(firstWordSnippet)) {
                 newcaretOffset = newcaretOffset - tlLineTextBeforeCaret.length();
+            } else if (snippetWOSpace.startsWith(lastWordLine)) {
+                midWordMatched = true;
+                newcaretOffset = newcaretOffset - lastWordLine.length();
             } else if (snippetWOSpace.startsWith(removeAllSpaces(line))) {
                 newcaretOffset = newcaretOffset - tlLine.length();
             } else if (snippetWOSpace.startsWith(removeAllSpaces(lineTextBeforeCaret))) {
                 newcaretOffset = newcaretOffset - tlLineTextBeforeCaret.length();
             }
+            // for annotations
             if (tlLine != null && !tlLine.isEmpty() && tlLine.charAt(0) == '@'
                     && snippetWOSpace != null && !snippetWOSpace.isEmpty() && snippetWOSpace.charAt(0) == '@') {
                 newcaretOffset = newcaretOffset - tlLine.length();
             }
             int caretToEndLength = -1;
-            if (javaToken.getId() == STRING_LITERAL && kind == Tree.Kind.STRING_LITERAL) {
+            if ((javaToken.getId() == STRING_LITERAL && kind == Tree.Kind.STRING_LITERAL) || midWordMatched) {
 
             } else if (newcaretOffset != caretOffset) {
                 caretToEndLength = line.length() - lineTextBeforeCaret.length();
                 String textAfterCaret = doc.getText(caretOffset, caretToEndLength);
                 caretToEndLength = trimTrailingSpaces(textAfterCaret).length();
             }
-            System.out.println("varName.getSnippet(), "+ varName.getSnippet() + caretOffset + " " + newcaretOffset);
             JeddictItem var = new JeddictItem(null, null, varName.getSnippet(), varName.getDescription(), varName.getImports(), newcaretOffset, caretToEndLength, true, false, -1);
             return var;
         }
@@ -489,13 +495,13 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         }
                     }
                 } else {
-                    String currentLine = getLineText(doc, caretOffset);
+                    String line = getLineText(doc, caretOffset);
+                    String lineTextBeforeCaret = getLineTextBeforeCaret(doc, caretOffset);
                     FileObject fileObject = getFileObjectFromEditor(doc);
                     String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                    List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(updateddoc, currentLine, mimeType);
+                    List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(updateddoc, line, mimeType);
                     for (Snippet varName : sugs) {
-                        JeddictItem var = new JeddictItem(null, null, varName.getSnippet(),"", Collections.emptyList(), caretOffset, true, false, -1);
-                        resultSet.addItem(var);
+                        resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
                     }
                 }
             } catch (Exception e) {
