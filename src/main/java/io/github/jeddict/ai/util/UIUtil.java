@@ -4,6 +4,7 @@
  */
 package io.github.jeddict.ai.util;
 
+import io.github.jeddict.ai.components.AssistantTopComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -15,7 +16,7 @@ import javax.swing.JTextArea;
  */
 public class UIUtil {
 
-    public static String askQuery() {
+    public static String queryToEnhance() {
         // Create a JTextArea for multiline input
         JTextArea textArea = new JTextArea(10, 30); // 10 rows, 30 columns
         textArea.setWrapStyleWord(true);
@@ -34,7 +35,8 @@ public class UIUtil {
                 panel,
                 "Please provide details about what to update in this method:",
                 JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
+                JOptionPane.PLAIN_MESSAGE,
+                AssistantTopComponent.icon
         );
 
         // Check the user's choice
@@ -56,7 +58,7 @@ public class UIUtil {
         return query;
     }
 
-    public static String askQueryAboutClass() {
+    public static String askQuery() {
         // Create a JTextArea for multiline input
         JTextArea textArea = new JTextArea(10, 30); // 10 rows, 30 columns
         textArea.setWrapStyleWord(true);
@@ -73,9 +75,10 @@ public class UIUtil {
         int option = JOptionPane.showConfirmDialog(
                 null,
                 panel,
-                "Please ask the query about this class.",
+                "Please ask the query.",
                 JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
+                JOptionPane.PLAIN_MESSAGE,
+                AssistantTopComponent.icon
         );
 
         // Check the user's choice

@@ -20,16 +20,12 @@ package io.github.jeddict.ai.components;
 
 import java.awt.BorderLayout;
 import java.awt.Desktop;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.prefs.Preferences;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -43,6 +39,7 @@ import org.openide.windows.TopComponent;
  */
 public class AssistantTopComponent extends TopComponent {
 
+    public static final ImageIcon icon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo16.png"));
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
     private HTMLEditorKit editorKit;
@@ -50,10 +47,10 @@ public class AssistantTopComponent extends TopComponent {
     public AssistantTopComponent(String name) {
         setName(name);
         setLayout(new BorderLayout());
+        setIcon(icon.getImage());
 
         parentPanel = new JPanel();
         parentPanel.setLayout(new BoxLayout(parentPanel, BoxLayout.Y_AXIS));
-
         add(parentPanel, BorderLayout.CENTER);
     }
 
