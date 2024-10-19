@@ -16,15 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.github.jeddict.ai;
+package io.github.jeddict.ai.hints;
 
-import io.github.jeddict.ai.fix.JavaDocFixImpl;
-import io.github.jeddict.ai.fix.ExpressionFix;
-import io.github.jeddict.ai.fix.RestEndpointFix;
-import io.github.jeddict.ai.fix.MethodFix;
-import io.github.jeddict.ai.fix.TextFix;
-import io.github.jeddict.ai.fix.VariableFix;
-import io.github.jeddict.ai.fix.VariableNameFix;
+import io.github.jeddict.ai.hints.JavaDocFixImpl;
+import io.github.jeddict.ai.hints.ExpressionFix;
+import io.github.jeddict.ai.hints.RestEndpointFix;
+import io.github.jeddict.ai.hints.MethodFix;
+import io.github.jeddict.ai.hints.TextFix;
+import io.github.jeddict.ai.hints.VariableFix;
+import io.github.jeddict.ai.hints.VariableNameFix;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.tree.Tree;
 import static com.sun.source.tree.Tree.Kind.CLASS;
@@ -38,7 +38,8 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import io.github.jeddict.ai.fix.LearnFix;
+import io.github.jeddict.ai.completion.Action;
+import io.github.jeddict.ai.hints.LearnFix;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.util.Locale;
 import java.util.logging.Logger;
@@ -164,8 +165,8 @@ public class JeddictHint {
                             }
                         }
                     }
-//                    fixes[i++] = new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix();
-//                    fixes[i++] = new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix();
+                    fixes[i++] = new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix();
+                    fixes[i++] = new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix();
                 }
                 break;
 

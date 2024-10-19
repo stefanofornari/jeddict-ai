@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.github.jeddict.ai.fix;
+package io.github.jeddict.ai.hints;
 
 import io.github.jeddict.ai.util.StringUtil;
 import com.sun.source.doctree.DocCommentTree;
@@ -31,9 +31,9 @@ import static com.sun.source.tree.Tree.Kind.VARIABLE;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
-import io.github.jeddict.ai.Action;
+import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.JeddictChatModel;
-import static io.github.jeddict.ai.Action.ENHANCE;
+import static io.github.jeddict.ai.completion.Action.ENHANCE;
 import static io.github.jeddict.ai.util.SourceUtil.geIndentaion;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import static io.github.jeddict.ai.util.StringUtil.trimLeadingSpaces;

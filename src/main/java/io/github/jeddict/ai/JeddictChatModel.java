@@ -716,10 +716,7 @@ public class JeddictChatModel {
     }
 
     public String generateHtmlDescriptionForClass(String classContent) {
-        String prompt = "You are an API server that provides a detailed and interactive HTML-formatted description of a Java class. "
-                + "Given the following Java class content, generate an HTML document that includes a clear and engaging description of the class. "
-                + "Ensure that the HTML content is visually appealing by utilizing Bootstrap CSS for overall styling and use highlight.js for code examples in the response. "
-                + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
+        String prompt = "You are an API server that provides description of following class in HTML. "
                 + "Do not include additional text or explanations outside of the HTML content.\n\n"
                 + "Java Class Content:\n" + classContent;
 
@@ -728,10 +725,29 @@ public class JeddictChatModel {
         System.out.println(answer);
         return answer;
     }
+    
+    public String generateHtmlDescriptionForMethod(String methodContent) {
+        String prompt = "You are an API server that provides description of following Method in HTML. "
+                + "Do not include additional text or explanations outside of the HTML content.\n\n"
+                + "Java Method Content:\n" + methodContent;
 
-    public String generateHtmlDescriptionForClass(String classContent, String previousChatResponse, String userQuery) {
+        // Generate the HTML description
+        String answer = generate(prompt);
+        System.out.println(answer);
+        return answer;
+    }
+
+    public String generateHtmlDescription(String classContent, String methodContent, String previousChatResponse, String userQuery) {
         String prompt;
-
+        String promptExtend;
+        if (methodContent != null) {
+            promptExtend = "Method Content:\n" + methodContent + "\n\n"
+                    + "Do not return complete Java Class, return only Method and wrap it in <code type=\"full\" class=\"java\">. \n";
+        } else {
+            promptExtend = "Orignal Java Class Content:\n" + classContent + "\n\n"
+                    + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
+                    + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. ";
+        }
         if (previousChatResponse == null) {
             prompt = "You are an API server that provides an interactive HTML-formatted answer to a user's query based on Orignal Java class content. "
                     + "Given the following Java class content, and the user's query, generate an HTML document that directly addresses the specific query. "
@@ -739,9 +755,7 @@ public class JeddictChatModel {
                     + "Use Bootstrap CSS for overall styling and highlight.js for code examples in the response. "
                     + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
                     + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                    + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
-                    + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
-                    + "Orignal Java Class Content:\n" + classContent + "\n\n"
+                    + promptExtend
                     + "User Query:\n" + userQuery;
         } else {
             prompt = "You are an API server that provides an interactive HTML-formatted answer to a user's query based on Orignal Java class content and Previous Chat Content. "
@@ -750,10 +764,8 @@ public class JeddictChatModel {
                     + "Use Bootstrap CSS for overall styling and highlight.js for code examples in the response. "
                     + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
                     + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                    + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
-                    + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
-                    + "Orignal Java Class Content:\n" + classContent + "\n\n"
                     + "Previous Chat Response:\n" + previousChatResponse + "\n\n"
+                    + promptExtend
                     + "User Query:\n" + userQuery;
         }
 
