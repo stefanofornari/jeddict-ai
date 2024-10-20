@@ -763,7 +763,7 @@ public class JeddictChatModel {
     }
 
     public String generateHtmlDescription(
-            String projectContent, String classContent, String methodContent, 
+            String projectContent, String classContent, String methodContent,
             String previousChatResponse, String userQuery) {
         String prompt;
         String promptExtend;
@@ -771,10 +771,10 @@ public class JeddictChatModel {
             promptExtend = "Method Content:\n" + methodContent + "\n\n"
                     + "Do not return complete Java Class, return only Method and wrap it in <code type=\"full\" class=\"java\">. \n";
         } else if (projectContent != null) {
-              promptExtend = "Project Full Content:\n" + classContent + "\n\n"
+            promptExtend = "Project Full Content:\n" + classContent + "\n\n"
                     + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
                     + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. ";
-        
+
         } else {
             promptExtend = "Orignal Java Class Content:\n" + classContent + "\n\n"
                     + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
@@ -828,6 +828,38 @@ public class JeddictChatModel {
         String jsonResponse = generate(prompt.toString());
         List<Snippet> nextLines = parseJsonToSnippets(jsonResponse);
         return nextLines;
+    }
+
+    public List<Snippet> suggestSQLQuery(String dbMetadata, String editorContent) {
+        StringBuilder prompt = new StringBuilder("You are an API server that provides SQL query suggestions based on the provided database schema metadata. ");
+
+        if (editorContent == null || editorContent.isEmpty()) {
+            prompt.append("Analyze the metadata and recommend appropriate SQL queries at the placeholder ${SUGGEST_SQL_QUERY_LIST}. ");
+        } else {
+            prompt.append("Based on the following content in the editor: \n")
+                    .append(editorContent)
+                    .append("\nAnalyze the metadata and recommend SQL queries at the placeholder ${SUGGEST_SQL_QUERY_LIST}. ");
+        }
+
+        prompt.append("""
+          Ensure the SQL queries match the database structure, constraints, and relationships. 
+          Respond with a JSON array containing the best SQL query options. 
+          Each entry should have one field, 'snippet', holding the recommended SQL query block, which may include multiple lines formatted as a single string using \\n for line breaks.
+          """);
+
+        // Include description if enabled
+        if (preferencesManager.isDescriptionEnabled()) {
+            prompt.append("""
+          Additionally, each entry should contain a 'description' field providing a very short explanation of what the query does and why it might be appropriate in this context, 
+          formatted with <b>, <br> tags, and optionally, if required, include any important link with <a href=''> tags.
+          """);
+        }
+
+        prompt.append("Database Metadata:\n").append(dbMetadata);
+
+        String jsonResponse = generate(prompt.toString());
+        List<Snippet> sqlQueries = parseJsonToSnippets(jsonResponse);
+        return sqlQueries;
     }
 
 }
