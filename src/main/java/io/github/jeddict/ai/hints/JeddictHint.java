@@ -38,6 +38,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+import io.github.jeddict.ai.JeddictChatModel;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.hints.LearnFix;
 import io.github.jeddict.ai.settings.PreferencesManager;
@@ -199,7 +200,7 @@ public class JeddictHint {
             default:
                 return null;
         }
-        String desc = NbBundle.getMessage(JeddictHint.class, "ERR_HINT"); //NOI18N
+        String desc = NbBundle.getMessage(JeddictChatModel.class, "ERR_HINT"); //NOI18N
         return ErrorDescriptionFactory.forTree(ctx, ctx.getPath(), desc, fixes); //NOI18N
     }
 
