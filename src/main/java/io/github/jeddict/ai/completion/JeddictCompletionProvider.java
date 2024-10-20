@@ -84,9 +84,8 @@ import static io.github.jeddict.ai.util.StringUtil.trimTrailingSpaces;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import org.netbeans.api.editor.completion.Completion;
-import org.netbeans.api.project.FileOwnerQuery;
-import org.netbeans.api.project.Project;
 import static org.netbeans.spi.editor.completion.CompletionProvider.COMPLETION_QUERY_TYPE;
+import org.netbeans.modules.db.sql.loader.SQLEditorSupport;
 
 @MimeRegistration(mimeType = "", service = CompletionProvider.class, position = 100)
 public class JeddictCompletionProvider implements CompletionProvider {
@@ -264,14 +263,13 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
         private JeddictItem createItem(Snippet varName, String line, String lineTextBeforeCaret, JavaToken javaToken, Tree.Kind kind, Document doc) throws BadLocationException {
             int newcaretOffset = caretOffset;
-            if(javaToken.getId() == STRING_LITERAL && kind == Tree.Kind.STRING_LITERAL) {
+            if (javaToken.getId() == STRING_LITERAL && kind == Tree.Kind.STRING_LITERAL) {
                 lineTextBeforeCaret = doc.getText(javaToken.getOffset(), newcaretOffset - javaToken.getOffset());
-                if(lineTextBeforeCaret.startsWith("\"")) {
+                if (lineTextBeforeCaret.startsWith("\"")) {
                     lineTextBeforeCaret = lineTextBeforeCaret.substring(1);
                 }
             }
-            
-            
+
             String snippetWOSpace = removeAllSpaces(varName.getSnippet());
             String tlLine = trimLeadingSpaces(line);
             String tlLineTextBeforeCaret = trimLeadingSpaces(lineTextBeforeCaret);
@@ -281,7 +279,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
             String lastWordLine = "";
             if (lineTextBeforeCaret != null && !lineTextBeforeCaret.trim().isEmpty()) {
                 String[] textSegments = lineTextBeforeCaret.trim().split("[^a-zA-Z0-9<]+");
-                if(textSegments.length > 0) {
+                if (textSegments.length > 0) {
                     firstWordLine = textSegments[0];
                     lastWordLine = textSegments[textSegments.length - 1];
                 }
@@ -289,9 +287,9 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
             String firstWordSnippet = "";
             if (varName.getSnippet() != null && !varName.getSnippet().trim().isEmpty()) {
-                 String[] textSegments =  varName.getSnippet().trim().split("[^a-zA-Z0-9]+");
-                if(textSegments.length > 0) {
-                firstWordSnippet = textSegments[0]; // Split by any non-alphanumeric character
+                String[] textSegments = varName.getSnippet().trim().split("[^a-zA-Z0-9]+");
+                if (textSegments.length > 0) {
+                    firstWordSnippet = textSegments[0]; // Split by any non-alphanumeric character
                 }
             }
 
@@ -335,8 +333,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 this.caretOffset = caretOffset;
                 String mimeType = (String) doc.getProperty("mimeType");
                 JavaToken javaToken = isJavaContext(component.getDocument(), caretOffset, true);
-                if(javaToken != null) {
-                    System.out.println("javaToken "  +javaToken.getId());
+                if (javaToken != null) {
+                    System.out.println("javaToken " + javaToken.getId());
                 }
                 if (COMPLETION_QUERY_TYPE == queryType && JAVA_MIME.equals(mimeType)
                         && javaToken.isJavaContext()) {
@@ -355,14 +353,14 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     String classDataContent = classDatas.stream()
                             .map(cd -> cd.toString())
                             .collect(Collectors.joining("\n--------------------\n"));
-                    
+
                     if (path != null) {
                         System.out.println("path.getLeaf().getKind() " + path.getLeaf().getKind());
                         if (path.getParentPath() != null) {
                             System.out.println("path.getParentPath().getLeaf().getKind() " + path.getParentPath().getLeaf().getKind());
                             if (path.getParentPath().getParentPath() != null) {
-                            System.out.println("path.getParentPath().getParentPath().getLeaf().getKind() " + path.getParentPath().getParentPath().getLeaf().getKind());
-                        }
+                                System.out.println("path.getParentPath().getParentPath().getLeaf().getKind() " + path.getParentPath().getParentPath().getLeaf().getKind());
+                            }
                         }
                     }
 
@@ -386,7 +384,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
                         List<Snippet> annotationSuggestions = getJeddictChatModel(fileObject).suggestAnnotations(classDataContent, updateddoc, line);
                         for (Snippet annotationSuggestion : annotationSuggestions) {
-                            resultSet.addItem(createItem(annotationSuggestion, line, lineTextBeforeCaret,javaToken, kind, doc));
+                            resultSet.addItem(createItem(annotationSuggestion, line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if (kind == Tree.Kind.MODIFIERS
                             || kind == Tree.Kind.IDENTIFIER) {
@@ -452,7 +450,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             resultSet.addItem(var);
                         }
                     } else {
-                        System.out.println("Skipped : " +kind + " " + path.getLeaf().toString());
+                        System.out.println("Skipped : " + kind + " " + path.getLeaf().toString());
                     }
                 } else if (COMPLETION_QUERY_TYPE == queryType && JAVA_MIME.equals(mimeType)) {
                     String line = getLineText(doc, caretOffset);
@@ -499,10 +497,20 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     String line = getLineText(doc, caretOffset);
                     String lineTextBeforeCaret = getLineTextBeforeCaret(doc, caretOffset);
                     FileObject fileObject = getFileObjectFromEditor(doc);
-                    String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                    List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(updateddoc, line, mimeType);
-                    for (Snippet varName : sugs) {
-                        resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                    SQLEditorSupport sQLEditorSupport = fileObject.getLookup().lookup(SQLEditorSupport.class);
+                    if (sQLEditorSupport != null) {
+                        SQLCompletion sqlCompletion = new SQLCompletion(sQLEditorSupport);
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_SQL_QUERY_LIST}");
+                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestSQLQuery(sqlCompletion.getMetaData(), updateddoc);
+                        for (Snippet varName : sugs) {
+                            resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                        }
+                    } else {
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
+                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(updateddoc, line, mimeType);
+                        for (Snippet varName : sugs) {
+                            resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -511,6 +519,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 resultSet.finish();
             }
         }
+
 
         private static boolean isJavaIdentifierPart(String text, boolean allowForDor) {
             for (int i = 0; i < text.length(); i++) {
@@ -547,7 +556,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
             if (offset == ts.offset()) {
                 return new JavaToken(true, ts.token().id(), ts.offset());
             }
-            
+
             switch (ts.token().id()) {
                 case DOUBLE_LITERAL:
                 case FLOAT_LITERAL:
@@ -573,5 +582,5 @@ public class JeddictCompletionProvider implements CompletionProvider {
             }
         }
     }
-    
+
 }
