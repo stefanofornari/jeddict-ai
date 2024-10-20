@@ -721,6 +721,74 @@ public class JeddictChatModel {
         return enhanced;
     }
 
+    public String generateCommitMessageSuggestions(String gitDiffOutput, String initialCommitMessage) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output in HTML format. ")
+                .append("Please provide various types of commit messages based on the changes: \n")
+                .append("- Very Short\n")
+                .append("- Short\n")
+                .append("- Medium\n")
+                .append("- Long\n")
+                .append("- Descriptive\n\n")
+                .append("Here is the 'git diff' and 'git status' output:\n")
+                .append(gitDiffOutput.replace("\n", "<br>")) // Use <br> for HTML rendering
+                .append("\n");
+
+        // Add initial commit message to the prompt if it is not empty or null
+        if (initialCommitMessage != null && !initialCommitMessage.isEmpty()) {
+            prompt.append("Initial Commit Message:\n").append(initialCommitMessage).append("<br>");
+        }
+
+        prompt.append("Please respond with the commit messages strictly in HTML format only. "
+                + "Do not use any Markdown or code formatting (like backticks or triple backticks). "
+                + "Ensure the HTML content is well-structured, styled using Bootstrap CSS, "
+                + "and split any long lines (over 100 characters) with <br> tags for multiline display. "
+                + "Your response should look like this: <br>"
+                + "<h3>Very Short:</h3> Commit message here<br>"
+                + "<h3>Short:</h3> Commit message here<br>"
+                + "<h3>Medium:</h3> Commit message here<br>"
+                + "<h3>Long:</h3> Commit message here<br>"
+                + "<h3>Descriptive:</h3> Commit message here<br>"
+                + "Do not include any other text or formatting outside of HTML.");
+
+        // Generate the commit message suggestions
+        String answer = generate(prompt.toString());
+
+        // Wrap long lines with <br> tags
+        answer = wrapLongLinesWithBr(removeCodeBlockMarkers(answer), 100);
+
+        return answer;
+    }
+
+    private String wrapLongLinesWithBr(String input, int maxLineLength) {
+        StringBuilder wrapped = new StringBuilder();
+        String[] lines = input.split("<br>"); // Split by existing line breaks
+
+        for (String line : lines) {
+            String[] words = line.split(" "); // Split line into words
+            StringBuilder currentLine = new StringBuilder();
+
+            for (String word : words) {
+                // Check if adding the next word exceeds the maximum line length
+                if (currentLine.length() + word.length() + 1 > maxLineLength) {
+                    // If current line is not empty, append it to the result
+                    if (currentLine.length() > 0) {
+                        wrapped.append(currentLine.toString().trim()).append("<br>");
+                        currentLine.setLength(0); // Reset current line
+                    }
+                }
+                currentLine.append(word).append(" "); // Append the word with a space
+            }
+
+            // Append any remaining words in the current line
+            if (currentLine.length() > 0) {
+                wrapped.append(currentLine.toString().trim()).append("<br>");
+            }
+        }
+
+        return wrapped.toString();
+    }
+
     public String generateHtmlDescriptionForProject(String projectContent, String query) {
         String prompt = "You are an API server that provides answer to query of following project in HTML. "
                 + "Do not include additional text or explanations outside of the HTML content.\n\n"

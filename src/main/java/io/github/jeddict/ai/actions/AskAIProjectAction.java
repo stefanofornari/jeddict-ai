@@ -41,7 +41,7 @@ import org.openide.util.NbBundle.Messages;
         displayName = "#CTL_AskAIProjectAction", lazy = false, asynchronous = true)
 @ActionReferences({
     @ActionReference(path = "Projects/Actions", position = 100),})
-@Messages({"CTL_AskAIProjectAction=Ask AI"})
+@Messages({"CTL_AskAIProjectAction=AI Query Project"})
 public final class AskAIProjectAction extends AbstractAction implements ContextAwareAction {
 
     @Override
