@@ -128,4 +128,9 @@ public class SourceUtil {
         }
         return "";
     }
+    
+        
+    public static String removeJavadoc(String content) {
+        return content.replaceAll("/\\*{1,2}[\\s\\S]*?\\*/|//.*|^\\s*///.*$", "");
+    }
 }

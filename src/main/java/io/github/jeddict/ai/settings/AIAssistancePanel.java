@@ -52,58 +52,232 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLayeredPane1 = new javax.swing.JLayeredPane();
-        classContextPane = new javax.swing.JLayeredPane();
-        jLayeredPane7 = new javax.swing.JLayeredPane();
-        classContextLabel = new javax.swing.JLabel();
-        classContextHelp = new javax.swing.JLabel();
-        classContextComboBox = new javax.swing.JComboBox<>();
+        jTabbedPane1 = new javax.swing.JTabbedPane();
+        providersPane = new javax.swing.JLayeredPane();
+        providerParentPane = new javax.swing.JLayeredPane();
         providerPane = new javax.swing.JLayeredPane();
-        jLayeredPane8 = new javax.swing.JLayeredPane();
         providerLabel = new javax.swing.JLabel();
         providerComboBox = new javax.swing.JComboBox<>();
         providerLocationPane = new javax.swing.JLayeredPane();
         providerLocationLabel = new javax.swing.JLabel();
         providerLocationField = new javax.swing.JTextField();
         apiKeyPane = new javax.swing.JLayeredPane();
-        jLayeredPane2 = new javax.swing.JLayeredPane();
+        apiKeyLabelPane = new javax.swing.JLayeredPane();
         apiKeyLabel = new javax.swing.JLabel();
         apiKeyInfo = new javax.swing.JLabel();
         apiKeyField = new javax.swing.JPasswordField();
-        modelPane = new javax.swing.JLayeredPane();
-        jLayeredPane6 = new javax.swing.JLayeredPane();
+        modelParentPane = new javax.swing.JLayeredPane();
+        modelLabelPane = new javax.swing.JLayeredPane();
         gptModelLabel = new javax.swing.JLabel();
         gptModelHelp = new javax.swing.JLabel();
-        jLayeredPane5 = new javax.swing.JLayeredPane();
+        modelChildPane = new javax.swing.JLayeredPane();
         modelComboBox = new javax.swing.JComboBox<>();
         modelsInfo = new javax.swing.JLabel();
-        jLayeredPane4 = new javax.swing.JLayeredPane();
+        activationParentPane = new javax.swing.JLayeredPane();
+        activationPane = new javax.swing.JLayeredPane();
         aiAssistantActivationCheckBox = new javax.swing.JCheckBox();
         enableHintCheckBox = new javax.swing.JCheckBox();
-        jLayeredPane9 = new javax.swing.JLayeredPane();
         enableSmartCodeCheckBox = new javax.swing.JCheckBox();
+        excludeJavadocCommentsPane = new javax.swing.JLayeredPane();
+        excludeJavadocCommentsCheckBox = new javax.swing.JCheckBox();
+        askAIPane = new javax.swing.JLayeredPane();
+        filterationPane = new javax.swing.JLayeredPane();
+        jLayeredPane12 = new javax.swing.JLayeredPane();
+        fileExtLabel = new javax.swing.JLabel();
+        classContextHelp1 = new javax.swing.JLabel();
+        fileExtField = new javax.swing.JTextField();
+        inlineCompletionPane = new javax.swing.JLayeredPane();
+        classContextPane = new javax.swing.JLayeredPane();
+        classContextLabelPane = new javax.swing.JLayeredPane();
+        classContextLabel = new javax.swing.JLabel();
+        classContextHelp = new javax.swing.JLabel();
+        classContextComboBox = new javax.swing.JComboBox<>();
+        snippetPane = new javax.swing.JLayeredPane();
         showDescriptionCheckBox = new javax.swing.JCheckBox();
-        jLayeredPane3 = new javax.swing.JLayeredPane();
+        cachePane = new javax.swing.JLayeredPane();
         cleanDataButton = new javax.swing.JButton();
 
-        jLayeredPane1.setLayout(new java.awt.GridLayout(0, 1));
+        providersPane.setLayout(new java.awt.GridLayout(3, 1));
+
+        providerParentPane.setLayout(new javax.swing.BoxLayout(providerParentPane, javax.swing.BoxLayout.LINE_AXIS));
+
+        providerPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(providerLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLabel.text")); // NOI18N
+        providerPane.add(providerLabel);
+
+        providerComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(GenAIProvider.values()));
+        providerComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerComboBox.toolTipText")); // NOI18N
+        providerComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                providerComboBoxActionPerformed(evt);
+            }
+        });
+        providerPane.add(providerComboBox);
+
+        providerParentPane.add(providerPane);
+
+        providerLocationPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(providerLocationLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationLabel.text")); // NOI18N
+        providerLocationPane.add(providerLocationLabel);
+
+        providerLocationField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationField.text")); // NOI18N
+        providerLocationPane.add(providerLocationField);
+
+        providerParentPane.add(providerLocationPane);
+
+        apiKeyPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        apiKeyLabelPane.setLayout(new java.awt.GridLayout(1, 0));
+
+        org.openide.awt.Mnemonics.setLocalizedText(apiKeyLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyLabel.text")); // NOI18N
+        apiKeyLabelPane.add(apiKeyLabel);
+
+        apiKeyInfo.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        org.openide.awt.Mnemonics.setLocalizedText(apiKeyInfo, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyInfo.text")); // NOI18N
+        apiKeyLabelPane.add(apiKeyInfo);
+
+        apiKeyPane.add(apiKeyLabelPane);
+
+        apiKeyField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyField.text")); // NOI18N
+        apiKeyField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                apiKeyFieldFocusLost(evt);
+            }
+        });
+        apiKeyPane.add(apiKeyField);
+
+        providerParentPane.add(apiKeyPane);
+
+        providersPane.add(providerParentPane);
+
+        modelParentPane.setLayout(new java.awt.GridLayout(2, 1));
+
+        modelLabelPane.setLayout(new javax.swing.BoxLayout(modelLabelPane, javax.swing.BoxLayout.LINE_AXIS));
+
+        org.openide.awt.Mnemonics.setLocalizedText(gptModelLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.gptModelLabel.text")); // NOI18N
+        modelLabelPane.add(gptModelLabel);
+
+        gptModelHelp.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        gptModelHelp.setForeground(new java.awt.Color(100, 100, 100));
+        gptModelHelp.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        org.openide.awt.Mnemonics.setLocalizedText(gptModelHelp, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.gptModelHelp.text")); // NOI18N
+        modelLabelPane.add(gptModelHelp);
+
+        modelParentPane.add(modelLabelPane);
+
+        modelChildPane.setLayout(new java.awt.GridLayout(1, 2));
+
+        modelComboBox.setEditable(true);
+        modelComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(getModelList((GenAIProvider)providerComboBox.getSelectedItem()).toArray(new String[0])));
+        modelComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelComboBox.toolTipText")); // NOI18N
+        modelComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                modelComboBoxActionPerformed(evt);
+            }
+        });
+        modelChildPane.add(modelComboBox);
+
+        modelsInfo.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        org.openide.awt.Mnemonics.setLocalizedText(modelsInfo, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelsInfo.text")); // NOI18N
+        modelChildPane.add(modelsInfo);
+
+        modelParentPane.add(modelChildPane);
+
+        providersPane.add(modelParentPane);
+
+        activationParentPane.setLayout(new java.awt.GridLayout(2, 0));
+
+        activationPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+
+        org.openide.awt.Mnemonics.setLocalizedText(aiAssistantActivationCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiAssistantActivationCheckBox.text")); // NOI18N
+        aiAssistantActivationCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiAssistantActivationCheckBox.toolTipText")); // NOI18N
+        aiAssistantActivationCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                aiAssistantActivationCheckBoxActionPerformed(evt);
+            }
+        });
+        activationPane.add(aiAssistantActivationCheckBox);
+
+        org.openide.awt.Mnemonics.setLocalizedText(enableHintCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintCheckBox.text")); // NOI18N
+        enableHintCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintCheckBox.toolTipText")); // NOI18N
+        enableHintCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                enableHintCheckBoxActionPerformed(evt);
+            }
+        });
+        activationPane.add(enableHintCheckBox);
+
+        org.openide.awt.Mnemonics.setLocalizedText(enableSmartCodeCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.text")); // NOI18N
+        enableSmartCodeCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.toolTipText")); // NOI18N
+        activationPane.add(enableSmartCodeCheckBox);
+
+        activationParentPane.add(activationPane);
+
+        excludeJavadocCommentsPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+
+        org.openide.awt.Mnemonics.setLocalizedText(excludeJavadocCommentsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.text")); // NOI18N
+        excludeJavadocCommentsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.toolTipText")); // NOI18N
+        excludeJavadocCommentsCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                excludeJavadocCommentsCheckBoxActionPerformed(evt);
+            }
+        });
+        excludeJavadocCommentsPane.add(excludeJavadocCommentsCheckBox);
+
+        activationParentPane.add(excludeJavadocCommentsPane);
+
+        providersPane.add(activationParentPane);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providersPane.TabConstraints.tabTitle"), providersPane); // NOI18N
+
+        askAIPane.setLayout(new java.awt.GridLayout(3, 1));
+
+        filterationPane.setPreferredSize(new java.awt.Dimension(125, 75));
+        filterationPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
+
+        jLayeredPane12.setPreferredSize(new java.awt.Dimension(125, 40));
+        jLayeredPane12.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 5));
+
+        fileExtLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        org.openide.awt.Mnemonics.setLocalizedText(fileExtLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.fileExtLabel.text")); // NOI18N
+        jLayeredPane12.add(fileExtLabel);
+
+        classContextHelp1.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        classContextHelp1.setForeground(new java.awt.Color(100, 100, 100));
+        classContextHelp1.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        org.openide.awt.Mnemonics.setLocalizedText(classContextHelp1, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextHelp1.text")); // NOI18N
+        jLayeredPane12.add(classContextHelp1);
+
+        filterationPane.add(jLayeredPane12);
+
+        fileExtField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.fileExtField.text")); // NOI18N
+        filterationPane.add(fileExtField);
+
+        askAIPane.add(filterationPane);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.askAIPane.TabConstraints.tabTitle"), askAIPane); // NOI18N
+
+        inlineCompletionPane.setLayout(new java.awt.GridLayout(3, 1));
 
         classContextPane.setPreferredSize(new java.awt.Dimension(125, 75));
-        classContextPane.setLayout(new java.awt.GridLayout(0, 1));
+        classContextPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
 
-        jLayeredPane7.setPreferredSize(new java.awt.Dimension(125, 40));
-        jLayeredPane7.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 5, 0));
+        classContextLabelPane.setPreferredSize(new java.awt.Dimension(125, 40));
+        classContextLabelPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 5));
 
+        classContextLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         org.openide.awt.Mnemonics.setLocalizedText(classContextLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextLabel.text")); // NOI18N
-        jLayeredPane7.add(classContextLabel);
+        classContextLabelPane.add(classContextLabel);
 
         classContextHelp.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
         classContextHelp.setForeground(new java.awt.Color(100, 100, 100));
         classContextHelp.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         org.openide.awt.Mnemonics.setLocalizedText(classContextHelp, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextHelp.text")); // NOI18N
-        jLayeredPane7.add(classContextHelp);
+        classContextLabelPane.add(classContextHelp);
 
-        classContextPane.add(jLayeredPane7);
+        classContextPane.add(classContextLabelPane);
 
         classContextComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(AIClassContext.values()));
         classContextComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextComboBox.toolTipText")); // NOI18N
@@ -115,123 +289,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         });
         classContextPane.add(classContextComboBox);
 
-        jLayeredPane1.add(classContextPane);
+        inlineCompletionPane.add(classContextPane);
 
-        providerPane.setLayout(new javax.swing.BoxLayout(providerPane, javax.swing.BoxLayout.LINE_AXIS));
-
-        jLayeredPane8.setLayout(new java.awt.GridLayout(0, 1));
-
-        org.openide.awt.Mnemonics.setLocalizedText(providerLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLabel.text")); // NOI18N
-        jLayeredPane8.add(providerLabel);
-
-        providerComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(GenAIProvider.values()));
-        providerComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerComboBox.toolTipText")); // NOI18N
-        providerComboBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                providerComboBoxActionPerformed(evt);
-            }
-        });
-        jLayeredPane8.add(providerComboBox);
-
-        providerPane.add(jLayeredPane8);
-
-        providerLocationPane.setLayout(new java.awt.GridLayout(0, 1));
-
-        org.openide.awt.Mnemonics.setLocalizedText(providerLocationLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationLabel.text")); // NOI18N
-        providerLocationPane.add(providerLocationLabel);
-
-        providerLocationField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationField.text")); // NOI18N
-        providerLocationPane.add(providerLocationField);
-
-        providerPane.add(providerLocationPane);
-
-        apiKeyPane.setLayout(new java.awt.GridLayout(0, 1));
-
-        jLayeredPane2.setLayout(new java.awt.GridLayout());
-
-        org.openide.awt.Mnemonics.setLocalizedText(apiKeyLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyLabel.text")); // NOI18N
-        jLayeredPane2.add(apiKeyLabel);
-
-        apiKeyInfo.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        org.openide.awt.Mnemonics.setLocalizedText(apiKeyInfo, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyInfo.text")); // NOI18N
-        jLayeredPane2.add(apiKeyInfo);
-
-        apiKeyPane.add(jLayeredPane2);
-
-        apiKeyField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyField.text")); // NOI18N
-        apiKeyField.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                apiKeyFieldFocusLost(evt);
-            }
-        });
-        apiKeyPane.add(apiKeyField);
-
-        providerPane.add(apiKeyPane);
-
-        jLayeredPane1.add(providerPane);
-
-        modelPane.setLayout(new java.awt.GridLayout(2, 1));
-
-        jLayeredPane6.setLayout(new javax.swing.BoxLayout(jLayeredPane6, javax.swing.BoxLayout.LINE_AXIS));
-
-        org.openide.awt.Mnemonics.setLocalizedText(gptModelLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.gptModelLabel.text")); // NOI18N
-        jLayeredPane6.add(gptModelLabel);
-
-        gptModelHelp.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
-        gptModelHelp.setForeground(new java.awt.Color(100, 100, 100));
-        gptModelHelp.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        org.openide.awt.Mnemonics.setLocalizedText(gptModelHelp, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.gptModelHelp.text")); // NOI18N
-        jLayeredPane6.add(gptModelHelp);
-
-        modelPane.add(jLayeredPane6);
-
-        jLayeredPane5.setLayout(new java.awt.GridLayout(1, 2));
-
-        modelComboBox.setEditable(true);
-        modelComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(getModelList((GenAIProvider)providerComboBox.getSelectedItem()).toArray(new String[0])));
-        modelComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelComboBox.toolTipText")); // NOI18N
-        modelComboBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                modelComboBoxActionPerformed(evt);
-            }
-        });
-        jLayeredPane5.add(modelComboBox);
-
-        modelsInfo.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        org.openide.awt.Mnemonics.setLocalizedText(modelsInfo, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelsInfo.text")); // NOI18N
-        jLayeredPane5.add(modelsInfo);
-
-        modelPane.add(jLayeredPane5);
-
-        jLayeredPane1.add(modelPane);
-
-        jLayeredPane4.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-
-        org.openide.awt.Mnemonics.setLocalizedText(aiAssistantActivationCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiAssistantActivationCheckBox.text")); // NOI18N
-        aiAssistantActivationCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiAssistantActivationCheckBox.toolTipText")); // NOI18N
-        aiAssistantActivationCheckBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                aiAssistantActivationCheckBoxActionPerformed(evt);
-            }
-        });
-        jLayeredPane4.add(aiAssistantActivationCheckBox);
-
-        org.openide.awt.Mnemonics.setLocalizedText(enableHintCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintCheckBox.text")); // NOI18N
-        enableHintCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintCheckBox.toolTipText")); // NOI18N
-        enableHintCheckBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                enableHintCheckBoxActionPerformed(evt);
-            }
-        });
-        jLayeredPane4.add(enableHintCheckBox);
-
-        jLayeredPane1.add(jLayeredPane4);
-
-        jLayeredPane9.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-
-        org.openide.awt.Mnemonics.setLocalizedText(enableSmartCodeCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.text")); // NOI18N
-        enableSmartCodeCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.toolTipText")); // NOI18N
-        jLayeredPane9.add(enableSmartCodeCheckBox);
+        snippetPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         org.openide.awt.Mnemonics.setLocalizedText(showDescriptionCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.showDescriptionCheckBox.text")); // NOI18N
         showDescriptionCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.showDescriptionCheckBox.toolTipText")); // NOI18N
@@ -240,11 +300,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 showDescriptionCheckBoxActionPerformed(evt);
             }
         });
-        jLayeredPane9.add(showDescriptionCheckBox);
+        snippetPane.add(showDescriptionCheckBox);
 
-        jLayeredPane1.add(jLayeredPane9);
+        inlineCompletionPane.add(snippetPane);
 
-        jLayeredPane3.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+        cachePane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
 
         org.openide.awt.Mnemonics.setLocalizedText(cleanDataButton, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.cleanDataButton.text")); // NOI18N
         cleanDataButton.addActionListener(new java.awt.event.ActionListener() {
@@ -252,19 +312,21 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 cleanDataButtonActionPerformed(evt);
             }
         });
-        jLayeredPane3.add(cleanDataButton);
+        cachePane.add(cleanDataButton);
 
-        jLayeredPane1.add(jLayeredPane3);
+        inlineCompletionPane.add(cachePane);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineCompletionPane.TabConstraints.tabTitle"), inlineCompletionPane); // NOI18N
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 518, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.Alignment.TRAILING)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 320, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 215, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -424,6 +486,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_apiKeyFieldFocusLost
 
+    private void excludeJavadocCommentsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_excludeJavadocCommentsCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_excludeJavadocCommentsCheckBoxActionPerformed
+
     private void updateModelComboBox(GenAIProvider selectedProvider) {
         modelComboBox.removeAllItems();
         for (String model : getModelList(selectedProvider)) {
@@ -481,6 +547,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         providerComboBox.setSelectedItem(preferencesManager.getProvider());
         modelComboBox.setSelectedItem(preferencesManager.getModel());
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
+        fileExtField.setText(preferencesManager.getFileExtensionToInclude());
+        excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
+
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
                 || selectedProvider == GenAIProvider.DEEPINFRA
@@ -508,6 +577,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setHintsEnabled(enableHintCheckBox.isSelected());
         preferencesManager.setSmartCodeEnabled(enableSmartCodeCheckBox.isSelected());
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
+        preferencesManager.setFileExtensionToInclude(fileExtField.getText());
+        preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
@@ -533,31 +604,39 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLayeredPane activationPane;
+    private javax.swing.JLayeredPane activationParentPane;
     private javax.swing.JCheckBox aiAssistantActivationCheckBox;
     private javax.swing.JPasswordField apiKeyField;
     private javax.swing.JLabel apiKeyInfo;
     private javax.swing.JLabel apiKeyLabel;
+    private javax.swing.JLayeredPane apiKeyLabelPane;
     private javax.swing.JLayeredPane apiKeyPane;
+    private javax.swing.JLayeredPane askAIPane;
+    private javax.swing.JLayeredPane cachePane;
     private javax.swing.JComboBox<AIClassContext> classContextComboBox;
     private javax.swing.JLabel classContextHelp;
+    private javax.swing.JLabel classContextHelp1;
     private javax.swing.JLabel classContextLabel;
+    private javax.swing.JLayeredPane classContextLabelPane;
     private javax.swing.JLayeredPane classContextPane;
     private javax.swing.JButton cleanDataButton;
     private javax.swing.JCheckBox enableHintCheckBox;
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
+    private javax.swing.JCheckBox excludeJavadocCommentsCheckBox;
+    private javax.swing.JLayeredPane excludeJavadocCommentsPane;
+    private javax.swing.JTextField fileExtField;
+    private javax.swing.JLabel fileExtLabel;
+    private javax.swing.JLayeredPane filterationPane;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
-    private javax.swing.JLayeredPane jLayeredPane1;
-    private javax.swing.JLayeredPane jLayeredPane2;
-    private javax.swing.JLayeredPane jLayeredPane3;
-    private javax.swing.JLayeredPane jLayeredPane4;
-    private javax.swing.JLayeredPane jLayeredPane5;
-    private javax.swing.JLayeredPane jLayeredPane6;
-    private javax.swing.JLayeredPane jLayeredPane7;
-    private javax.swing.JLayeredPane jLayeredPane8;
-    private javax.swing.JLayeredPane jLayeredPane9;
+    private javax.swing.JLayeredPane inlineCompletionPane;
+    private javax.swing.JLayeredPane jLayeredPane12;
+    private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JLayeredPane modelChildPane;
     private javax.swing.JComboBox<String> modelComboBox;
-    private javax.swing.JLayeredPane modelPane;
+    private javax.swing.JLayeredPane modelLabelPane;
+    private javax.swing.JLayeredPane modelParentPane;
     private javax.swing.JLabel modelsInfo;
     private javax.swing.JComboBox<io.github.jeddict.ai.settings.GenAIProvider> providerComboBox;
     private javax.swing.JLabel providerLabel;
@@ -565,6 +644,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLabel providerLocationLabel;
     private javax.swing.JLayeredPane providerLocationPane;
     private javax.swing.JLayeredPane providerPane;
+    private javax.swing.JLayeredPane providerParentPane;
+    private javax.swing.JLayeredPane providersPane;
     private javax.swing.JCheckBox showDescriptionCheckBox;
+    private javax.swing.JLayeredPane snippetPane;
     // End of variables declaration//GEN-END:variables
 }

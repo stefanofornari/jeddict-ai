@@ -23,6 +23,9 @@ package io.github.jeddict.ai.settings;
  * @author Gaurav Gupta
  */
 import static io.github.jeddict.ai.settings.GenAIModel.DEFAULT_MODEL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.openide.util.NbPreferences;
 import java.util.prefs.Preferences;
 import javax.swing.JOptionPane;
@@ -200,4 +203,38 @@ public class PreferencesManager {
     public void setDescriptionEnabled(boolean enabled) {
         preferences.putBoolean("showDecription", enabled);
     }
+    
+    public boolean isExcludeJavadocEnabled() {
+        return preferences.getBoolean("excludeJavadoc", true);
+    }
+
+    public void setExcludeJavadocEnabled(boolean enabled) {
+        preferences.putBoolean("excludeJavadoc", enabled);
+    }
+    
+    private final List<String> DEFAULT_ACCEPTED_EXTENSIONS = Arrays.asList(
+            "java", "php", "jsf", "kt", "groovy", "scala", "xml", "json", "yaml", "yml",
+            "properties", "txt", "md", "js", "ts", "css", "scss", "html", "xhtml", "sh",
+            "bat", "sql", "jsp", "rb", "cs", "go", "swift", "rs", "c", "cpp", "h", "py"
+    );
+    private List<String> acceptedExtensions = Collections.EMPTY_LIST;
+
+    public String getFileExtensionToInclude() {
+        return preferences.get("fileExtensionToInclude", String.join(", ", DEFAULT_ACCEPTED_EXTENSIONS));
+    }
+
+    public void setFileExtensionToInclude(String exts) {
+        if (exts != null && !exts.isEmpty()) {
+            preferences.put("fileExtensionToInclude", exts);
+            acceptedExtensions = Arrays.asList(getFileExtensionToInclude().split("\\s*,\\s*"));
+        }
+    }
+    
+    public List<String> getFileExtensionListToInclude() {
+        if (acceptedExtensions.isEmpty()) {
+            acceptedExtensions = Arrays.asList(getFileExtensionToInclude().split("\\s*,\\s*"));
+        }
+        return acceptedExtensions;
+    }
+
 }

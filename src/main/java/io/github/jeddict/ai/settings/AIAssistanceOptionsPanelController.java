@@ -12,13 +12,17 @@ import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
-@OptionsPanelController.SubRegistration(
-        location = "Editor",
-        displayName = "#AdvancedOption_DisplayName_AIAssistance",
-        keywords = "#AdvancedOption_Keywords_AIAssistance",
-        keywordsCategory = "Editor/AIAssistance"
+
+@OptionsPanelController.TopLevelRegistration(
+        categoryName = "#OptionsCategory_Name_JeddictAIAssistant",
+        iconBase = "icons/logo32.png",
+        keywords = "#OptionsCategory_Keywords_JeddictAIAssistant",
+        keywordsCategory = "JeddictAIAssistant"
 )
-@org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_AIAssistance=AI Assistance", "AdvancedOption_Keywords_AIAssistance=AI, CHATGPT"})
+@org.openide.util.NbBundle.Messages({
+    "OptionsCategory_Name_JeddictAIAssistant=Jeddict AI Assistant",
+    "OptionsCategory_Keywords_JeddictAIAssistant=AI"
+})
 public final class AIAssistanceOptionsPanelController extends OptionsPanelController {
 
     private AIAssistancePanel panel;

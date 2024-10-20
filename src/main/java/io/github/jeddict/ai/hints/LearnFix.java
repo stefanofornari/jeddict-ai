@@ -29,7 +29,9 @@ import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.JeddictChatModel;
 import io.github.jeddict.ai.components.AssistantTopComponent;
+import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.ProjectUtils.getSourceFiles;
+import static io.github.jeddict.ai.util.SourceUtil.removeJavadoc;
 import io.github.jeddict.ai.util.StringUtil;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import java.awt.BorderLayout;
@@ -79,12 +81,6 @@ import static io.github.jeddict.ai.util.UIUtil.askQuery;
  */
 public class LearnFix extends JavaFix {
 
-    private final List<String> acceptedExtensions = Arrays.asList(
-            "java", "php", "jsf", "kt", "groovy", "scala", "xml", "json", "yaml", "yml",
-            "properties", "txt", "md", "js", "ts", "css", "scss", "html", "xhtml", "sh",
-            "bat", "sql", "jsp", "rb", "cs", "go", "swift", "rs", "c", "cpp", "h", "py"
-    );
-
     private TreePath treePath;
     private final Action action;
     private JButton prevButton, nextButton, saveButton;
@@ -93,6 +89,7 @@ public class LearnFix extends JavaFix {
     private int currentResponseIndex = -1;
     private String javaCode = null;
     private String projectContent;
+    private PreferencesManager pm = PreferencesManager.getInstance();
 
     public LearnFix(TreePathHandle tpHandle, Action action, TreePath treePath) {
         super(tpHandle);
@@ -164,8 +161,12 @@ public class LearnFix extends JavaFix {
         StringBuilder inputForAI = new StringBuilder();
         for (FileObject file : sourceFiles) {
             try {
-                if (acceptedExtensions.contains(file.getExt())) {
-                    inputForAI.append(file.asText());
+                if (pm.getFileExtensionListToInclude().contains(file.getExt())) {
+                    String text = file.asText();
+                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                        text = removeJavadoc(text);
+                    }
+                    inputForAI.append(text);
                     inputForAI.append("\n");
                 }
             } catch (Exception ex) {
@@ -189,13 +190,17 @@ public class LearnFix extends JavaFix {
                     .filter(FileObject::isFolder)
                     .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
                     .filter(FileObject::isData)
-                    .filter(file -> acceptedExtensions.contains(file.getExt())))
+                    .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt())))
                     .collect(Collectors.toList());
 
             StringBuilder inputForAI = new StringBuilder();
             for (FileObject file : sourceFiles) {
                 try {
-                    inputForAI.append(file.asText());
+                    String text = file.asText();
+                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                        text = removeJavadoc(text);
+                    }
+                    inputForAI.append(text);
                     inputForAI.append("\n");
                 } catch (Exception ex) {
                     Exceptions.printStackTrace(ex);
