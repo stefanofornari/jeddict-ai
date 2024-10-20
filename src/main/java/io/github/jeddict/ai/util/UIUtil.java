@@ -99,4 +99,42 @@ public class UIUtil {
         }
         return query;
     }
+    
+    public static String askForInitialCommitMessage() {
+    // Create a JTextArea for multiline input
+    JTextArea textArea = new JTextArea(10, 30); // 10 rows, 30 columns
+    textArea.setWrapStyleWord(true);
+    textArea.setLineWrap(true);
+
+    // Add the text area to a JScrollPane
+    JScrollPane scrollPane = new JScrollPane(textArea);
+
+    // Create a JPanel to hold the scroll pane
+    JPanel panel = new JPanel();
+    panel.add(scrollPane);
+
+    // Show the custom dialog
+    int option = JOptionPane.showConfirmDialog(
+            null,
+            panel,
+            "Please enter the initial commit message (optional).",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE,
+            AssistantTopComponent.icon
+    );
+
+    // Check the user's choice
+    if (option != JOptionPane.OK_OPTION) {
+        return null; // Exit if the user cancels the input
+    }
+
+    String initialMessage = textArea.getText().trim();
+
+    // If the input is empty, return null to indicate no initial message
+    if (initialMessage.isEmpty()) {
+        return null; // No input provided
+    }
+    
+    return initialMessage; // Return the provided initial commit message
+}
 }

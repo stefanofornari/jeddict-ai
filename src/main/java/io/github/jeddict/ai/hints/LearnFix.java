@@ -89,6 +89,7 @@ public class LearnFix extends JavaFix {
     private int currentResponseIndex = -1;
     private String javaCode = null;
     private String projectContent;
+    private String commitChanges;
     private PreferencesManager pm = PreferencesManager.getInstance();
 
     public LearnFix(TreePathHandle tpHandle, Action action, TreePath treePath) {
@@ -148,7 +149,7 @@ public class LearnFix extends JavaFix {
                 name = ((ClassTree) leaf).getSimpleName().toString();
 
             }
-            displayHtmlContent(removeCodeBlockMarkers(response), name);
+            displayHtmlContent(removeCodeBlockMarkers(response), name+ " AI Assistance");
         }
     }
 
@@ -176,7 +177,15 @@ public class LearnFix extends JavaFix {
         
         projectContent = inputForAI.toString();
         String response = new JeddictChatModel().generateHtmlDescriptionForProject(projectContent, userQuery);
-        displayHtmlContent(removeCodeBlockMarkers(response), projectName);
+        displayHtmlContent(removeCodeBlockMarkers(response), projectName+ " Projetc GenAI");
+    }
+    
+     public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
+        ProjectInformation info = ProjectUtils.getInformation(project);
+        String projectName = info.getDisplayName();
+        String response = new JeddictChatModel().generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
+        displayHtmlContent(removeCodeBlockMarkers(response), projectName+ " GenAI Commit");
+        this.commitChanges = commitChanges;
     }
 
     public void askQueryForPackage(Collection<? extends FileObject> selectedPackages, String userQuery) {
@@ -208,7 +217,7 @@ public class LearnFix extends JavaFix {
             }
             projectContent = inputForAI.toString();
             String response = new JeddictChatModel().generateHtmlDescriptionForProject(projectContent, userQuery);
-            displayHtmlContent(removeCodeBlockMarkers(response), projectName);
+            displayHtmlContent(removeCodeBlockMarkers(response), projectName+ " Package GenAI");
         }
     }
 
@@ -223,7 +232,7 @@ public class LearnFix extends JavaFix {
 
                 Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
                 prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-                topComponent = new AssistantTopComponent(title + " AI Assistance");
+                topComponent = new AssistantTopComponent(title);
                 updateEditor(response).addHyperlinkListener((HyperlinkEvent e) -> {
                     if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
                         try {
@@ -395,7 +404,9 @@ public class LearnFix extends JavaFix {
                     }
                 }
                 String response;
-                if (treePath == null && projectContent != null) {
+                if(commitChanges != null) {
+                     response = new JeddictChatModel().generateCommitMessageSuggestions(commitChanges, question);
+                } else if (treePath == null || projectContent != null) {
                     response = new JeddictChatModel().generateHtmlDescription(projectContent, null, null, prevChat, question);
                 } else {
                     response = new JeddictChatModel().generateHtmlDescription(null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
