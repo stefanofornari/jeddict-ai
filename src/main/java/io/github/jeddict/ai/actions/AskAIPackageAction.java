@@ -41,7 +41,7 @@ import org.openide.util.NbBundle.Messages;
 @ActionRegistration(
         displayName = "#CTL_AskAIPackageAction", lazy = false, asynchronous = true)
 @ActionReference(path = "Projects/package/Actions", position = 100)
-@Messages({"CTL_AskAIPackageAction=Ask AI"})
+@Messages({"CTL_AskAIPackageAction=AI Query Package"})
 public final class AskAIPackageAction extends AbstractAction implements ContextAwareAction {
 
     @Override

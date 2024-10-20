@@ -237,4 +237,14 @@ public class PreferencesManager {
         return acceptedExtensions;
     }
 
+    public String getTestCasePrompt() {
+        return preferences.get("testCasePrompt", "Generate JUnit Test");
+    }
+
+    public void setTestCasePrompt(String prompt) {
+        if (prompt != null && !prompt.isEmpty()) {
+            preferences.put("testCasePrompt", prompt);
+        }
+    }
+    
 }

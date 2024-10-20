@@ -74,6 +74,8 @@ import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import static io.github.jeddict.ai.util.UIUtil.askQuery;
+import org.openide.windows.Mode;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -88,10 +90,11 @@ public class LearnFix extends JavaFix {
     private final List<String> responseHistory = new ArrayList<>();
     private int currentResponseIndex = -1;
     private String javaCode = null;
+    private Project project;
     private String projectContent;
     private String commitChanges;
     private PreferencesManager pm = PreferencesManager.getInstance();
-
+    private Tree leaf ;
     public LearnFix(TreePathHandle tpHandle, Action action, TreePath treePath) {
         super(tpHandle);
         this.treePath = treePath;
@@ -111,6 +114,9 @@ public class LearnFix extends JavaFix {
         } else if (action == Action.QUERY) {
             return NbBundle.getMessage(JeddictChatModel.class, "HINT_QUERY",
                     StringUtil.convertToCapitalized(treePath.getLeaf().getKind().toString()));
+        } else if (action == Action.TEST) {
+            return NbBundle.getMessage(JeddictChatModel.class, "HINT_TEST",
+                    StringUtil.convertToCapitalized(treePath.getLeaf().getKind().toString()));
         }
         return null;
     }
@@ -121,7 +127,11 @@ public class LearnFix extends JavaFix {
         if (copy.toPhase(JavaSource.Phase.RESOLVED).compareTo(JavaSource.Phase.RESOLVED) < 0) {
             return;
         }
-        Tree leaf = tc.getPath().getLeaf();
+        leaf = tc.getPath().getLeaf();
+        FileObject fileObject = copy.getFileObject();
+        if (fileObject != null) {
+            this.project = FileOwnerQuery.getOwner(fileObject);
+        }
 
         if (leaf.getKind() == CLASS
                 || leaf.getKind() == INTERFACE
@@ -134,12 +144,17 @@ public class LearnFix extends JavaFix {
                     return;
                 }
                 response = new JeddictChatModel().generateHtmlDescription(null, treePath.getCompilationUnit().toString(), null, null, query);
+            } else if (action == Action.TEST) {
+                if (leaf instanceof MethodTree) {
+                    response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), null, null);
+                } else {
+                    response = new JeddictChatModel().generateTestCase(null, treePath.getCompilationUnit().toString(), null, null, null);
+                }
             } else {
                 if (leaf instanceof MethodTree) {
                     response = new JeddictChatModel().generateHtmlDescriptionForMethod(leaf.toString());
                 } else {
                     response = new JeddictChatModel().generateHtmlDescriptionForClass(treePath.getCompilationUnit().toString());
-
                 }
             }
             String name;
@@ -177,7 +192,7 @@ public class LearnFix extends JavaFix {
         
         projectContent = inputForAI.toString();
         String response = new JeddictChatModel().generateHtmlDescriptionForProject(projectContent, userQuery);
-        displayHtmlContent(removeCodeBlockMarkers(response), projectName+ " Projetc GenAI");
+        displayHtmlContent(removeCodeBlockMarkers(response), projectName+ " Project GenAI");
     }
     
      public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
@@ -232,7 +247,7 @@ public class LearnFix extends JavaFix {
 
                 Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
                 prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-                topComponent = new AssistantTopComponent(title);
+                topComponent = new AssistantTopComponent(title, project);
                 updateEditor(response).addHyperlinkListener((HyperlinkEvent e) -> {
                     if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
                         try {
@@ -378,7 +393,10 @@ public class LearnFix extends JavaFix {
 
     private JEditorPane updateEditor(String response) {
         JEditorPane editorPane = null;
-        String[] parts = response.split("<pre><code type=\"[^\"]*\">|<pre><code class=\"[^\"]*\">|<pre><code class=\"[^\"]*\" type=\"[^\"]*\">|<pre><code type=\"[^\"]*\" class=\"[^\"]*\">|</code></pre>");
+        String[] parts = response.split("<pre.*?>\\s*<code type=\"[^\"]*\">|<pre.*?>\\s*<code class=\"[^\"]*\">|<pre.*?>\\s*<code class=\"[^\"]*\" type=\"[^\"]*\">|<pre.*?>\\s*<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>\\s*</pre>");
+        if(parts.length == 1) {
+            parts = response.split("<code type=\"[^\"]*\">|<code class=\"[^\"]*\">|<code class=\"[^\"]*\" type=\"[^\"]*\">|<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>");
+        }
         topComponent.clear();
         for (int i = 0; i < parts.length; i++) {
             if (i % 2 == 1) {
@@ -408,6 +426,12 @@ public class LearnFix extends JavaFix {
                      response = new JeddictChatModel().generateCommitMessageSuggestions(commitChanges, question);
                 } else if (treePath == null || projectContent != null) {
                     response = new JeddictChatModel().generateHtmlDescription(projectContent, null, null, prevChat, question);
+                } else if (action == Action.TEST) {
+                    if (leaf instanceof MethodTree) {
+                        response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), prevChat, question);
+                    } else {
+                        response = new JeddictChatModel().generateTestCase(null, treePath.getCompilationUnit().toString(), null, prevChat, question);
+                    }
                 } else {
                     response = new JeddictChatModel().generateHtmlDescription(null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
                 }

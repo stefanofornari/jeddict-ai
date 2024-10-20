@@ -20,5 +20,5 @@ package io.github.jeddict.ai.completion;
 
 public enum Action {
 
-    CREATE, ENHANCE, COMPILATION_ERROR, LEARN, QUERY
+    CREATE, ENHANCE, COMPILATION_ERROR, LEARN, QUERY, TEST
 }

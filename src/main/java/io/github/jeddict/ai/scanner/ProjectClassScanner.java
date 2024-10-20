@@ -241,7 +241,8 @@ public class ProjectClassScanner {
 
     public static List<ClassData> getClassData(FileObject fileObject, Set<String> findReferencedClasses, AIClassContext classAnalysisContext) {
 
-        if (classAnalysisContext == AIClassContext.CURRENT_CLASS) {
+        if (classAnalysisContext == AIClassContext.CURRENT_CLASS 
+                || fileObject == null) {
             return Collections.emptyList();
         }
         Project project = FileOwnerQuery.getOwner(fileObject);
