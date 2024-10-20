@@ -96,6 +96,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         showDescriptionCheckBox = new javax.swing.JCheckBox();
         cachePane = new javax.swing.JLayeredPane();
         cleanDataButton = new javax.swing.JButton();
+        hintPane = new javax.swing.JLayeredPane();
+        testPromptPane = new javax.swing.JLayeredPane();
+        testPromptLabel = new javax.swing.JLabel();
+        testPromptField = new javax.swing.JTextField();
 
         providersPane.setLayout(new java.awt.GridLayout(3, 1));
 
@@ -318,15 +322,31 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineCompletionPane.TabConstraints.tabTitle"), inlineCompletionPane); // NOI18N
 
+        hintPane.setLayout(new java.awt.GridLayout(3, 1));
+
+        testPromptPane.setPreferredSize(new java.awt.Dimension(125, 75));
+        testPromptPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
+
+        testPromptLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        org.openide.awt.Mnemonics.setLocalizedText(testPromptLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.testPromptLabel.text")); // NOI18N
+        testPromptPane.add(testPromptLabel);
+
+        testPromptField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.testPromptField.text")); // NOI18N
+        testPromptPane.add(testPromptField);
+
+        hintPane.add(testPromptPane);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.hintPane.TabConstraints.tabTitle"), hintPane); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 448, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 215, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 245, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -549,6 +569,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
+        testPromptField.setText(preferencesManager.getTestCasePrompt());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
@@ -579,6 +600,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
         preferencesManager.setFileExtensionToInclude(fileExtField.getText());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
+        preferencesManager.setTestCasePrompt(testPromptField.getText());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
@@ -630,6 +652,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane filterationPane;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
+    private javax.swing.JLayeredPane hintPane;
     private javax.swing.JLayeredPane inlineCompletionPane;
     private javax.swing.JLayeredPane jLayeredPane12;
     private javax.swing.JTabbedPane jTabbedPane1;
@@ -648,5 +671,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane providersPane;
     private javax.swing.JCheckBox showDescriptionCheckBox;
     private javax.swing.JLayeredPane snippetPane;
+    private javax.swing.JTextField testPromptField;
+    private javax.swing.JLabel testPromptLabel;
+    private javax.swing.JLayeredPane testPromptPane;
     // End of variables declaration//GEN-END:variables
 }

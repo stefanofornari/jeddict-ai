@@ -497,6 +497,10 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     String line = getLineText(doc, caretOffset);
                     String lineTextBeforeCaret = getLineTextBeforeCaret(doc, caretOffset);
                     FileObject fileObject = getFileObjectFromEditor(doc);
+                    if (fileObject == null) {
+                        resultSet.finish();
+                        return;
+                    }
                     SQLEditorSupport sQLEditorSupport = fileObject.getLookup().lookup(SQLEditorSupport.class);
                     if (sQLEditorSupport != null) {
                         SQLCompletion sqlCompletion = new SQLCompletion(sQLEditorSupport);

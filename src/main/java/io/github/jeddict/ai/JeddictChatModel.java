@@ -43,7 +43,9 @@ import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
@@ -839,10 +841,9 @@ public class JeddictChatModel {
             promptExtend = "Method Content:\n" + methodContent + "\n\n"
                     + "Do not return complete Java Class, return only Method and wrap it in <code type=\"full\" class=\"java\">. \n";
         } else if (projectContent != null) {
-            promptExtend = "Project Full Content:\n" + classContent + "\n\n"
+            promptExtend = "Project Full Content:\n" + projectContent + "\n\n"
                     + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
                     + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. ";
-
         } else {
             promptExtend = "Orignal Java Class Content:\n" + classContent + "\n\n"
                     + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
@@ -870,6 +871,112 @@ public class JeddictChatModel {
         }
 
         // Generate the HTML description
+        String answer = generate(prompt);
+        System.out.println(answer);
+        return answer;
+    }
+
+    public String generateTestCase(
+            String projectContent, String classContent, String methodContent,
+            String previousChatResponse, String userQuery) {
+
+        String prompt;
+        String promptExtend;
+        Set<String> testCaseTypes = new HashSet<>(); // Using a Set to avoid duplicates
+
+        // Determine the test case type based on the user query
+        if (userQuery != null) {
+            userQuery = userQuery +" ,\n "+ PreferencesManager.getInstance().getTestCasePrompt();
+        } else {
+            userQuery = PreferencesManager.getInstance().getTestCasePrompt();
+        }
+
+        if (userQuery.toLowerCase().contains("junit5")) {
+            testCaseTypes.add("JUnit5");
+        } else if (userQuery.toLowerCase().contains("junit")) {
+            testCaseTypes.add("JUnit");
+        }
+
+        if (userQuery.toLowerCase().contains("testng")) {
+            testCaseTypes.add("TestNG");
+        }
+
+        if (userQuery.toLowerCase().contains("mockito")) {
+            testCaseTypes.add("Mockito");
+        }
+
+        if (userQuery.toLowerCase().contains("spock")) {
+            testCaseTypes.add("Spock");
+        }
+
+        if (userQuery.toLowerCase().contains("assertj")) {
+            testCaseTypes.add("AssertJ");
+        }
+
+        if (userQuery.toLowerCase().contains("hamcrest")) {
+            testCaseTypes.add("Hamcrest");
+        }
+
+        if (userQuery.toLowerCase().contains("powermock")) {
+            testCaseTypes.add("PowerMock");
+        }
+
+        if (userQuery.toLowerCase().contains("cucumber")) {
+            testCaseTypes.add("Cucumber");
+        }
+
+        if (userQuery.toLowerCase().contains("spring test")) {
+            testCaseTypes.add("Spring Test");
+        }
+        
+        if (userQuery.toLowerCase().contains("arquillian")) {
+            testCaseTypes.add("Arquillian Test");
+        }
+        userQuery = "User Query: " + userQuery;
+        String testCaseType = String.join(", ", testCaseTypes);
+        if (methodContent != null) {
+            promptExtend = "Method Content:\n" + methodContent + "\n\n"
+                    + "Generate " + testCaseType + " test cases for this method. Include assertions and necessary mock setups. "
+                    + "Wrap the " + testCaseType + " test cases in <code type=\"full\" class=\"java\">. ";
+        } else if (projectContent != null) {
+            promptExtend = "Project Full Content:\n" + projectContent + "\n\n"
+                    + "Generate " + testCaseType + " test cases for all classes. Include assertions and necessary mock setups. "
+                    + "If Full Java Class is in response, wrap the generated " + testCaseType + " test class in <code type=\"full\" class=\"java\">. "
+                    + "If partial snippets are in response, wrap them in <code type=\"snippet\" class=\"java\">. ";
+        } else {
+            promptExtend = "Original Java Class Content:\n" + classContent + "\n\n"
+                    + "Generate " + testCaseType + " test cases for the main methods in this class. Include assertions and necessary mock setups. "
+                    + "If Full Java Class is in response, wrap the generated " + testCaseType + " test class in <code type=\"full\" class=\"java\">. "
+                    + "If partial snippets are in response, wrap them in <code type=\"snippet\" class=\"java\">. ";
+        }
+
+        if (previousChatResponse == null) {
+            prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content. "
+                    + "Given the following Java class or method content and the user's query, generate " + testCaseType + " test cases that are well-structured and functional. "
+                    + "Wrap the code blocks in <pre> tags for formatting code examples. "
+                    + "Provide an interactive HTML-formatted descriptive answer with test case. "
+                    + "Ensure the HTML content is well-structured, clearly answers the query. "
+                    + "Use Bootstrap CSS for overall styling for code examples in the response. "
+                    + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
+                    + "Do not include additional text or explanations outside of the HTML content.\n\n"
+                    + promptExtend
+                    + userQuery;
+        } else {
+            prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content and previous chat content. "
+                    + "Given the following Java class content, previous chat response, and the user's query, generate " + testCaseType + " test cases that directly address the user's query. "
+                    + "Ensure the " + testCaseType + " test cases are well-structured and reflect any modifications or updates suggested in the previous chat response. "
+                    + "Wrap the code blocks in <pre> tags for code formatting. "
+                    + "Provide an interactive HTML-formatted descriptive answer with test case. "
+                    + "Ensure the HTML content is well-structured, clearly answers the query. "
+                    + "Use Bootstrap CSS for overall styling for code examples in the response. "
+                    + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
+                    + "Do not include additional text or explanations outside of the HTML content.\n\n"
+                    + "Previous Chat Response:\n" + previousChatResponse + "\n\n"
+                    + promptExtend
+                    + userQuery;
+        }
+
+        // Generate the test cases
         String answer = generate(prompt);
         System.out.println(answer);
         return answer;

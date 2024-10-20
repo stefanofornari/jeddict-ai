@@ -20,17 +20,30 @@ package io.github.jeddict.ai.components;
 
 import java.awt.BorderLayout;
 import java.awt.Desktop;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.prefs.Preferences;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.project.Project;
 import org.openide.windows.TopComponent;
 
 /**
@@ -43,12 +56,14 @@ public class AssistantTopComponent extends TopComponent {
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
     private HTMLEditorKit editorKit;
+    private final Project project;
 
-    public AssistantTopComponent(String name) {
+    public AssistantTopComponent(String name, Project project) {
         setName(name);
         setLayout(new BorderLayout());
         setIcon(icon.getImage());
 
+        this.project = project;
         parentPanel = new JPanel();
         parentPanel.setLayout(new BoxLayout(parentPanel, BoxLayout.Y_AXIS));
         add(parentPanel, BorderLayout.CENTER);
@@ -80,11 +95,117 @@ public class AssistantTopComponent extends TopComponent {
     public JEditorPane createCodePane(String content) {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setEditorKit(createEditorKit("text/x-java"));
-        editorPane.setEditable(false);
         editorPane.setText(content);
+        addContextMenu(editorPane);
         parentPanel.add(editorPane);
         return editorPane;
     }
+
+    
+    private void addContextMenu(JEditorPane editorPane) {
+        JPopupMenu contextMenu = new JPopupMenu();
+
+        // "Copy Code" menu item
+        JMenuItem copyItem = new JMenuItem("Copy Code");
+        copyItem.addActionListener(e -> {
+            editorPane.selectAll();
+            editorPane.copy();
+            editorPane.select(0, 0);
+        });
+        contextMenu.add(copyItem);
+
+        JMenuItem saveAsItem = new JMenuItem("Save As");
+        saveAsItem.addActionListener(e -> saveAs(editorPane.getText()));
+        contextMenu.add(saveAsItem);
+
+        // Add mouse listener to show context menu
+        editorPane.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
+    }
+
+    private void saveAs(String content) {
+        String className = extractClassName(content);
+        String packageName = extractPackageName(content);
+        boolean isTestClass = className != null && className.endsWith("Test");
+        String baseDir = isTestClass ? "src/test/java" : "src/main/java";
+        String projectRootDir = project.getProjectDirectory().getPath();
+        String filePath = Paths.get(projectRootDir, baseDir).toString();
+        if (packageName != null) {
+            filePath = Paths.get(filePath, packageName.split("\\.")).toString();
+        }
+        File targetDir = new File(filePath);
+        if (!targetDir.exists()) {
+            boolean dirsCreated = targetDir.mkdirs(); // Create the directory and any necessary parent directories
+            if (!dirsCreated) {
+                JOptionPane.showMessageDialog(null, "Failed to create directories: " + targetDir.getAbsolutePath());
+                return; // Exit the method if directories couldn't be created
+            }
+        }
+        // Create the file chooser
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save As");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Java Files", "java"));
+        
+        // Set the current directory to the constructed file path
+        fileChooser.setCurrentDirectory(new File(filePath));
+        if (className != null) {
+            String defaultFileName = className.endsWith(".java") ? className : className + ".java";
+            fileChooser.setSelectedFile(new File(defaultFileName));
+        }
+        // Show the save dialog
+        int userSelection = fileChooser.showSaveDialog(null);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().endsWith(".java")) {
+                file = new File(file.getAbsolutePath() + ".java"); // Ensure file has .java extension
+            }
+
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(content);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(null, "Error saving file: " + ex.getMessage());
+            }
+        }
+    }
+    
+     public String extractClassName(String content) {
+        String regex = "(?<=\\bclass\\s+)\\w+";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(content);
+
+        if (matcher.find()) {
+            return matcher.group(); // Return the class name found
+        } else {
+            return null; // No class name found
+        }
+    }
+     
+      // Method to extract Java package name using regex
+    public String extractPackageName(String content) {
+        String regex = "(?<=\\bpackage\\s+)([a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*);?";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(content);
+
+        if (matcher.find()) {
+            return matcher.group(1); // Return the package name found (group 1 without the semicolon)
+        } else {
+            return null; // No package name found
+        }
+    }
+
 
     public static EditorKit createEditorKit(String mimeType) {
         return MimeLookup.getLookup(MimePath.parse(mimeType)).lookup(EditorKit.class);
