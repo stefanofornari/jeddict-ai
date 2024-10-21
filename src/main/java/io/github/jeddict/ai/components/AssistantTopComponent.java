@@ -53,6 +53,16 @@ import org.openide.windows.TopComponent;
 public class AssistantTopComponent extends TopComponent {
 
     public static final ImageIcon icon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo16.png"));
+    public static final ImageIcon copyIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/copyIcon.gif"));
+    public static final ImageIcon saveasIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveIcon.png"));
+    public static final ImageIcon startIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/startIcon.png"));
+    public static final ImageIcon progressIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/progressIcon.png"));
+    public static final ImageIcon upIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/browserIcon.png"));
+    public static final ImageIcon forwardIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/forwardIcon.png"));
+    public static final ImageIcon backIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/backIcon.png"));
+    public static final ImageIcon saveToEditor = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveToEditorIcon.png"));
+    public static final ImageIcon newEditor = new ImageIcon(AssistantTopComponent.class.getResource("/icons/newEditorIcon.png"));
+
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
     private HTMLEditorKit editorKit;
@@ -105,12 +115,17 @@ public class AssistantTopComponent extends TopComponent {
     private void addContextMenu(JEditorPane editorPane) {
         JPopupMenu contextMenu = new JPopupMenu();
 
-        // "Copy Code" menu item
-        JMenuItem copyItem = new JMenuItem("Copy Code");
+        JMenuItem copyItem = new JMenuItem("Copy");
         copyItem.addActionListener(e -> {
-            editorPane.selectAll();
-            editorPane.copy();
-            editorPane.select(0, 0);
+            if (editorPane.getSelectedText() != null) {
+                // Copy selected text
+                editorPane.copy();
+            } else {
+                // Select all and copy
+                editorPane.selectAll();
+                editorPane.copy();
+                editorPane.select(0, 0);
+            }
         });
         contextMenu.add(copyItem);
 
@@ -136,7 +151,7 @@ public class AssistantTopComponent extends TopComponent {
         });
     }
 
-    private void saveAs(String content) {
+    public void saveAs(String content) {
         String className = extractClassName(content);
         String packageName = extractPackageName(content);
         boolean isTestClass = className != null && className.endsWith("Test");
@@ -231,6 +246,60 @@ public class AssistantTopComponent extends TopComponent {
     public JPanel getParentPanel() {
         return parentPanel;
     }
+    
+    public String getAllJavaEditorText() {
+        StringBuilder allText = new StringBuilder();
+        for (int i = 0; i < parentPanel.getComponentCount(); i++) {
+            if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
+                if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
+                    allText.append("\n");
+                    allText.append(editorPane.getText());
+                    allText.append("\n");
+                }
+            }
+        }
+        return allText.toString().trim();
+    }
+    
+    public String getAllEditorText() {
+        StringBuilder allText = new StringBuilder();
+        for (int i = 0; i < parentPanel.getComponentCount(); i++) {
+            if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
+                if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
+                    allText.append("<pre><code type=\"full\" class=\"java\">");
+                    allText.append(editorPane.getText());
+                    allText.append("<code></pre>");
+                } else {
+                    allText.append(editorPane.getText());
+                }
+            }
+        }
+        return allText.toString().trim();
+    }
+    
+    public int getAllJavaEditorCount() {
+        int count = 0;
+        for (int i = 0; i < parentPanel.getComponentCount(); i++) {
+            if (parentPanel.getComponent(i) instanceof JEditorPane) {
+                JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
+                if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+    
+        public int getAllEditorCount() {
+        int count = 0;
+        for (int i = 0; i < parentPanel.getComponentCount(); i++) {
+            if (parentPanel.getComponent(i) instanceof JEditorPane) {
+                    count++;
+            }
+        }
+        return count;
+    }
+
 
     private HTMLEditorKit getHTMLEditorKit() {
         if (editorKit != null) {
