@@ -109,11 +109,11 @@ public class PreferencesManager {
     }
     
     public void setProviderLocation(String providerLocation) {
-        preferences.put(PROVIDER_LOCATION_PREFERENCES, providerLocation);
+        preferences.put(getModel() + PROVIDER_LOCATION_PREFERENCES, providerLocation);
     }
 
     public String getProviderLocation() {
-        return preferences.get(PROVIDER_LOCATION_PREFERENCES, null);
+        return preferences.get(getModel() + PROVIDER_LOCATION_PREFERENCES, null);
     }
 
     public String getModelName() {

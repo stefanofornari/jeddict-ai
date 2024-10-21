@@ -723,44 +723,51 @@ public class JeddictChatModel {
         return enhanced;
     }
 
-    public String generateCommitMessageSuggestions(String gitDiffOutput, String initialCommitMessage) {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output in HTML format. ")
-                .append("Please provide various types of commit messages based on the changes: \n")
-                .append("- Very Short\n")
-                .append("- Short\n")
-                .append("- Medium\n")
-                .append("- Long\n")
-                .append("- Descriptive\n\n")
-                .append("Here is the 'git diff' and 'git status' output:\n")
-                .append(gitDiffOutput.replace("\n", "<br>")) // Use <br> for HTML rendering
-                .append("\n");
+public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage) {
+    StringBuilder prompt = new StringBuilder();
+    prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output in HTML format. ")
+            .append("Your goal is to create commit messages that reflect business or domain features rather than technical details like dependency updates or refactoring. Please provide various types of commit messages based on the changes: \n")
+            .append("- Very Short\n")
+            .append("- Short\n")
+            .append("- Medium\n")
+            .append("- Long\n")
+            .append("- Descriptive\n\n")
+            .append("Here is the 'git diff' and 'git status' output:\n")
+            .append(gitDiffOutput.replace("\n", "<br>")) // Use <br> for HTML rendering
+            .append("\n");
 
-        // Add initial commit message to the prompt if it is not empty or null
-        if (initialCommitMessage != null && !initialCommitMessage.isEmpty()) {
-            prompt.append("Initial Commit Message:\n").append(initialCommitMessage).append("<br>");
-        }
-
-        prompt.append("Please respond with the commit messages strictly in HTML format only. "
-                + "Do not use any Markdown or code formatting (like backticks or triple backticks). "
-                + "Ensure the HTML content is well-structured, styled using Bootstrap CSS, "
-                + "and split any long lines (over 100 characters) with <br> tags for multiline display. "
-                + "Your response should look like this: <br>"
-                + "<h3>Very Short:</h3> Commit message here<br>"
-                + "<h3>Short:</h3> Commit message here<br>"
-                + "<h3>Medium:</h3> Commit message here<br>"
-                + "<h3>Long:</h3> Commit message here<br>"
-                + "<h3>Descriptive:</h3> Commit message here<br>"
-                + "Do not include any other text or formatting outside of HTML.");
-
-        // Generate the commit message suggestions
-        String answer = generate(prompt.toString());
-
-        // Wrap long lines with <br> tags
-        answer = wrapLongLinesWithBr(removeCodeBlockMarkers(answer), 100);
-
-        return answer;
+    // Add reference commit message to the prompt if it is not empty or null
+    if (referenceCommitMessage != null && !referenceCommitMessage.isEmpty()) {
+        prompt.append("Reference Commit Message:\n").append(referenceCommitMessage).append("<br><br>")
+              .append("Ensure that all the following commit message suggestions are aligned with this reference message. "
+                      + "The suggestions should reflect the intent and context of the reference commit message, focusing on the business or domain features, adapting it as necessary to fit the changes in the 'git diff' output. "
+                      + "The goal is to keep all suggestions consistent with the meaning of the reference commit message.<br>");
+    } else {
+        prompt.append("No reference commit message provided.<br><br>")
+              .append("Please generate commit message suggestions based on the 'git diff' output and the context of the changes, emphasizing business or domain features.");
     }
+
+    prompt.append("Please respond with the commit messages strictly in HTML format only. "
+            + "Do not use any Markdown or code formatting (like backticks or triple backticks). "
+            + "Ensure the HTML content is well-structured, styled using Bootstrap CSS, "
+            + "and split any long lines (over 100 characters) with <br> tags for multiline display. "
+            + "Your response should look like this: <br>"
+            + "<h3>Very Short:</h3> Commit message here<br>"
+            + "<h3>Short:</h3> Commit message here<br>"
+            + "<h3>Medium:</h3> Commit message here<br>"
+            + "<h3>Long:</h3> Commit message here<br>"
+            + "<h3>Descriptive:</h3> Commit message here<br>"
+            + "Do not include any other text or formatting outside of HTML.");
+
+    // Generate the commit message suggestions
+    String answer = generate(prompt.toString());
+    System.out.println(answer);
+    // Wrap long lines with <br> tags
+    answer = wrapLongLinesWithBr(removeCodeBlockMarkers(answer), 100);
+    System.out.println("===========================================");
+    System.out.println(answer);
+    return answer;
+}
 
     private String wrapLongLinesWithBr(String input, int maxLineLength) {
         StringBuilder wrapped = new StringBuilder();
@@ -857,7 +864,7 @@ public class JeddictChatModel {
                     + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
                     + "Do not include additional text or explanations outside of the HTML content.\n\n"
                     + promptExtend
-                    + "User Query:\n" + userQuery;
+                    + "\n User Query:\n" + userQuery;
         } else {
             prompt = "You are an API server that provides an interactive HTML-formatted answer to a user's query based on Orignal Java class content and Previous Chat Content. "
                     + "Given the following Java class content, the previous chat response, and the user's query, generate an HTML document that directly addresses the specific query. "
