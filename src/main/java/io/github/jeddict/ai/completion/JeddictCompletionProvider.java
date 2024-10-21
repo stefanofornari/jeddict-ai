@@ -347,12 +347,18 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     String lineTextBeforeCaret = getLineTextBeforeCaret(doc, caretOffset);
                     TreePath path = findTreePathAtCaret(compilationUnit, task);
                     FileObject fileObject = getFileObjectFromEditor(doc);
+                    
+                    Tree.Kind kind = path.getLeaf().getKind();
+                    Tree.Kind parentKind = path.getParentPath().getLeaf().getKind();
                     AIClassContext activeClassContext = prefsManager.getClassContext();
+                    if (kind == Tree.Kind.VARIABLE || kind == Tree.Kind.METHOD || kind == Tree.Kind.STRING_LITERAL) {
+                        activeClassContext = prefsManager.getVarContext();
+                    }
                     Set<String> findReferencedClasses = findReferencedClasses(compilationUnit);
                     List<ClassData> classDatas = getClassData(fileObject, findReferencedClasses, activeClassContext);
                     String classDataContent = classDatas.stream()
                             .map(cd -> cd.toString())
-                            .collect(Collectors.joining("\n--------------------\n"));
+                            .collect(Collectors.joining("\n------------\n"));
 
                     if (path != null) {
                         System.out.println("path.getLeaf().getKind() " + path.getLeaf().getKind());
@@ -364,8 +370,6 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         }
                     }
 
-                    Tree.Kind kind = path.getLeaf().getKind();
-                    Tree.Kind parentKind = path.getParentPath().getLeaf().getKind();
                     if (path == null
                             || kind == Tree.Kind.ERRONEOUS) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");

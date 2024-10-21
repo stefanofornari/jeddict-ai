@@ -92,6 +92,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         classContextLabel = new javax.swing.JLabel();
         classContextHelp = new javax.swing.JLabel();
         classContextComboBox = new javax.swing.JComboBox<>();
+        varContextPane = new javax.swing.JLayeredPane();
+        classContextLabelPane1 = new javax.swing.JLayeredPane();
+        varContextLabel = new javax.swing.JLabel();
+        varContextHelp = new javax.swing.JLabel();
+        varContextComboBox = new javax.swing.JComboBox<>();
         snippetPane = new javax.swing.JLayeredPane();
         showDescriptionCheckBox = new javax.swing.JCheckBox();
         cachePane = new javax.swing.JLayeredPane();
@@ -101,7 +106,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         testPromptLabel = new javax.swing.JLabel();
         testPromptField = new javax.swing.JTextField();
 
-        providersPane.setLayout(new java.awt.GridLayout(3, 1));
+        providersPane.setLayout(new java.awt.GridLayout(4, 1));
 
         providerParentPane.setLayout(new javax.swing.BoxLayout(providerParentPane, javax.swing.BoxLayout.LINE_AXIS));
 
@@ -236,7 +241,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providersPane.TabConstraints.tabTitle"), providersPane); // NOI18N
 
-        askAIPane.setLayout(new java.awt.GridLayout(3, 1));
+        askAIPane.setLayout(new java.awt.GridLayout(4, 1));
 
         filterationPane.setPreferredSize(new java.awt.Dimension(125, 75));
         filterationPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
@@ -263,7 +268,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.askAIPane.TabConstraints.tabTitle"), askAIPane); // NOI18N
 
-        inlineCompletionPane.setLayout(new java.awt.GridLayout(3, 1));
+        inlineCompletionPane.setLayout(new java.awt.GridLayout(4, 1));
 
         classContextPane.setPreferredSize(new java.awt.Dimension(125, 75));
         classContextPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
@@ -295,6 +300,36 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         inlineCompletionPane.add(classContextPane);
 
+        varContextPane.setPreferredSize(new java.awt.Dimension(125, 75));
+        varContextPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
+
+        classContextLabelPane1.setPreferredSize(new java.awt.Dimension(125, 40));
+        classContextLabelPane1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 5));
+
+        varContextLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        org.openide.awt.Mnemonics.setLocalizedText(varContextLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.varContextLabel.text")); // NOI18N
+        classContextLabelPane1.add(varContextLabel);
+
+        varContextHelp.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        varContextHelp.setForeground(new java.awt.Color(100, 100, 100));
+        varContextHelp.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        org.openide.awt.Mnemonics.setLocalizedText(varContextHelp, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.varContextHelp.text")); // NOI18N
+        classContextLabelPane1.add(varContextHelp);
+
+        varContextPane.add(classContextLabelPane1);
+
+        varContextComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(AIClassContext.values()));
+        varContextComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.varContextComboBox.toolTipText")); // NOI18N
+        varContextComboBox.setPreferredSize(new java.awt.Dimension(72, 35));
+        varContextComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                varContextComboBoxActionPerformed(evt);
+            }
+        });
+        varContextPane.add(varContextComboBox);
+
+        inlineCompletionPane.add(varContextPane);
+
         snippetPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         org.openide.awt.Mnemonics.setLocalizedText(showDescriptionCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.showDescriptionCheckBox.text")); // NOI18N
@@ -322,7 +357,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineCompletionPane.TabConstraints.tabTitle"), inlineCompletionPane); // NOI18N
 
-        hintPane.setLayout(new java.awt.GridLayout(3, 1));
+        hintPane.setLayout(new java.awt.GridLayout(4, 1));
 
         testPromptPane.setPreferredSize(new java.awt.Dimension(125, 75));
         testPromptPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
@@ -342,11 +377,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 448, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 245, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 305, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -510,6 +545,13 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_excludeJavadocCommentsCheckBoxActionPerformed
 
+    private void varContextComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_varContextComboBoxActionPerformed
+       AIClassContext selectedContext = (AIClassContext) varContextComboBox.getSelectedItem();
+        if (selectedContext != null) {
+            varContextHelp.setText(selectedContext.getDescription());
+        }
+    }//GEN-LAST:event_varContextComboBoxActionPerformed
+
     private void updateModelComboBox(GenAIProvider selectedProvider) {
         modelComboBox.removeAllItems();
         for (String model : getModelList(selectedProvider)) {
@@ -553,6 +595,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     void load() {
         aiAssistantActivationCheckBox.setSelected(preferencesManager.isAiAssistantActivated());
         classContextComboBox.setSelectedItem(preferencesManager.getClassContext());
+        varContextComboBox.setSelectedItem(preferencesManager.getVarContext());
         enableHintCheckBox.setSelected(preferencesManager.isHintsEnabled());
         enableSmartCodeCheckBox.setSelected(preferencesManager.isSmartCodeEnabled());
 
@@ -593,6 +636,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     void store() {
         preferencesManager.setAiAssistantActivated(aiAssistantActivationCheckBox.isSelected());
         preferencesManager.setClassContext((AIClassContext) classContextComboBox.getSelectedItem());
+        preferencesManager.setVarContext((AIClassContext) varContextComboBox.getSelectedItem());
         preferencesManager.setProvider((GenAIProvider) providerComboBox.getSelectedItem());
         preferencesManager.setModel((String) modelComboBox.getSelectedItem());
         preferencesManager.setHintsEnabled(enableHintCheckBox.isSelected());
@@ -641,6 +685,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLabel classContextHelp1;
     private javax.swing.JLabel classContextLabel;
     private javax.swing.JLayeredPane classContextLabelPane;
+    private javax.swing.JLayeredPane classContextLabelPane1;
     private javax.swing.JLayeredPane classContextPane;
     private javax.swing.JButton cleanDataButton;
     private javax.swing.JCheckBox enableHintCheckBox;
@@ -674,5 +719,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JTextField testPromptField;
     private javax.swing.JLabel testPromptLabel;
     private javax.swing.JLayeredPane testPromptPane;
+    private javax.swing.JComboBox<AIClassContext> varContextComboBox;
+    private javax.swing.JLabel varContextHelp;
+    private javax.swing.JLabel varContextLabel;
+    private javax.swing.JLayeredPane varContextPane;
     // End of variables declaration//GEN-END:variables
 }

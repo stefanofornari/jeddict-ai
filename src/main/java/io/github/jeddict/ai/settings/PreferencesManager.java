@@ -153,6 +153,22 @@ public class PreferencesManager {
     public void setClassContext(AIClassContext context) {
         preferences.put("classContext", context != null ? context.name() : null);
     }
+    
+    public AIClassContext getVarContext() {
+        String classContext = preferences.get("varContext", null);
+        if (classContext != null) {
+            try {
+                return AIClassContext.valueOf(classContext);
+            } catch (IllegalArgumentException iae) {
+                // .. skip
+            }
+        }
+        return AIClassContext.CURRENT_CLASS;
+    }
+
+    public void setVarContext(AIClassContext context) {
+        preferences.put("varContext", context != null ? context.name() : null);
+    }
 
     public String getModel() {
        return preferences.get(MODEL_PREFERENCE, DEFAULT_MODEL);
