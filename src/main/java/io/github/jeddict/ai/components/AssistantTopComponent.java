@@ -68,12 +68,16 @@ public class AssistantTopComponent extends TopComponent {
     private HTMLEditorKit editorKit;
     private final Project project;
 
-    public AssistantTopComponent(String name, Project project) {
+    private String type = "java";
+    public AssistantTopComponent(String name, String type, Project project) {
         setName(name);
         setLayout(new BorderLayout());
         setIcon(icon.getImage());
 
         this.project = project;
+        if (type != null) {
+            this.type = type;
+        }
         parentPanel = new JPanel();
         parentPanel.setLayout(new BoxLayout(parentPanel, BoxLayout.Y_AXIS));
         add(parentPanel, BorderLayout.CENTER);
@@ -104,7 +108,7 @@ public class AssistantTopComponent extends TopComponent {
 
     public JEditorPane createCodePane(String content) {
         JEditorPane editorPane = new JEditorPane();
-        editorPane.setEditorKit(createEditorKit("text/x-java"));
+        editorPane.setEditorKit(createEditorKit("text/x-" + type));
         editorPane.setText(content);
         addContextMenu(editorPane);
         parentPanel.add(editorPane);
@@ -251,7 +255,7 @@ public class AssistantTopComponent extends TopComponent {
         StringBuilder allText = new StringBuilder();
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
-                if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
+                if (editorPane.getEditorKit().getContentType().equals("text/x-" + type)) {
                     allText.append("\n");
                     allText.append(editorPane.getText());
                     allText.append("\n");
@@ -265,10 +269,10 @@ public class AssistantTopComponent extends TopComponent {
         StringBuilder allText = new StringBuilder();
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
-                if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
-                    allText.append("<pre><code type=\"full\" class=\"java\">");
+                if (editorPane.getEditorKit().getContentType().equals("text/x-" + type)) {
+                    allText.append("<code type=\"full\" class=\"").append(type).append("\">");
                     allText.append(editorPane.getText());
-                    allText.append("<code></pre>");
+                    allText.append("</code>");
                 } else {
                     allText.append(editorPane.getText());
                 }
@@ -282,7 +286,7 @@ public class AssistantTopComponent extends TopComponent {
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane) {
                 JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
-                if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
+                if (editorPane.getEditorKit().getContentType().equals("text/x-" + type)) {
                     count++;
                 }
             }
@@ -379,6 +383,8 @@ public class AssistantTopComponent extends TopComponent {
         styleSheet.addRule("code { font-size: 87.5%; color: #e83e8c; word-wrap: break-word; }");
         styleSheet.addRule("pre { display: block; font-size: 87.5%; color: #212529; }");
         styleSheet.addRule("pre code { font-size: inherit; color: inherit; word-break: normal; }");
+        styleSheet.addRule("strong { font-weight: bold; }");
+
         return editorKit;
     }
 

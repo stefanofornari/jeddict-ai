@@ -28,6 +28,7 @@ import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.completion.SQLCompletion;
 import io.github.jeddict.ai.components.AssistantTopComponent;
 import static io.github.jeddict.ai.components.AssistantTopComponent.backIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.copyIcon;
@@ -90,6 +91,8 @@ import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 
 /**
  *
@@ -99,6 +102,7 @@ public class LearnFix extends JavaFix {
 
     private TreePath treePath;
     private final Action action;
+    private SQLCompletion sqlCompletion;
     private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton;
     private AssistantTopComponent topComponent;
     private final List<String> responseHistory = new ArrayList<>();
@@ -119,6 +123,12 @@ public class LearnFix extends JavaFix {
     public LearnFix(Action action) {
         super(null);
         this.action = action;
+    }
+
+    public LearnFix(Action action, SQLCompletion sqlCompletion) {
+        super(null);
+        this.action = action;
+        this.sqlCompletion = sqlCompletion;
     }
 
     public LearnFix(Action action, Project project) {
@@ -270,7 +280,7 @@ public class LearnFix extends JavaFix {
 
                 Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
                 prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-                topComponent = new AssistantTopComponent(title, project);
+                topComponent = new AssistantTopComponent(title, null, project);
                 updateEditor(response).addHyperlinkListener((HyperlinkEvent e) -> {
                     if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
                         try {
@@ -287,7 +297,7 @@ public class LearnFix extends JavaFix {
                 responseHistory.add(response);
                 currentResponseIndex = responseHistory.size() - 1;
 
-                topComponent.add(createBottomPanel(filename, title, null), BorderLayout.SOUTH);
+                topComponent.add(createBottomPanel(null, filename, title, null), BorderLayout.SOUTH);
                 topComponent.open();
                 topComponent.requestActive();
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -302,15 +312,15 @@ public class LearnFix extends JavaFix {
         });
     }
 
-    public void openChat(final String query, String fileName, String title, Consumer<String> action) {
+    public void openChat(String type, final String query, String fileName, String title, Consumer<String> action) {
         SwingUtilities.invokeLater(() -> {
             Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
             prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-            topComponent = new AssistantTopComponent(title, project);
+            topComponent = new AssistantTopComponent(title, type, project);
             topComponent.setLayout(new BorderLayout());
             JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
             topComponent.add(scrollPane, BorderLayout.CENTER);
-            topComponent.add(createBottomPanel(fileName, title, action), BorderLayout.SOUTH);
+            topComponent.add(createBottomPanel(type, fileName, title, action), BorderLayout.SOUTH);
             topComponent.open();
             topComponent.requestActive();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -324,7 +334,7 @@ public class LearnFix extends JavaFix {
 
     JEditorPane questionPane;
 
-    private JPanel createBottomPanel(String fileName, String title, Consumer<String> action) {
+    private JPanel createBottomPanel(String type, String fileName, String title, Consumer<String> action) {
         // Create a panel for the text field and buttons
         JPanel bottomPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -418,7 +428,23 @@ public class LearnFix extends JavaFix {
 
         // JEditorPane instead of JTextField
         questionPane = new JEditorPane();
-        questionPane.setEditorKit(createEditorKit("text/x-java"));
+        questionPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
+             questionPane.setText("Enter your question here..."); // Placeholder text
+        questionPane.setForeground(Color.GRAY); // Placeholder color
+
+        // Add caret listener to handle placeholder behavior
+        questionPane.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+                if (questionPane.getText().trim().isEmpty() || questionPane.getText().equals("Enter your question here...")) {
+                    questionPane.setForeground(Color.GRAY);
+                    questionPane.setText("Enter your question here...");
+                    questionPane.setCaretPosition(0); // Move caret to the beginning
+                } else {
+                    questionPane.setForeground(Color.BLACK); // Change text color
+                }
+            }
+        });
         JScrollPane scrollPane = new JScrollPane(questionPane);  // Add scroll if needed
         scrollPane.setPreferredSize(new Dimension(500, 50));
         gbc.gridx = 1;  // Positioning the editor in the middle
@@ -532,10 +558,9 @@ public class LearnFix extends JavaFix {
 
     private JEditorPane updateEditor(String response) {
         JEditorPane editorPane = null;
-        String[] parts = response.split("<pre.*?>\\s*<code type=\"[^\"]*\">|<pre.*?>\\s*<code class=\"[^\"]*\">|<pre.*?>\\s*<code class=\"[^\"]*\" type=\"[^\"]*\">|<pre.*?>\\s*<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>\\s*</pre>");
-        if (parts.length == 1) {
-            parts = response.split("<code type=\"[^\"]*\">|<code class=\"[^\"]*\">|<code class=\"[^\"]*\" type=\"[^\"]*\">|<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>");
-        }
+        response = response.replaceAll("<code(?!\\s*\\w+)[^>]*>(.*?)</code>", "<strong>$1</strong>");
+        response = response.replaceAll("<pre(?!\\s*\\w+)[^>]*>(.*?)</pre>", "<strong>$1</strong>");
+        String[] parts = response.split("<code type=\"[^\"]*\">|<code class=\"[^\"]*\">|<code class=\"[^\"]*\" type=\"[^\"]*\">|<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>");
         topComponent.clear();
         for (int i = 0; i < parts.length; i++) {
             if (i % 2 == 1) {
@@ -565,7 +590,9 @@ public class LearnFix extends JavaFix {
                     responseHistory.set(responseHistory.size() - 1, prevChat);
                 }
                 String response;
-                if (commitChanges != null) {
+                if (sqlCompletion != null) {
+                    response = new JeddictChatModel().generateHtmlResponseFromDbMetadata(sqlCompletion.getMetaData(), question);
+                } else if (commitChanges != null) {
                     response = new JeddictChatModel().generateCommitMessageSuggestions(commitChanges, question);
                 } else if (treePath == null || projectContent != null) {
                     response = new JeddictChatModel().generateHtmlDescription(projectContent, null, null, prevChat, question);

@@ -57,7 +57,7 @@ abstract class ChatAction implements ActionListener {
         FileObject file = getFileObject(document);
         Project project = getProject(file);
         LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, project);
-        learnFix.openChat(selectedText, file.getName(), "Chat with AI", content -> {
+        learnFix.openChat(null, selectedText, file.getName(), "Chat with AI", content -> {
             NbDocument.runAtomic(document, () -> {
                 try {
                     document.remove(startLocation, text.length());

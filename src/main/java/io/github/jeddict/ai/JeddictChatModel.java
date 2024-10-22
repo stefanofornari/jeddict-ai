@@ -797,13 +797,39 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
 
         return wrapped.toString();
     }
+    
+public String generateHtmlResponseFromDbMetadata(String dbMetadata, String developerQuestion) {
+    StringBuilder dbPrompt = new StringBuilder("You are an API server that provides assistance with SQL queries and database-related questions. ");
+
+    dbPrompt.append("Given the following database schema metadata:\n")
+            .append(dbMetadata)
+            .append("\nRespond to the developer's question: \n")
+            .append(developerQuestion)
+            .append("\n")
+            .append("""
+              Analyze the metadata and provide a relevant SQL query with a description. Offer guidance 
+              or explanations to address the developer's question, error, or inquiry related to the database. 
+              Ensure the SQL queries match the database structure, constraints, and relationships. 
+              Wrap only the full SQL query in <code type="full" class="sql"> tags without adding any HTML tags inside this block, 
+              and do not wrap individual SQL keywords or table/column names in <code> tags
+              and do not wrap any partial sql query segment  in <code> tags. 
+              Always include a detailed explanation of the query, including its purpose and how it relates to the developer's question. 
+              Respond with the answer directly in HTML format (not in Markdown syntax), including both the SQL query and the explanation, 
+              and do not include any text outside the HTML response.
+              """);
+
+    String htmlResponse = generate(dbPrompt.toString());
+    System.out.println(htmlResponse);
+    return htmlResponse;
+}
+
 
     public String generateHtmlDescriptionForProject(String projectContent, String query) {
         String prompt = "You are an API server that provides answer to query of following project in HTML. "
                 + "Do not include additional text or explanations outside of the HTML content.\n\n"
                 + "Do not include text in <code> block.\n\n"
-                + "If Full Java Class is in response then wrap it in <pre><code type=\"full\" class=\"java\"></pre>. "
-                + "If partial snippet of Java Class are in response then wrap it in <pre><code type=\"snippet\" class=\"java\"></pre>. "
+                + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
+                + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
                 + "Projects Content:\n" + projectContent + "\n\n"
                 + "Query:\n" + query;
 
@@ -816,8 +842,8 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
     public String generateHtmlDescriptionForClass(String classContent) {
         String prompt = "You are an API server that provides description of following class in HTML. "
                 + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                + "If Full Java Class is in response then wrap it in <pre><code type=\"full\" class=\"java\"></pre>. "
-                + "If partial snippet of Java Class are in response then wrap it in <pre><code type=\"snippet\" class=\"java\"></pre>. "
+                + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
+                + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
                 + "Java Class Content:\n" + classContent;
 
         // Generate the HTML description
@@ -829,8 +855,8 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
     public String generateHtmlDescriptionForMethod(String methodContent) {
         String prompt = "You are an API server that provides description of following Method in HTML. "
                 + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                + "If Full Java Class is in response then wrap it in <pre><code type=\"full\" class=\"java\"></pre>. "
-                + "If partial snippet of Java Class are in response then wrap it in <pre><code type=\"snippet\" class=\"java\"></pre>. "
+                + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
+                + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
                 + "Java Method Content:\n" + methodContent;
 
         // Generate the HTML description
@@ -861,7 +887,6 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
                     + "Given the following Java class content, and the user's query, generate an HTML document that directly addresses the specific query. "
                     + "Ensure the HTML content is well-structured, clearly answers the query. "
                     + "Use Bootstrap CSS for overall styling and highlight.js for code examples in the response. "
-                    + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
                     + "Do not include additional text or explanations outside of the HTML content.\n\n"
                     + promptExtend
                     + "\n User Query:\n" + userQuery;
@@ -870,7 +895,6 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
                     + "Given the following Java class content, the previous chat response, and the user's query, generate an HTML document that directly addresses the specific query. "
                     + "Ensure the HTML content is well-structured, clearly answers the query, and reflects any modifications or updates suggested in the previous chat response. "
                     + "Use Bootstrap CSS for overall styling and highlight.js for code examples in the response. "
-                    + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
                     + "Do not include additional text or explanations outside of the HTML content.\n\n"
                     + "Previous Chat Response:\n" + previousChatResponse + "\n\n"
                     + promptExtend
@@ -960,11 +984,9 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
         if (previousChatResponse == null) {
             prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content. "
                     + "Given the following Java class or method content and the user's query, generate " + testCaseType + " test cases that are well-structured and functional. "
-                    + "Wrap the code blocks in <pre> tags for formatting code examples. "
                     + "Provide an interactive HTML-formatted descriptive answer with test case. "
                     + "Ensure the HTML content is well-structured, clearly answers the query. "
                     + "Use Bootstrap CSS for overall styling for code examples in the response. "
-                    + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
                     + "Do not include additional text or explanations outside of the HTML content.\n\n"
                     + promptExtend
                     + userQuery;
@@ -972,11 +994,9 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
             prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content and previous chat content. "
                     + "Given the following Java class content, previous chat response, and the user's query, generate " + testCaseType + " test cases that directly address the user's query. "
                     + "Ensure the " + testCaseType + " test cases are well-structured and reflect any modifications or updates suggested in the previous chat response. "
-                    + "Wrap the code blocks in <pre> tags for code formatting. "
                     + "Provide an interactive HTML-formatted descriptive answer with test case. "
                     + "Ensure the HTML content is well-structured, clearly answers the query. "
                     + "Use Bootstrap CSS for overall styling for code examples in the response. "
-                    + "Wrap the code blocks in <pre> tags to preserve formatting and indentation. "
                     + "Do not include additional text or explanations outside of the HTML content.\n\n"
                     + "Previous Chat Response:\n" + previousChatResponse + "\n\n"
                     + promptExtend
