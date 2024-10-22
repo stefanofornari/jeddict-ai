@@ -41,21 +41,31 @@ abstract class ChatAction implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         JTextComponent editor = EditorRegistry.lastFocusedComponent();
-        final String selectedText = editor.getSelectedText();
+        String selectedText = editor.getSelectedText();
         final StyledDocument document = (StyledDocument) editor.getDocument();
-        final int selectionStartPosition = editor.getSelectionStart();
+        int selectionStartPosition = editor.getSelectionStart();
+        if (selectedText == null || selectedText.isEmpty()) {
+            try {
+                selectionStartPosition = 0;
+                selectedText = document.getText(selectionStartPosition, document.getLength());
+            } catch (BadLocationException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        }
+        final String text = selectedText;
+        final int startLocation = selectionStartPosition;
         FileObject file = getFileObject(document);
         Project project = getProject(file);
         LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, project);
         learnFix.openChat(selectedText, file.getName(), "Chat with AI", content -> {
             NbDocument.runAtomic(document, () -> {
                 try {
-                    document.remove(selectionStartPosition, selectedText.length());
-                    document.insertString(selectionStartPosition, content, null);
+                    document.remove(startLocation, text.length());
+                    document.insertString(startLocation, content, null);
                     Reformat reformat = Reformat.get(document);
                     reformat.lock();
                     try {
-                        reformat.reformat(selectionStartPosition, selectionStartPosition + content.length());
+                        reformat.reformat(startLocation, startLocation + content.length());
                     } finally {
                         reformat.unlock();
                     }
