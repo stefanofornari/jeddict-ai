@@ -44,7 +44,7 @@ public final class ChatPopupAction extends AbstractAction implements ActionListe
 
     public ChatPopupAction() {
         putValue(NAME, Bundle.CTL_ChatPopupAction());
-        setEnabled(shouldEnableMenu());
+        setEnabled(true);
     }
 
     @Override
@@ -53,7 +53,7 @@ public final class ChatPopupAction extends AbstractAction implements ActionListe
 
     @Override
     public JMenuItem getPopupPresenter() {
-        setEnabled(shouldEnableMenu());
+        setEnabled(true);
         JMenu main = new JMenu(this);
         List<? extends Action> actionsForPath = Utilities.actionsForPath("Actions/Chat/SubActions");
         actionsForPath.forEach((action) -> {
@@ -62,14 +62,4 @@ public final class ChatPopupAction extends AbstractAction implements ActionListe
         return main;
     }
 
-    private Boolean shouldEnableMenu() {
-        JTextComponent editor = EditorRegistry.focusedComponent();
-        Boolean shouldEnable = false;
-
-        if (null != editor) {
-            final String selectedText = editor.getSelectedText();
-            shouldEnable = null != selectedText && !selectedText.isEmpty();
-        }
-        return shouldEnable;
-    }
 }
