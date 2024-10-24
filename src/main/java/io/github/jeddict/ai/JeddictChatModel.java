@@ -138,7 +138,7 @@ public class JeddictChatModel {
                 panel.add(apiKeyField);
 
                 int option = JOptionPane.showConfirmDialog(null, panel,
-                        "API Key Required", JOptionPane.OK_CANCEL_OPTION);
+                        preferencesManager.getProvider().name() + " API Key Required", JOptionPane.OK_CANCEL_OPTION);
                 if (option == JOptionPane.OK_OPTION) {
                     preferencesManager.setApiKey(apiKeyField.getText().trim());
                 }
