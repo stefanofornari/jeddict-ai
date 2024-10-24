@@ -83,8 +83,8 @@ public class PreferencesManager {
             // If still not found, show input dialog to enter API key
             if (!headless) {
                 apiKey = JOptionPane.showInputDialog(null,
-                        "Your OpenAI API key is not configured. Please enter it now.",
-                        "OpenAI API Key Required",
+                        getProvider().name() + ":" + getModelName() + " API key is not configured. Please enter it now.",
+                        getProvider().name() + ":" + getModelName() + " API Key Required",
                         JOptionPane.WARNING_MESSAGE);
             }
 
@@ -95,8 +95,8 @@ public class PreferencesManager {
                 if (!headless) {
                     // If user didn't provide a valid key, show error and throw exception
                     JOptionPane.showMessageDialog(null,
-                            "OpenAI API key setup is incomplete. Please provide a valid key.",
-                            "API Key Not Configured",
+                            getProvider().name() + ":" + getModelName() + " API key setup is incomplete. Please provide a valid key.",
+                            getProvider().name() + ":" + getModelName() + " API Key Not Configured",
                             JOptionPane.ERROR_MESSAGE);
                     throw new IllegalStateException("A valid OpenAI API key is necessary for this feature.");
                 } else {
