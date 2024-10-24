@@ -1,6 +1,20 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package io.github.jeddict.ai.util;
 
@@ -15,6 +29,8 @@ import java.util.regex.Pattern;
 import javax.swing.JEditorPane;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import java.awt.FontMetrics;
+import javax.swing.text.JTextComponent;
 
 /**
  *
@@ -32,7 +48,7 @@ public class EditorUtil {
         String[] parts = text.split("```");
         String regex = "(\\w+)\\n([\\s\\S]+)";
         Pattern pattern = Pattern.compile(regex);
-        
+
         int wordBreakLimit = getWordBreakLimit(topComponent);
         for (int i = 0; i < parts.length; i++) {
             if (i % 2 == 0) {
@@ -58,17 +74,18 @@ public class EditorUtil {
         }
         return code.toString();
     }
-    
+
     private static int getWordBreakLimit(AssistantTopComponent topComponent) {
         int width;
         try {
-            width = ((int) (topComponent.getWidth() / topComponent.getFontMetrics(topComponent.getFont()).charWidth('O')));
+            FontMetrics metrics = topComponent.getFontMetrics(topComponent.getFont());
+            width = (int) (topComponent.getWidth() / metrics.charWidth('O'));
         } catch (Exception ex) {
             width = 100;
         }
         return width;
     }
-    
+
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
         String[] lines = markdown.split("\n");  // Split the markdown by new lines
         StringBuilder formattedMarkdown = new StringBuilder();
@@ -212,7 +229,7 @@ public class EditorUtil {
         }
         return REVERSE_OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(mimeType, null); // Returns null if not found
     }
-    
+
     public static boolean isSuitableForWebAppDirectory(String mimeType) {
         // Define the allowed MIME types for src/main/webapp
         Set<String> allowedMimeTypes = new HashSet<>(Arrays.asList(
