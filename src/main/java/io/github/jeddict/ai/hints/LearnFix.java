@@ -74,7 +74,6 @@ import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
-import static io.github.jeddict.ai.util.UIUtil.askQuery;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
@@ -204,13 +203,7 @@ public class LearnFix extends JavaFix {
             executorService.submit(() -> {
                 String response;
                 String fileName = fileObject != null ? fileObject.getName() : null;
-                if (action == Action.QUERY) {
-                    String query = askQuery();
-                    if (query == null) {
-                        return;
-                    }
-                    response = new JeddictChatModel().generateDescription(null, treePath.getCompilationUnit().toString(), null, null, query);
-                } else if (action == Action.TEST) {
+                if (action == Action.TEST) {
                     if (leaf instanceof MethodTree) {
                         response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), null, null);
                     } else {
@@ -414,7 +407,7 @@ private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles)
         submitButton.setMaximumSize(buttonSize);
         eastButtonPanel.add(submitButton);
 
-        int javaEditorCount = topComponent.getAllJavaEditorCount();
+        int javaEditorCount = topComponent.getAllCodeEditorCount();
 
         // Copy Button with Icon (East)
         copyButton = createButton(copyIcon);
@@ -519,16 +512,16 @@ private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles)
         eastButtonPanel.add(contextButton);
 
         copyButton.addActionListener(e -> {
-            StringSelection stringSelection = new StringSelection(topComponent.getAllJavaEditorText());
+            StringSelection stringSelection = new StringSelection(topComponent.getAllCodeEditorText());
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(stringSelection, null);
         });
         saveButton.addActionListener(e -> {
-            topComponent.saveAs(null, topComponent.getAllJavaEditorText());
+            topComponent.saveAs(null, topComponent.getAllCodeEditorText());
         });
         saveToEditorButton.addActionListener(e -> {
             if (action != null) {
-                action.accept(topComponent.getAllJavaEditorText());
+                action.accept(topComponent.getAllCodeEditorText());
             }
         });
         newChatButton.addActionListener(e -> {
@@ -726,7 +719,7 @@ private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles)
         prevButton.setEnabled(currentResponseIndex > 0);
         nextButton.setEnabled(currentResponseIndex < responseHistory.size() - 1);
 
-        int javaEditorCount = topComponent.getAllJavaEditorCount();
+        int javaEditorCount = topComponent.getAllCodeEditorCount();
         copyButton.setEnabled(javaEditorCount > 0);
         saveButton.setEnabled(javaEditorCount > 0);
 

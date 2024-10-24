@@ -287,7 +287,7 @@ public class AssistantTopComponent extends TopComponent {
         return parentPanel;
     }
     
-    public String getAllJavaEditorText() {
+    public String getAllCodeEditorText() {
         StringBuilder allText = new StringBuilder();
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
@@ -318,7 +318,7 @@ public class AssistantTopComponent extends TopComponent {
         return allText.toString().trim();
     }
     
-    public int getAllJavaEditorCount() {
+    public int getAllCodeEditorCount() {
         int count = 0;
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane) {
