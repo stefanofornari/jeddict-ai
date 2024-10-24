@@ -5,8 +5,11 @@
 package io.github.jeddict.ai.util;
 
 import io.github.jeddict.ai.components.AssistantTopComponent;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JEditorPane;
@@ -19,7 +22,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
  */
 public class EditorUtil {
 
-    public static JEditorPane updateEditors(AssistantTopComponent topComponent, String text) {
+    public static String updateEditors(AssistantTopComponent topComponent, String text) {
+        StringBuilder code = new StringBuilder();
         JEditorPane editorPane = null;
 
         topComponent.clear();
@@ -29,21 +33,18 @@ public class EditorUtil {
         String regex = "(\\w+)\\n([\\s\\S]+)";
         Pattern pattern = Pattern.compile(regex);
 
+        int width = ((int)(topComponent.getWidth()/topComponent.getFontMetrics(topComponent.getFont()).charWidth('O')));
         for (int i = 0; i < parts.length; i++) {
             if (i % 2 == 0) {
-                // Text part
-                System.out.println("Text Part " + (i / 2 + 1) + ":");
-                System.out.println();
-
-                String html = renderer.render(parser.parse(parts[i].trim()));
+                String newText = addLineBreaksToMarkdown(parts[i].trim(), width);
+                String html = renderer.render(parser.parse(newText));
                 editorPane = topComponent.createHtmlPane(html);
             } else {
                 Matcher matcher = pattern.matcher(parts[i]);
                 if (matcher.matches()) {
                     String codeType = matcher.group(1);
                     String codeContent = matcher.group(2);
-                    System.out.println("Code Type: " + codeType);
-                    System.out.println("Code Content:\n" + codeContent);
+                    code.append('\n').append(codeContent).append('\n');
                     editorPane = topComponent.createCodePane(getMimeType(codeType), codeContent);
                 } else {
                     String html = renderer.render(parser.parse(parts[i].trim()));
@@ -55,10 +56,46 @@ public class EditorUtil {
         if (editorPane != null) {
             editorPane.setCaretPosition(0);
         }
-        return editorPane;
+        return code.toString();
+    }
+    
+    
+    public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
+        String[] lines = markdown.split("\n");  // Split the markdown by new lines
+        StringBuilder formattedMarkdown = new StringBuilder();
+
+        for (String line : lines) {
+            if (!line.trim().isEmpty()) {
+                formattedMarkdown.append(breakLongLine(line, maxLineLength));  // Process the line for length
+            }
+            formattedMarkdown.append('\n');
+        }
+
+        return formattedMarkdown.toString();
     }
 
-    private static Map<String, String> OPENAI_NETBEANS_EDITOR_MAP = new HashMap<>();
+    private static String breakLongLine(String line, int maxLineLength) {
+        StringBuilder formattedLine = new StringBuilder();
+        int lastBreakIndex = 0;
+
+        for (int i = 0; i < line.length(); i++) {
+            if (i - lastBreakIndex >= maxLineLength && (line.charAt(i) == '.' || line.charAt(i) == ',')) {
+                // Add a break tag after punctuation when the line exceeds max length
+                formattedLine.append(line, lastBreakIndex, i + 1).append("<br>");
+                lastBreakIndex = i + 1;
+            }
+        }
+
+        // Append remaining part of the line
+        if (lastBreakIndex < line.length()) {
+            formattedLine.append(line.substring(lastBreakIndex));
+        }
+
+        return formattedLine.toString();
+    }
+
+    private static final Map<String, String> OPENAI_NETBEANS_EDITOR_MAP = new HashMap<>();
+    private static final Map<String, String> REVERSE_OPENAI_NETBEANS_EDITOR_MAP = new HashMap<>();
 
     static {
         // OpenAI Code Block and NetBeans Editor MIME type mappings
@@ -141,13 +178,49 @@ public class EditorUtil {
         OPENAI_NETBEANS_EDITOR_MAP.put("beans", "text/x-java"); // CDI beans.xml files
         OPENAI_NETBEANS_EDITOR_MAP.put("context", "text/x-java"); // CDI context.xml files
         OPENAI_NETBEANS_EDITOR_MAP.put("config", "text/x-properties"); // Configuration properties files
-        OPENAI_NETBEANS_EDITOR_MAP.put("css", "text/css"); // CSS files for styling
         OPENAI_NETBEANS_EDITOR_MAP.put("js", "text/javascript"); // JavaScript files for web applications
-        
+
+        for (Map.Entry<String, String> entry : OPENAI_NETBEANS_EDITOR_MAP.entrySet()) {
+            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put(entry.getValue(), entry.getKey());
+
+            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/x-java", "java");
+            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/xml", "xml");
+            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/javascript", "js");
+            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/x-yaml", "yaml");
+            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/html", "html");
+        }
+
     }
 
     // Method to get the NetBeans MIME type for a given ChatGPT code block type
     public static String getMimeType(String chatGptType) {
-        return OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(chatGptType, "application/octet-stream"); // Default to binary if not found
+        return OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(chatGptType, "text/plain"); // Default to binary if not found
+    }
+
+    public static String getExtension(String mimeType) {
+        if (mimeType == null) {
+            return "java";
+        }
+        return REVERSE_OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(mimeType, null); // Returns null if not found
+    }
+    
+    public static boolean isSuitableForWebAppDirectory(String mimeType) {
+        // Define the allowed MIME types for src/main/webapp
+        Set<String> allowedMimeTypes = new HashSet<>(Arrays.asList(
+                "text/html", // HTML files
+                "text/x-jsp", // JSP files
+                "text/css", // CSS files
+                "text/x-scss", // SCSS files
+                "text/x-less", // LESS files
+                "text/javascript", // JavaScript files
+                "text/x-vue", // Vue.js files
+                "text/x-pug", // Pug template engine files
+                "text/xml", // XML files (for web-related configs like web.xml)
+                "text/x-ts", // TypeScript files
+                "text/x-jsx" // JSX files (React.js)
+        ));
+
+        // Check if the MIME type is allowed for web applications
+        return allowedMimeTypes.contains(mimeType);
     }
 }

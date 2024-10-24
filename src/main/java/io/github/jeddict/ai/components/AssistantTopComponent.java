@@ -18,6 +18,9 @@
  */
 package io.github.jeddict.ai.components;
 
+import static io.github.jeddict.ai.util.EditorUtil.getExtension;
+import static io.github.jeddict.ai.util.EditorUtil.isSuitableForWebAppDirectory;
+import static io.github.jeddict.ai.util.StringUtil.convertToCapitalized;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.event.MouseAdapter;
@@ -41,7 +44,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
-import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.project.Project;
@@ -148,7 +150,7 @@ public class AssistantTopComponent extends TopComponent {
         contextMenu.add(copyItem);
 
         JMenuItem saveAsItem = new JMenuItem("Save As");
-        saveAsItem.addActionListener(e -> saveAs(editorPane.getText()));
+        saveAsItem.addActionListener(e -> saveAs(editorPane.getContentType(), editorPane.getText()));
         contextMenu.add(saveAsItem);
 
         // Add mouse listener to show context menu
@@ -169,43 +171,61 @@ public class AssistantTopComponent extends TopComponent {
         });
     }
 
-    public void saveAs(String content) {
-        String className = extractClassName(content);
-        String packageName = extractPackageName(content);
-        boolean isTestClass = className != null && className.endsWith("Test");
-        String baseDir = isTestClass ? "src/test/java" : "src/main/java";
+    public void saveAs(String mimeType, String content) {
         
         // Create the file chooser
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save As");
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Java Files", "java"));
         
-        if (project != null) {
-            String projectRootDir = project.getProjectDirectory().getPath();
-            String filePath = Paths.get(projectRootDir, baseDir).toString();
-            if (packageName != null) {
-                filePath = Paths.get(filePath, packageName.split("\\.")).toString();
-            }
-            File targetDir = new File(filePath);
-            if (!targetDir.exists()) {
-                boolean dirsCreated = targetDir.mkdirs();
-                if (!dirsCreated) {
-                    JOptionPane.showMessageDialog(null, "Failed to create directories: " + targetDir.getAbsolutePath());
-                    return;
+        if (mimeType == null || mimeType.equals("text/x-java")) {
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Java Files", "java"));
+            String className = extractClassName(content);
+            String packageName = extractPackageName(content);
+            boolean isTestClass = className != null && className.endsWith("Test");
+            String baseDir = isTestClass ? "src/test/java" : "src/main/java";
+
+            if (project != null) {
+                String projectRootDir = project.getProjectDirectory().getPath();
+                String filePath = Paths.get(projectRootDir, baseDir).toString();
+                if (packageName != null) {
+                    filePath = Paths.get(filePath, packageName.split("\\.")).toString();
                 }
+                File targetDir = new File(filePath);
+                if (!targetDir.exists()) {
+                    boolean dirsCreated = targetDir.mkdirs();
+                    if (!dirsCreated) {
+                        JOptionPane.showMessageDialog(null, "Failed to create directories: " + targetDir.getAbsolutePath());
+                        return;
+                    }
+                }
+                fileChooser.setCurrentDirectory(new File(filePath));
             }
-            fileChooser.setCurrentDirectory(new File(filePath));
+            if (className != null) {
+                String defaultFileName = className.endsWith(".java") ? className : className + ".java";
+                fileChooser.setSelectedFile(new File(defaultFileName));
+            }
+        } else {
+            if (project != null) {
+                String filePath = project.getProjectDirectory().getPath();
+                if (isSuitableForWebAppDirectory(mimeType)) {
+                    filePath = Paths.get(filePath, "src/main/webapp").toString();
+                }
+                fileChooser.setCurrentDirectory(new File(filePath));
+            }
+            String fileExtension = getExtension(mimeType);
+            if (fileExtension != null) {
+                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(convertToCapitalized(fileExtension) + " Files", fileExtension));
+            }
         }
-        if (className != null) {
-            String defaultFileName = className.endsWith(".java") ? className : className + ".java";
-            fileChooser.setSelectedFile(new File(defaultFileName));
-        }
+        
+
         // Show the save dialog
         int userSelection = fileChooser.showSaveDialog(null);
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
-            if (!file.getName().endsWith(".java")) {
-                file = new File(file.getAbsolutePath() + ".java"); // Ensure file has .java extension
+            String fileExtension = getExtension(mimeType);
+            if (!file.getName().endsWith("." + fileExtension)) {
+                file = new File(file.getAbsolutePath() + "." + fileExtension);
             }
 
             try (FileWriter writer = new FileWriter(file)) {
@@ -271,7 +291,7 @@ public class AssistantTopComponent extends TopComponent {
         StringBuilder allText = new StringBuilder();
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
-                if (editorPane.getEditorKit().getContentType().equals("text/x-" + type)) {
+                if (!(editorPane.getEditorKit() instanceof javax.swing.text.html.HTMLEditorKit)) {
                     allText.append("\n");
                     allText.append(editorPane.getText());
                     allText.append("\n");
@@ -287,7 +307,7 @@ public class AssistantTopComponent extends TopComponent {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
                 if (!editorPane.getEditorKit().getContentType().equals("text/html") 
                         && editorPane.getEditorKit().getContentType().startsWith("text")) {
-                    allText.append("<pre><code class=\"").append(type).append("\">");
+                    allText.append("<pre><code>");
                     allText.append(editorPane.getText());
                     allText.append("</code></pre>");
                 } else {
@@ -303,24 +323,24 @@ public class AssistantTopComponent extends TopComponent {
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane) {
                 JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
-                if (editorPane.getEditorKit().getContentType().equals("text/x-" + type)) {
+                if (!editorPane.getEditorKit().getContentType().equals("text/html") 
+                        && editorPane.getEditorKit().getContentType().startsWith("text")) {
                     count++;
                 }
             }
         }
         return count;
     }
-    
-        public int getAllEditorCount() {
+
+    public int getAllEditorCount() {
         int count = 0;
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane) {
-                    count++;
+                count++;
             }
         }
         return count;
     }
-
 
     private HTMLEditorKit getHTMLEditorKit() {
         if (htmlEditorKit != null) {
@@ -401,7 +421,7 @@ public class AssistantTopComponent extends TopComponent {
         styleSheet.addRule("pre { display: block; font-size: 87.5%; color: #212529; }");
         styleSheet.addRule("pre code { font-size: inherit; color: inherit; word-break: normal; }");
         styleSheet.addRule("strong { font-weight: bold; }");
-
+    
         return htmlEditorKit;
     }
 

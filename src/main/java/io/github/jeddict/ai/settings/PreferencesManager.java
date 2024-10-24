@@ -107,7 +107,7 @@ public class PreferencesManager {
 
         return apiKey;
     }
-    
+
     public void setProviderLocation(String providerLocation) {
         preferences.put(getModel() + PROVIDER_LOCATION_PREFERENCES, providerLocation);
     }
@@ -153,7 +153,7 @@ public class PreferencesManager {
     public void setClassContext(AIClassContext context) {
         preferences.put("classContext", context != null ? context.name() : null);
     }
-    
+
     public AIClassContext getVarContext() {
         String classContext = preferences.get("varContext", null);
         if (classContext != null) {
@@ -171,7 +171,7 @@ public class PreferencesManager {
     }
 
     public String getModel() {
-       return preferences.get(MODEL_PREFERENCE, DEFAULT_MODEL);
+        return preferences.get(MODEL_PREFERENCE, DEFAULT_MODEL);
     }
 
     public void setModel(String model) {
@@ -219,7 +219,7 @@ public class PreferencesManager {
     public void setDescriptionEnabled(boolean enabled) {
         preferences.putBoolean("showDecription", enabled);
     }
-    
+
     public boolean isExcludeJavadocEnabled() {
         return preferences.getBoolean("excludeJavadoc", true);
     }
@@ -227,7 +227,7 @@ public class PreferencesManager {
     public void setExcludeJavadocEnabled(boolean enabled) {
         preferences.putBoolean("excludeJavadoc", enabled);
     }
-    
+
     private final List<String> DEFAULT_ACCEPTED_EXTENSIONS = Arrays.asList(
             "java", "php", "jsf", "kt", "groovy", "scala", "xml", "json", "yaml", "yml",
             "properties", "txt", "md", "js", "ts", "css", "scss", "html", "xhtml", "sh",
@@ -245,12 +245,38 @@ public class PreferencesManager {
             acceptedExtensions = Arrays.asList(getFileExtensionToInclude().split("\\s*,\\s*"));
         }
     }
-    
+
     public List<String> getFileExtensionListToInclude() {
         if (acceptedExtensions.isEmpty()) {
             acceptedExtensions = Arrays.asList(getFileExtensionToInclude().split("\\s*,\\s*"));
         }
         return acceptedExtensions;
+    }
+
+    private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
+            "src/test/java", "src/test/resources", 
+            "src/main/resources", "src/main/webapp",
+            "target", "build",
+            "nb-configurations.xml"," "
+    );
+    private List<String> excludeDir = Collections.EMPTY_LIST;
+
+    public String getExcludeDirs() {
+        return preferences.get("excludeDirs", String.join(", ", EXCLUDE_DIR_DEFAULT));
+    }
+
+    public void setExcludeDirs(String dirs) {
+        if (dirs != null && !dirs.isEmpty()) {
+            preferences.put("excludeDirs", dirs);
+            excludeDir = Arrays.asList(getExcludeDirs().split("\\s*,\\s*", -1));
+        }
+    }
+
+    public List<String> getExcludeDirList() {
+        if (excludeDir.isEmpty()) {
+            excludeDir = Arrays.asList(getExcludeDirs().split("\\s*,\\s*", -1));
+        }
+        return excludeDir;
     }
 
     public String getTestCasePrompt() {
@@ -262,5 +288,5 @@ public class PreferencesManager {
             preferences.put("testCasePrompt", prompt);
         }
     }
-    
+
 }

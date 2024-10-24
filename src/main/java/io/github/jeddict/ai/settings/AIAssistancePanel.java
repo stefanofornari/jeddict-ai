@@ -29,11 +29,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
 import static io.github.jeddict.ai.settings.GenAIModel.MODELS;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import org.openide.util.NbBundle;
 
 final class AIAssistancePanel extends javax.swing.JPanel {
 
@@ -81,11 +89,14 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         excludeJavadocCommentsPane = new javax.swing.JLayeredPane();
         excludeJavadocCommentsCheckBox = new javax.swing.JCheckBox();
         askAIPane = new javax.swing.JLayeredPane();
-        filterationPane = new javax.swing.JLayeredPane();
-        jLayeredPane12 = new javax.swing.JLayeredPane();
+        fileFilterationPane = new javax.swing.JLayeredPane();
         fileExtLabel = new javax.swing.JLabel();
-        classContextHelp1 = new javax.swing.JLabel();
-        fileExtField = new javax.swing.JTextField();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        fileExtField = new javax.swing.JTextArea();
+        jLabel1 = new javax.swing.JLabel();
+        jLayeredPane2 = new javax.swing.JLayeredPane();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        excludeDirTable = new javax.swing.JTable();
         inlineCompletionPane = new javax.swing.JLayeredPane();
         classContextPane = new javax.swing.JLayeredPane();
         classContextLabelPane = new javax.swing.JLayeredPane();
@@ -241,30 +252,62 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providersPane.TabConstraints.tabTitle"), providersPane); // NOI18N
 
-        askAIPane.setLayout(new java.awt.GridLayout(4, 1));
+        askAIPane.setLayout(new javax.swing.BoxLayout(askAIPane, javax.swing.BoxLayout.Y_AXIS));
 
-        filterationPane.setPreferredSize(new java.awt.Dimension(125, 75));
-        filterationPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
+        fileFilterationPane.setMinimumSize(new java.awt.Dimension(130, 40));
+        fileFilterationPane.setPreferredSize(new java.awt.Dimension(125, 200));
 
-        jLayeredPane12.setPreferredSize(new java.awt.Dimension(125, 40));
-        jLayeredPane12.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 5));
-
-        fileExtLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        fileExtLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         org.openide.awt.Mnemonics.setLocalizedText(fileExtLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.fileExtLabel.text")); // NOI18N
-        jLayeredPane12.add(fileExtLabel);
+        fileExtLabel.setVerticalAlignment(javax.swing.SwingConstants.BOTTOM);
+        fileExtLabel.setMinimumSize(new java.awt.Dimension(122, 10));
+        fileExtLabel.setPreferredSize(new java.awt.Dimension(122, 20));
 
-        classContextHelp1.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
-        classContextHelp1.setForeground(new java.awt.Color(100, 100, 100));
-        classContextHelp1.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        org.openide.awt.Mnemonics.setLocalizedText(classContextHelp1, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextHelp1.text")); // NOI18N
-        jLayeredPane12.add(classContextHelp1);
-
-        filterationPane.add(jLayeredPane12);
-
+        fileExtField.setColumns(20);
+        fileExtField.setRows(5);
         fileExtField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.fileExtField.text")); // NOI18N
-        filterationPane.add(fileExtField);
+        jScrollPane3.setViewportView(fileExtField);
 
-        askAIPane.add(filterationPane);
+        jLabel1.setForeground(new java.awt.Color(102, 102, 102));
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.jLabel1.text")); // NOI18N
+
+        fileFilterationPane.setLayer(fileExtLabel, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        fileFilterationPane.setLayer(jScrollPane3, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        fileFilterationPane.setLayer(jLabel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        javax.swing.GroupLayout fileFilterationPaneLayout = new javax.swing.GroupLayout(fileFilterationPane);
+        fileFilterationPane.setLayout(fileFilterationPaneLayout);
+        fileFilterationPaneLayout.setHorizontalGroup(
+            fileFilterationPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE)
+            .addGroup(fileFilterationPaneLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(fileExtLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        fileFilterationPaneLayout.setVerticalGroup(
+            fileFilterationPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(fileFilterationPaneLayout.createSequentialGroup()
+                .addGroup(fileFilterationPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(fileExtLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
+        askAIPane.add(fileFilterationPane);
+
+        jLayeredPane2.setLayout(new java.awt.GridLayout(1, 2, 5, 0));
+
+        excludeDirTable.setModel(getExcludeTableModel());
+        jScrollPane2.setViewportView(excludeDirTable);
+
+        jLayeredPane2.add(jScrollPane2);
+
+        askAIPane.add(jLayeredPane2);
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.askAIPane.TabConstraints.tabTitle"), askAIPane); // NOI18N
 
@@ -378,14 +421,14 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 621, Short.MAX_VALUE)
+                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 543, Short.MAX_VALUE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 68, Short.MAX_VALUE))
+                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 344, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(80, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -647,6 +690,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setSmartCodeEnabled(enableSmartCodeCheckBox.isSelected());
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
         preferencesManager.setFileExtensionToInclude(fileExtField.getText());
+        preferencesManager.setExcludeDirs(getCommaSeparatedValues(excludeTableModel));
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
         preferencesManager.setTestCasePrompt(testPromptField.getText());
 
@@ -669,6 +713,73 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
     }
 
+    private DefaultTableModel excludeTableModel;
+    private DefaultTableModel getExcludeTableModel() {
+        excludeDirTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        List<String> excludeDirList = preferencesManager.getExcludeDirList();
+        Object[][] excludeDirArray = new Object[excludeDirList.size()][1];
+
+        for (int i = 0; i < excludeDirList.size(); i++) {
+            excludeDirArray[i][0] = excludeDirList.get(i);
+        }
+        excludeTableModel = new DefaultTableModel(
+                excludeDirArray,
+                new String[]{
+                   NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeDir.text")
+                }
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return true;
+            }
+
+            @Override
+            public void setValueAt(Object aValue, int row, int column) {
+                super.setValueAt(aValue, row, column);
+                if (row == getRowCount() - 1 && !aValue.toString().isEmpty()) {
+                    addRow(new Object[]{""});
+                }
+            }
+        };
+        return excludeTableModel;
+    }
+    
+    private String getCommaSeparatedValues(DefaultTableModel model) {
+        StringBuilder sb = new StringBuilder();
+        int rowCount = model.getRowCount();
+
+        for (int i = 0; i < rowCount; i++) {
+            Object value = model.getValueAt(i, 0); // Get the value from the first column
+            if (value != null) {
+                sb.append(value.toString());
+                sb.append(", "); // Append a comma and space except for the last element
+            }
+        }
+
+        return sb.toString();
+    }
+    
+       static class CustomTableCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            // Get the default component
+            Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            // Set the custom border color
+            if (cell instanceof JComponent) {
+                JComponent jComponent = (JComponent) cell;
+
+                // Set a border with a custom color
+                jComponent.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,  new Color(225, 225, 225)));  // Red border as an example
+            }
+
+            // Return the cell component
+            return cell;
+        }
+    }
+    
+
     boolean valid() {
         return true;
     }
@@ -686,7 +797,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane cachePane;
     private javax.swing.JComboBox<AIClassContext> classContextComboBox;
     private javax.swing.JLabel classContextHelp;
-    private javax.swing.JLabel classContextHelp1;
     private javax.swing.JLabel classContextLabel;
     private javax.swing.JLayeredPane classContextLabelPane;
     private javax.swing.JLayeredPane classContextLabelPane1;
@@ -694,16 +804,20 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JButton cleanDataButton;
     private javax.swing.JCheckBox enableHintCheckBox;
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
+    private javax.swing.JTable excludeDirTable;
     private javax.swing.JCheckBox excludeJavadocCommentsCheckBox;
     private javax.swing.JLayeredPane excludeJavadocCommentsPane;
-    private javax.swing.JTextField fileExtField;
+    private javax.swing.JTextArea fileExtField;
     private javax.swing.JLabel fileExtLabel;
-    private javax.swing.JLayeredPane filterationPane;
+    private javax.swing.JLayeredPane fileFilterationPane;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
     private javax.swing.JLayeredPane hintPane;
     private javax.swing.JLayeredPane inlineCompletionPane;
-    private javax.swing.JLayeredPane jLayeredPane12;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLayeredPane jLayeredPane2;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLayeredPane modelChildPane;
     private javax.swing.JComboBox<String> modelComboBox;

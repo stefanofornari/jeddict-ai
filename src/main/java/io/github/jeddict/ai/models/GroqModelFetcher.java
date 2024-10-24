@@ -42,7 +42,7 @@ public class GroqModelFetcher {
         return API_URL;
     }
 
-    public static List<String> fetchModels(String baseUrl, String token) {
+    public List<String> fetchModels(String baseUrl, String token) {
         if (baseUrl == null || baseUrl.isEmpty() || token == null || token.isEmpty()) {
             return Collections.EMPTY_LIST;
         }
