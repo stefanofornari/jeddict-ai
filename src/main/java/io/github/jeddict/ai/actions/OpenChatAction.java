@@ -1,17 +1,6 @@
 /*
- * Copyright 2019 Eric VILLARD <dev@eviweb.fr>.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package io.github.jeddict.ai.actions;
 
@@ -30,47 +19,59 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.text.NbDocument;
 import org.openide.util.Exceptions;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.NbBundle.Messages;
 
 /**
- * Base class for ChatAction implementations
  *
  * @author Shiwani Gupta
  */
-abstract class ChatAction implements ActionListener {
+@ActionID(
+        category = "Chat/SubActions",
+        id = "io.github.jeddict.ai.actions.OpenChatAction"
+)
+@ActionRegistration(
+        displayName = "#CTL_OpenChatAction"
+)
+@Messages("CTL_OpenChatAction=Open in Chat")
+public class OpenChatAction implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+
+        LearnFix learnFix;
         JTextComponent editor = EditorRegistry.lastFocusedComponent();
         String selectedText = editor.getSelectedText();
         final StyledDocument document = (StyledDocument) editor.getDocument();
+
+        FileObject file = getFileObject(document);
         int selectionStartPosition = editor.getSelectionStart();
         if (selectedText == null || selectedText.isEmpty()) {
-            try {
-                selectionStartPosition = 0;
-                selectedText = document.getText(selectionStartPosition, document.getLength());
-            } catch (BadLocationException ex) {
-                Exceptions.printStackTrace(ex);
-            }
+            selectionStartPosition = -1;
+            selectedText = "";
+            learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, file);
+        } else {
+            learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY);
         }
         final String text = selectedText;
         final int startLocation = selectionStartPosition;
-        FileObject file = getFileObject(document);
-        Project project = getProject(file);
-        LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, project);
         learnFix.openChat(null, selectedText, file.getName(), "Chat with AI", content -> {
             NbDocument.runAtomic(document, () -> {
-                try {
-                    document.remove(startLocation, text.length());
-                    document.insertString(startLocation, content, null);
-                    Reformat reformat = Reformat.get(document);
-                    reformat.lock();
+                if (!text.isEmpty()) {
                     try {
-                        reformat.reformat(startLocation, startLocation + content.length());
-                    } finally {
-                        reformat.unlock();
+                        document.remove(startLocation, text.length());
+                        document.insertString(startLocation, content, null);
+                        Reformat reformat = Reformat.get(document);
+                        reformat.lock();
+                        try {
+                            reformat.reformat(startLocation, startLocation + content.length());
+                        } finally {
+                            reformat.unlock();
+                        }
+                    } catch (BadLocationException ex) {
+                        Exceptions.printStackTrace(ex);
                     }
-                } catch (BadLocationException ex) {
-                    Exceptions.printStackTrace(ex);
                 }
             });
         });

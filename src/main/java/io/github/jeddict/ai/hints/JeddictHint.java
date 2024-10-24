@@ -34,6 +34,8 @@ import com.sun.source.util.Trees;
 import io.github.jeddict.ai.JeddictChatModel;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.settings.PreferencesManager;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
 import javax.lang.model.element.Element;
@@ -72,7 +74,6 @@ public class JeddictHint {
 
     public JeddictHint() {
     }
-
     @TriggerTreeKind({Tree.Kind.CLASS, Tree.Kind.INTERFACE, Tree.Kind.METHOD, Tree.Kind.VARIABLE,
         Tree.Kind.BLOCK,
         Tree.Kind.STRING_LITERAL,
@@ -93,109 +94,104 @@ public class JeddictHint {
             return null;
         }
 
-        Fix[] fixes = new Fix[20];
+        List<Fix> fixes = new ArrayList<>(); // Define fixes as List
         TreePathHandle tpHandle = TreePathHandle.create(treePath, compilationInfo);
 
         Tree.Kind kind = treePath.getLeaf().getKind();
         DocCommentTree oldDocCommentTree = ((DocTrees) compilationInfo.getTrees()).getDocCommentTree(treePath);
-        int i = 0;
 
         switch (kind) {
             case CLASS:
             case INTERFACE:
                 TypeElement type = (TypeElement) compilationInfo.getTrees().getElement(treePath);
                 ElementHandle<TypeElement> elementHandle = ElementHandle.create(type);
-                fixes[i++] = new JavaDocFixImpl(tpHandle, Action.CREATE, elementHandle).toEditorFix();
+                fixes.add(new JavaDocFixImpl(tpHandle, Action.CREATE, elementHandle).toEditorFix());
                 if (oldDocCommentTree != null) {
-                    fixes[i++] = new JavaDocFixImpl(tpHandle, Action.ENHANCE, elementHandle).toEditorFix();
+                    fixes.add(new JavaDocFixImpl(tpHandle, Action.ENHANCE, elementHandle).toEditorFix());
                 }
                 if (type.getAnnotationMirrors().stream().anyMatch(a -> a.getAnnotationType().toString().equals("jakarta.ws.rs.Path"))) {
-                    fixes[i++] = new RestEndpointFix(tpHandle, Action.CREATE, elementHandle).toEditorFix();
+                    fixes.add(new RestEndpointFix(tpHandle, Action.CREATE, elementHandle).toEditorFix());
                 }
-                fixes[i++] = new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix();
-                fixes[i++] = new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix();
-                fixes[i++] = new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix();
+                fixes.add(new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix());
+                fixes.add(new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix());
+                fixes.add(new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix());
                 break;
 //            case IDENTIFIER:
 //            case BLOCK:
             case STRING_LITERAL:
                 if (treePath.getLeaf() != null) {
                     tpHandle = TreePathHandle.create(treePath, compilationInfo);
-                    fixes[i++] = new TextFix(tpHandle, Action.CREATE, treePath).toEditorFix();
-                    fixes[i++] = new TextFix(tpHandle, Action.ENHANCE, treePath).toEditorFix();
+                    fixes.add(new TextFix(tpHandle, Action.CREATE, treePath).toEditorFix());
+                    fixes.add(new TextFix(tpHandle, Action.ENHANCE, treePath).toEditorFix());
                 }
                 break;
 //            case EMPTY_STATEMENT:
             case EXPRESSION_STATEMENT:
-
                 if (treePath.getLeaf() != null) {
                     tpHandle = TreePathHandle.create(treePath, compilationInfo);
-                    fixes[i++] = new ExpressionFix(tpHandle, Action.ENHANCE, treePath).toEditorFix();
+                    fixes.add(new ExpressionFix(tpHandle, Action.ENHANCE, treePath).toEditorFix());
                 }
-
                 break;
             case METHOD:
-
                 Element methodElement = compilationInfo.getTrees().getElement(treePath);
                 if (methodElement != null && methodElement.getKind() == ElementKind.METHOD) {
                     ElementHandle<ExecutableElement> methodHandle = ElementHandle.create((ExecutableElement) methodElement);
                     tpHandle = TreePathHandle.create(treePath, compilationInfo);
-                    fixes[i++] = new JavaDocFixImpl(tpHandle, Action.CREATE, methodHandle).toEditorFix();
+                    fixes.add(new JavaDocFixImpl(tpHandle, Action.CREATE, methodHandle).toEditorFix());
                     if (oldDocCommentTree != null) {
-                        fixes[i++] = new JavaDocFixImpl(tpHandle, Action.ENHANCE, methodHandle).toEditorFix();
+                        fixes.add(new JavaDocFixImpl(tpHandle, Action.ENHANCE, methodHandle).toEditorFix());
                     }
-                    fixes[i++] = new MethodFix(tpHandle, Action.CREATE, methodHandle).toEditorFix(); // query
-                    fixes[i++] = new MethodFix(tpHandle, Action.ENHANCE, methodHandle).toEditorFix();
+                    fixes.add(new MethodFix(tpHandle, Action.CREATE, methodHandle).toEditorFix());
+                    fixes.add(new MethodFix(tpHandle, Action.ENHANCE, methodHandle).toEditorFix());
                     for (Diagnostic<?> d : ctx.getInfo().getDiagnostics()) {
                         if (isDiagnosticRelatedToMethod(d, compilationInfo, treePath.getLeaf())) {
                             if (d.getKind() == Diagnostic.Kind.ERROR) {
-                                fixes[i++] = new MethodFix(tpHandle,
+                                fixes.add(new MethodFix(tpHandle,
                                         (d.getMessage(Locale.getDefault()) + '\n' + d.toString()),
-                                        "Line:" + d.getLineNumber() + " " + d.getMessage(Locale.getDefault())).toEditorFix();
+                                        "Line:" + d.getLineNumber() + " " + d.getMessage(Locale.getDefault())).toEditorFix());
                             } else {
-                                fixes[i++] = new MethodFix(tpHandle,
+                                fixes.add(new MethodFix(tpHandle,
                                         (d.getMessage(Locale.getDefault()) + '\n' + d.toString()),
-                                        "Line:" + d.getLineNumber() + " WARNING: " + d.getMessage(Locale.getDefault())).toEditorFix();
+                                        "Line:" + d.getLineNumber() + " WARNING: " + d.getMessage(Locale.getDefault())).toEditorFix());
                             }
                         }
                     }
-                    fixes[i++] = new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix();
-                    fixes[i++] = new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix();
-                    fixes[i++] = new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix();
+                    fixes.add(new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix());
+                    fixes.add(new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix());
+                    fixes.add(new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix());
                 }
                 break;
-
             case VARIABLE:
                 Element fieldElement = compilationInfo.getTrees().getElement(treePath);
                 if (fieldElement != null && fieldElement.getKind() == ElementKind.FIELD) {
                     ElementHandle<VariableElement> fieldHandle = ElementHandle.create((VariableElement) fieldElement);
                     tpHandle = TreePathHandle.create(treePath, compilationInfo);
-                    fixes[i++] = new JavaDocFixImpl(tpHandle, Action.CREATE, fieldHandle).toEditorFix();
+                    fixes.add(new JavaDocFixImpl(tpHandle, Action.CREATE, fieldHandle).toEditorFix());
                     if (oldDocCommentTree != null) {
-                        fixes[i++] = new JavaDocFixImpl(tpHandle, Action.ENHANCE, fieldHandle).toEditorFix();
+                        fixes.add(new JavaDocFixImpl(tpHandle, Action.ENHANCE, fieldHandle).toEditorFix());
                     }
                 }
-                fixes[i++] = new VariableNameFix(tpHandle, Action.ENHANCE, treePath).toEditorFix();
+                fixes.add(new VariableNameFix(tpHandle, Action.ENHANCE, treePath).toEditorFix());
                 for (Diagnostic<?> d : ctx.getInfo().getDiagnostics()) {
                     if (isDiagnosticRelatedToVariable(d, compilationInfo, treePath.getLeaf())) {
                         if (d.getKind() == Diagnostic.Kind.ERROR) {
-                            fixes[i++] = new VariableFix(tpHandle,
+                            fixes.add(new VariableFix(tpHandle,
                                     (d.getMessage(Locale.getDefault()) + '\n' + d.toString()),
-                                    "Line:" + d.getLineNumber() + " " + d.getMessage(Locale.getDefault())).toEditorFix();
+                                    "Line:" + d.getLineNumber() + " " + d.getMessage(Locale.getDefault())).toEditorFix());
                         } else {
-                            fixes[i++] = new VariableFix(tpHandle,
+                            fixes.add(new VariableFix(tpHandle,
                                     (d.getMessage(Locale.getDefault()) + '\n' + d.toString()),
-                                    "Line:" + d.getLineNumber() + " WARNING: " + d.getMessage(Locale.getDefault())).toEditorFix();
+                                    "Line:" + d.getLineNumber() + " WARNING: " + d.getMessage(Locale.getDefault())).toEditorFix());
                         }
                     }
                 }
                 break;
-
             default:
                 return null;
         }
+        Fix[] fixesArray = fixes.toArray(new Fix[0]); // Convert to array
         String desc = NbBundle.getMessage(JeddictChatModel.class, "ERR_HINT"); //NOI18N
-        return ErrorDescriptionFactory.forTree(ctx, ctx.getPath(), desc, fixes); //NOI18N
+        return ErrorDescriptionFactory.forTree(ctx, ctx.getPath(), desc, fixesArray); //NOI18N
     }
 
     private static boolean isDiagnosticRelatedToMethod(Diagnostic<?> diagnostic, CompilationInfo compilationInfo, Tree methodElement) {

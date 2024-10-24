@@ -501,21 +501,25 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     String line = getLineText(doc, caretOffset);
                     String lineTextBeforeCaret = getLineTextBeforeCaret(doc, caretOffset);
                     FileObject fileObject = getFileObjectFromEditor(doc);
-                    if (fileObject == null) {
-                        resultSet.finish();
-                        return;
-                    }
-                    SQLEditorSupport sQLEditorSupport = fileObject.getLookup().lookup(SQLEditorSupport.class);
-                    if (sQLEditorSupport != null) {
-                        SQLCompletion sqlCompletion = new SQLCompletion(sQLEditorSupport);
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_SQL_QUERY_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestSQLQuery(sqlCompletion.getMetaData(), updateddoc);
-                        for (Snippet varName : sugs) {
-                            resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                    if (fileObject != null) {
+                        SQLEditorSupport sQLEditorSupport = fileObject.getLookup().lookup(SQLEditorSupport.class);
+                        if (sQLEditorSupport != null) {
+                            SQLCompletion sqlCompletion = new SQLCompletion(sQLEditorSupport);
+                            String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_SQL_QUERY_LIST}");
+                            List<Snippet> sugs = getJeddictChatModel(fileObject).suggestSQLQuery(sqlCompletion.getMetaData(), updateddoc);
+                            for (Snippet varName : sugs) {
+                                resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                            }
+                        } else {
+                            String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
+                            List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(updateddoc, line, mimeType);
+                            for (Snippet varName : sugs) {
+                                resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                            }
                         }
                     } else {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(updateddoc, line, mimeType);
+                        List<Snippet> sugs = getJeddictChatModel(null).suggestNextLineCode(updateddoc, line, mimeType);
                         for (Snippet varName : sugs) {
                             resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
                         }

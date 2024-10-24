@@ -30,13 +30,12 @@ import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.JeddictChatModel;
 import io.github.jeddict.ai.completion.SQLCompletion;
 import io.github.jeddict.ai.components.AssistantTopComponent;
+import static io.github.jeddict.ai.components.AssistantTopComponent.attachIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.backIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.copyIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.createEditorKit;
 import static io.github.jeddict.ai.components.AssistantTopComponent.forwardIcon;
-import static io.github.jeddict.ai.components.AssistantTopComponent.newEditor;
-import static io.github.jeddict.ai.components.AssistantTopComponent.progressIcon;
-import static io.github.jeddict.ai.components.AssistantTopComponent.saveToEditor;
+import static io.github.jeddict.ai.components.AssistantTopComponent.logoIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.saveasIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.startIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.upIcon;
@@ -50,10 +49,6 @@ import java.awt.Desktop;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -61,7 +56,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
@@ -91,14 +85,32 @@ import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.event.CaretEvent;
-import javax.swing.event.CaretListener;
+import static io.github.jeddict.ai.components.AssistantTopComponent.newEditorIcon;
+import static io.github.jeddict.ai.components.AssistantTopComponent.progressIcon;
+import static io.github.jeddict.ai.components.AssistantTopComponent.saveToEditorIcon;
+import io.github.jeddict.ai.util.EditorUtil;
+import io.github.jeddict.ai.util.HtmlEscapeUtil;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionListener;
+import java.net.URI;
+import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.swing.JDialog;
+import javax.swing.JTable;
+import javax.swing.table.TableColumn;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 
 /**
  *
  * @author Shiwani Gupta
  */
 public class LearnFix extends JavaFix {
+
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private TreePath treePath;
     private final Action action;
@@ -109,10 +121,24 @@ public class LearnFix extends JavaFix {
     private int currentResponseIndex = -1;
     private String javaCode = null;
     private Project project;
-    private String projectContent;
+    private Collection<? extends FileObject> selectedFileObjects;
+    private FileObject selectedFileObject;
+    private FileObject fileObject;
     private String commitChanges;
     private PreferencesManager pm = PreferencesManager.getInstance();
     private Tree leaf;
+
+    private Project getProject() {
+        if (project != null) {
+            return project;
+        } else if (selectedFileObjects != null && !selectedFileObjects.isEmpty()) {
+            return FileOwnerQuery.getOwner(selectedFileObjects.toArray(FileObject[]::new)[0]);
+        } else if (fileObject != null) {
+            return FileOwnerQuery.getOwner(fileObject);
+        } else {
+            return null;
+        }
+    }
 
     public LearnFix(TreePathHandle tpHandle, Action action, TreePath treePath) {
         super(tpHandle);
@@ -137,6 +163,18 @@ public class LearnFix extends JavaFix {
         this.project = project;
     }
 
+    public LearnFix(Action action, Collection<? extends FileObject> selectedFileObjects) {
+        super(null);
+        this.action = action;
+        this.selectedFileObjects = selectedFileObjects;
+    }
+
+    public LearnFix(Action action, FileObject selectedFileObject) {
+        super(null);
+        this.action = action;
+        this.selectedFileObject = selectedFileObject;
+    }
+
     @Override
     protected String getText() {
         if (action == Action.LEARN) {
@@ -159,56 +197,55 @@ public class LearnFix extends JavaFix {
             return;
         }
         leaf = tc.getPath().getLeaf();
-        String fileName = null;
-        FileObject fileObject = copy.getFileObject();
-        if (fileObject != null) {
-            fileName = fileObject.getName();
-            this.project = FileOwnerQuery.getOwner(fileObject);
-        }
+        this.fileObject = copy.getFileObject();
 
         if (leaf.getKind() == CLASS
                 || leaf.getKind() == INTERFACE
                 || leaf.getKind() == ENUM
                 || leaf.getKind() == METHOD) {
-            String response;
-            if (action == Action.QUERY) {
-                String query = askQuery();
-                if (query == null) {
-                    return;
-                }
-                response = new JeddictChatModel().generateHtmlDescription(null, treePath.getCompilationUnit().toString(), null, null, query);
-            } else if (action == Action.TEST) {
-                if (leaf instanceof MethodTree) {
-                    response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), null, null);
+            executorService.submit(() -> {
+                String response;
+                String fileName = fileObject != null ? fileObject.getName() : null;
+                if (action == Action.QUERY) {
+                    String query = askQuery();
+                    if (query == null) {
+                        return;
+                    }
+                    response = new JeddictChatModel().generateDescription(null, treePath.getCompilationUnit().toString(), null, null, query);
+                } else if (action == Action.TEST) {
+                    if (leaf instanceof MethodTree) {
+                        response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), null, null);
+                    } else {
+                        response = new JeddictChatModel().generateTestCase(null, treePath.getCompilationUnit().toString(), null, null, null);
+                    }
                 } else {
-                    response = new JeddictChatModel().generateTestCase(null, treePath.getCompilationUnit().toString(), null, null, null);
+                    if (leaf instanceof MethodTree) {
+                        response = new JeddictChatModel().assistJavaMethod(leaf.toString());
+                    } else {
+                        response = new JeddictChatModel().assistJavaClass(treePath.getCompilationUnit().toString());
+                    }
                 }
-            } else {
+                String name;
                 if (leaf instanceof MethodTree) {
-                    response = new JeddictChatModel().generateHtmlDescriptionForMethod(leaf.toString());
+                    name = ((MethodTree) leaf).getName().toString();
                 } else {
-                    response = new JeddictChatModel().generateHtmlDescriptionForClass(treePath.getCompilationUnit().toString());
-                }
-            }
-            String name;
-            if (leaf instanceof MethodTree) {
-                name = ((MethodTree) leaf).getName().toString();
-            } else {
-                name = ((ClassTree) leaf).getSimpleName().toString();
+                    name = ((ClassTree) leaf).getSimpleName().toString();
 
-            }
-            displayHtmlContent(removeCodeBlockMarkers(response), fileName, name + " AI Assistance");
+                }
+                SwingUtilities.invokeLater(() -> {
+                    displayHtmlContent(removeCodeBlockMarkers(response), fileName, name + " AI Assistant");
+                });
+            });
         }
     }
 
-    public void askQueryForProject(Project project, String userQuery) {
+    private List<FileObject> getProjectContextList() {
+        return getSourceFiles(project);
+    }
 
-        ProjectInformation info = ProjectUtils.getInformation(project);
-        String projectName = info.getDisplayName();
-        List<FileObject> sourceFiles = getSourceFiles(project);
-
+    private String getProjectContext() {
         StringBuilder inputForAI = new StringBuilder();
-        for (FileObject file : sourceFiles) {
+        for (FileObject file : getProjectContextList()) {
             try {
                 if (pm.getFileExtensionListToInclude().contains(file.getExt())) {
                     String text = file.asText();
@@ -223,9 +260,54 @@ public class LearnFix extends JavaFix {
             }
         }
 
-        projectContent = inputForAI.toString();
-        String response = new JeddictChatModel().generateHtmlDescriptionForProject(projectContent, userQuery);
-        displayHtmlContent(removeCodeBlockMarkers(response), null, projectName + " Project GenAI");
+        return inputForAI.toString();
+    }
+
+    public String getFilesContext() {
+        StringBuilder inputForAI = new StringBuilder();
+        for (FileObject file : getFilesContextList()) {
+            try {
+                String text = file.asText();
+                if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                    text = removeJavadoc(text);
+                }
+                inputForAI.append(text);
+                inputForAI.append("\n");
+            } catch (Exception ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        }
+        return inputForAI.toString();
+    }
+
+    public List<FileObject> getFilesContextList() {
+        List<FileObject> sourceFiles = selectedFileObjects.stream()
+                .filter(FileObject::isFolder)
+                .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
+                .filter(FileObject::isData)
+                .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt())))
+                .collect(Collectors.toList());
+
+        sourceFiles.addAll(selectedFileObjects.stream()
+                .filter(FileObject::isData)
+                .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
+                .collect(Collectors.toList()));
+        return sourceFiles;
+    }
+
+    public String getFileContext() {
+        StringBuilder inputForAI = new StringBuilder();
+        try {
+            String text = selectedFileObject.asText();
+            if ("java".equals(selectedFileObject.getExt()) && pm.isExcludeJavadocEnabled()) {
+                text = removeJavadoc(text);
+            }
+            inputForAI.append(text);
+            inputForAI.append("\n");
+        } catch (Exception ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return inputForAI.toString();
     }
 
     public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
@@ -236,79 +318,27 @@ public class LearnFix extends JavaFix {
         this.commitChanges = commitChanges;
     }
 
-    public void askQueryForPackage(Collection<? extends FileObject> selectedPackages, String userQuery) {
-        Iterator<? extends FileObject> selectedPackagesIterator = selectedPackages.iterator();
-        if (selectedPackagesIterator.hasNext()) {
-            this.project = FileOwnerQuery.getOwner(selectedPackagesIterator.next());
-            ProjectInformation info = ProjectUtils.getInformation(project);
-            String projectName = info.getDisplayName();
-
-            List<FileObject> sourceFiles = selectedPackages.stream()
-                    .filter(FileObject::isFolder)
-                    .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
-                    .filter(FileObject::isData)
-                    .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt())))
-                    .collect(Collectors.toList());
-
-            StringBuilder inputForAI = new StringBuilder();
-            for (FileObject file : sourceFiles) {
-                try {
-                    String text = file.asText();
-                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                        text = removeJavadoc(text);
-                    }
-                    inputForAI.append(text);
-                    inputForAI.append("\n");
-                } catch (Exception ex) {
-                    Exceptions.printStackTrace(ex);
-                }
-            }
-            projectContent = inputForAI.toString();
-            String response = new JeddictChatModel().generateHtmlDescriptionForProject(projectContent, userQuery);
-            displayHtmlContent(removeCodeBlockMarkers(response), null, projectName + " Package GenAI");
-        }
-    }
-
     public void displayHtmlContent(final String response, String filename, String title) {
         SwingUtilities.invokeLater(() -> {
-            try {
-                File tempFile = File.createTempFile("tempHtml", ".html");
-                tempFile.deleteOnExit();
-                try (FileWriter writer = new FileWriter(tempFile)) {
-                    writer.write(response);
+            Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
+            prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
+            topComponent = new AssistantTopComponent(title, null, getProject());
+            EditorUtil.updateEditors(topComponent, response);
+
+            JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
+            topComponent.add(scrollPane, BorderLayout.CENTER);
+
+            responseHistory.add(response);
+            currentResponseIndex = responseHistory.size() - 1;
+
+            topComponent.add(createBottomPanel(null, filename, title, null), BorderLayout.SOUTH);
+            topComponent.open();
+            topComponent.requestActive();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (topComponent != null) {
+                    topComponent.close();
                 }
-
-                Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
-                prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-                topComponent = new AssistantTopComponent(title, null, project);
-                updateEditor(response).addHyperlinkListener((HyperlinkEvent e) -> {
-                    if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-                        try {
-                            Desktop.getDesktop().browse(e.getURL().toURI());
-                        } catch (IOException | URISyntaxException ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                });
-
-                JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
-                topComponent.add(scrollPane, BorderLayout.CENTER);
-
-                responseHistory.add(response);
-                currentResponseIndex = responseHistory.size() - 1;
-
-                topComponent.add(createBottomPanel(null, filename, title, null), BorderLayout.SOUTH);
-                topComponent.open();
-                topComponent.requestActive();
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    if (topComponent != null) {
-                        topComponent.close();
-                    }
-                }));
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            }));
         });
     }
 
@@ -316,7 +346,7 @@ public class LearnFix extends JavaFix {
         SwingUtilities.invokeLater(() -> {
             Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
             prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-            topComponent = new AssistantTopComponent(title, type, project);
+            topComponent = new AssistantTopComponent(title, type, getProject());
             topComponent.setLayout(new BorderLayout());
             JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
             topComponent.add(scrollPane, BorderLayout.CENTER);
@@ -349,8 +379,8 @@ public class LearnFix extends JavaFix {
         // Ask Button with Icon (East)
         JButton submitButton = createButton(startIcon);
         submitButton.setToolTipText("Ask a question");
-        submitButton.setPreferredSize(buttonSize); // Set button size
-        submitButton.setMaximumSize(buttonSize);   // Avoid stretching
+        submitButton.setPreferredSize(buttonSize);
+        submitButton.setMaximumSize(buttonSize);
         eastButtonPanel.add(submitButton);
 
         int javaEditorCount = topComponent.getAllJavaEditorCount();
@@ -372,15 +402,14 @@ public class LearnFix extends JavaFix {
         eastButtonPanel.add(saveButton);
 
         // New Chat Button (East)
-        JButton saveToEditorButton = createButton(saveToEditor);
+        JButton saveToEditorButton = createButton(saveToEditorIcon);
         saveToEditorButton.setToolTipText("Update " + fileName);
         saveToEditorButton.setPreferredSize(buttonSize);
         saveToEditorButton.setMaximumSize(buttonSize);
         saveToEditorButton.setEnabled(fileName != null);
         eastButtonPanel.add(saveToEditorButton);
 
-        // Add eastButtonPanel in vertical layout to bottomPanel on the EAST side
-        gbc.gridx = 2;  // Positioning the button panel on the far right
+        gbc.gridx = 2;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.NORTHEAST;
         gbc.fill = GridBagConstraints.VERTICAL;
@@ -412,15 +441,26 @@ public class LearnFix extends JavaFix {
         openInBrowserButton.setEnabled(topComponent.getAllEditorCount() > 0);
         westButtonPanel.add(openInBrowserButton);
 
+        // Jeddict Button (West)
+        JButton jeddictButton = createButton(logoIcon);
+        jeddictButton.addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(new URI("https://jeddict.github.io/page.html?l=tutorial/AI"));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        westButtonPanel.add(jeddictButton);
+
         // New Chat Button (West)
-        JButton newChatButton = createButton(newEditor);
+        JButton newChatButton = createButton(newEditorIcon);
         newChatButton.setToolTipText("Start a new chat");
         newChatButton.setPreferredSize(buttonSize);
         newChatButton.setMaximumSize(buttonSize);
         westButtonPanel.add(newChatButton);
 
         // Add westButtonPanel in vertical layout to bottomPanel on the WEST side
-        gbc.gridx = 0;  // Positioning the button panel on the far left
+        gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.fill = GridBagConstraints.VERTICAL;
@@ -429,30 +469,23 @@ public class LearnFix extends JavaFix {
         // JEditorPane instead of JTextField
         questionPane = new JEditorPane();
         questionPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
-             questionPane.setText("Enter your question here..."); // Placeholder text
-        questionPane.setForeground(Color.GRAY); // Placeholder color
-
-        // Add caret listener to handle placeholder behavior
-        questionPane.addCaretListener(new CaretListener() {
-            @Override
-            public void caretUpdate(CaretEvent e) {
-                if (questionPane.getText().trim().isEmpty() || questionPane.getText().equals("Enter your question here...")) {
-                    questionPane.setForeground(Color.GRAY);
-                    questionPane.setText("Enter your question here...");
-                    questionPane.setCaretPosition(0); // Move caret to the beginning
-                } else {
-                    questionPane.setForeground(Color.BLACK); // Change text color
-                }
-            }
-        });
-        JScrollPane scrollPane = new JScrollPane(questionPane);  // Add scroll if needed
+        JScrollPane scrollPane = new JScrollPane(questionPane);
         scrollPane.setPreferredSize(new Dimension(500, 50));
-        gbc.gridx = 1;  // Positioning the editor in the middle
+        gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
         bottomPanel.add(scrollPane, gbc);
+
+        // Context Button (East)
+        JButton contextButton = createButton(attachIcon);
+        contextButton.setToolTipText("View detailed context of the current chat session.");
+        contextButton.addActionListener(e -> {
+            // Code to open popup with JTable
+            showFilePathPopup();
+        });
+        eastButtonPanel.add(contextButton);
 
         copyButton.addActionListener(e -> {
             StringSelection stringSelection = new StringSelection(topComponent.getAllJavaEditorText());
@@ -463,25 +496,25 @@ public class LearnFix extends JavaFix {
             topComponent.saveAs(topComponent.getAllJavaEditorText());
         });
         saveToEditorButton.addActionListener(e -> {
-            if(action != null) {
+            if (action != null) {
                 action.accept(topComponent.getAllJavaEditorText());
             }
         });
         newChatButton.addActionListener(e -> {
-           topComponent.clear();
-           topComponent.repaint();
-           responseHistory.clear();
-           currentResponseIndex = -1;
-           updateButtons(prevButton, nextButton);
+            topComponent.clear();
+            topComponent.repaint();
+            responseHistory.clear();
+            currentResponseIndex = -1;
+            updateButtons(prevButton, nextButton);
         });
 
         // Action for upButton
         openInBrowserButton.addActionListener(e -> {
             try {
-                File latestTempFile = File.createTempFile(title, ".html");
+                File latestTempFile = File.createTempFile("gen-ai", ".html");
                 latestTempFile.deleteOnExit();
                 try (FileWriter writer = new FileWriter(latestTempFile)) {
-                    writer.write(responseHistory.get(currentResponseIndex));
+                    writer.write(topComponent.getAllEditorText());
                 }
                 if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
                     Desktop.getDesktop().browse(latestTempFile.toURI());
@@ -507,7 +540,7 @@ public class LearnFix extends JavaFix {
             if (currentResponseIndex > 0) {
                 currentResponseIndex--;
                 String historyResponse = responseHistory.get(currentResponseIndex);
-                updateEditor(historyResponse);
+                EditorUtil.updateEditors(topComponent, historyResponse);
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -516,7 +549,7 @@ public class LearnFix extends JavaFix {
             if (currentResponseIndex < responseHistory.size() - 1) {
                 currentResponseIndex++;
                 String historyResponse = responseHistory.get(currentResponseIndex);
-                updateEditor(historyResponse);
+                EditorUtil.updateEditors(topComponent, historyResponse);
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -525,10 +558,52 @@ public class LearnFix extends JavaFix {
 
         return bottomPanel;
     }
-    
+
+    private void showFilePathPopup() {
+        List<FileObject> fileObjects;
+        String projectRootDir;
+        if (project != null) {
+            fileObjects = getProjectContextList();
+            projectRootDir = project.getProjectDirectory().getPath();
+        } else if (selectedFileObjects != null) {
+            fileObjects = getFilesContextList();
+            projectRootDir = FileOwnerQuery.getOwner(fileObjects.get(0)).getProjectDirectory().getPath();
+        } else if (selectedFileObject != null) {
+            fileObjects = Collections.singletonList(selectedFileObject);
+            projectRootDir = FileOwnerQuery.getOwner(selectedFileObject).getProjectDirectory().getPath();
+        } else {
+            fileObjects = Collections.EMPTY_LIST;
+            projectRootDir = "";
+        }
+        JDialog dialog = new JDialog();
+        dialog.setTitle("Context Paths");
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setSize(800, 800);
+        dialog.setLocationRelativeTo(SwingUtilities.windowForComponent(topComponent));
+
+        String[][] data = new String[fileObjects.size()][2];
+        for (int i = 0; i < fileObjects.size(); i++) {
+            FileObject fileObject = fileObjects.get(i);
+            String relativePath = fileObject.getPath().replaceFirst(projectRootDir + "/", "");
+            data[i][0] = fileObject.getName();
+            data[i][1] = relativePath;
+        }
+        String[] columnNames = {"File Name", "Path"};
+
+        JTable table = new JTable(data, columnNames);
+        TableColumn column1 = table.getColumnModel().getColumn(0);
+        TableColumn column2 = table.getColumnModel().getColumn(1);
+        column1.setPreferredWidth(200); // 25% width
+        column2.setPreferredWidth(600); // 75% width
+        table.setEnabled(false);
+        JScrollPane scrollPane = new JScrollPane(table);
+        dialog.add(scrollPane);
+        dialog.setVisible(true);
+    }
+
     private JButton createButton(ImageIcon icon) {
         JButton button = new JButton(icon);
-           // Set button preferred size to match the icon's size (24x24)
+        // Set button preferred size to match the icon's size (24x24)
         button.setPreferredSize(new Dimension(icon.getIconWidth(), icon.getIconHeight()));
 
         // Remove button text and focus painting for a cleaner look
@@ -556,28 +631,25 @@ public class LearnFix extends JavaFix {
         return button;
     }
 
-    private JEditorPane updateEditor(String response) {
-        JEditorPane editorPane = null;
-        response = response.replaceAll("<code(?!\\s*\\w+)[^>]*>(.*?)</code>", "<strong>$1</strong>");
-        response = response.replaceAll("<pre(?!\\s*\\w+)[^>]*>(.*?)</pre>", "<strong>$1</strong>");
-        String[] parts = response.split("<code type=\"[^\"]*\">|<code class=\"[^\"]*\">|<code class=\"[^\"]*\" type=\"[^\"]*\">|<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>");
-        topComponent.clear();
-        for (int i = 0; i < parts.length; i++) {
-            if (i % 2 == 1) {
-                editorPane = topComponent.createCodePane(parts[i]);
-                javaCode = parts[i];
-            } else {
-                editorPane = topComponent.createHtmlPane(parts[i]);
-            }
-        }
-        if (editorPane != null) {
-            editorPane.setCaretPosition(editorPane.getDocument().getLength());
-        }
-        return editorPane;
-    }
+//    private JEditorPane updateEditor(String response) {
+//        response = response.replaceAll("<code(?!\\s*\\w+)[^>]*>(.*?)</code>", "<strong>$1</strong>");
+//        response = response.replaceAll("<pre(?!\\s*\\w+)[^>]*>(.*?)</pre>", "<strong>$1</strong>");
+//        String[] parts = response.split("<code type=\"[^\"]*\">|<code class=\"[^\"]*\">|<code class=\"[^\"]*\" type=\"[^\"]*\">|<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>");
+//        topComponent.clear();
+//        for (int i = 0; i < parts.length; i++) {
+//            if (i % 2 == 1) {
+//                editorPane = topComponent.createCodePane(HtmlEscapeUtil.decodeHtml(parts[i]));
+//                javaCode = parts[i];
+//            } else {
+//                String html = renderer.render(parser.parse(parts[i]));
+//                editorPane = topComponent.createHtmlPane(html);
+//            }
+//        }
+//        return editorPane;
+//    }
 
     private void handleQuestion(String question, JButton submitButton) {
-        SwingUtilities.invokeLater(() -> {
+        executorService.submit(() -> {
             try {
                 String prevChat = responseHistory.isEmpty() ? null : responseHistory.get(responseHistory.size() - 1);
                 if (action == Action.LEARN) {
@@ -585,17 +657,22 @@ public class LearnFix extends JavaFix {
                         prevChat = null;
                     }
                 }
-                if(prevChat != null) {
-                    prevChat = topComponent.getAllEditorText();
-                    responseHistory.set(responseHistory.size() - 1, prevChat);
+                if (prevChat != null) {
+                    prevChat = responseHistory.get(currentResponseIndex);
                 }
                 String response;
                 if (sqlCompletion != null) {
-                    response = new JeddictChatModel().generateHtmlResponseFromDbMetadata(sqlCompletion.getMetaData(), question);
+                    response = new JeddictChatModel().assistDbMetadata(sqlCompletion.getMetaData(), question);
                 } else if (commitChanges != null) {
                     response = new JeddictChatModel().generateCommitMessageSuggestions(commitChanges, question);
-                } else if (treePath == null || projectContent != null) {
-                    response = new JeddictChatModel().generateHtmlDescription(projectContent, null, null, prevChat, question);
+                } else if (project != null) {
+                    response = new JeddictChatModel().generateDescription(getProjectContext(), null, null, prevChat, question);
+                } else if (selectedFileObjects != null) {
+                    response = new JeddictChatModel().generateDescription(getFilesContext(), null, null, prevChat, question);
+                } else if (selectedFileObject != null) {
+                    response = new JeddictChatModel().generateDescription(null, getFileContext(), null, prevChat, question);
+                } else if (treePath == null) {
+                    response = new JeddictChatModel().generateDescription(null, null, null, prevChat, question);
                 } else if (action == Action.TEST) {
                     if (leaf instanceof MethodTree) {
                         response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), prevChat, question);
@@ -603,19 +680,22 @@ public class LearnFix extends JavaFix {
                         response = new JeddictChatModel().generateTestCase(null, treePath.getCompilationUnit().toString(), null, prevChat, question);
                     }
                 } else {
-                    response = new JeddictChatModel().generateHtmlDescription(null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
+                    response = new JeddictChatModel().generateDescription(null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
                 }
-                response = removeCodeBlockMarkers(response);
+//                response = removeCodeBlockMarkers(response);
                 if (responseHistory.isEmpty() || !response.equals(responseHistory.get(responseHistory.size() - 1))) {
                     responseHistory.add(response);
                     currentResponseIndex = responseHistory.size() - 1;
                 }
-                updateEditor(response);
-                submitButton.setIcon(startIcon);
-                submitButton.setEnabled(true);
-                saveButton.setEnabled(javaCode != null);
-                updateButtons(prevButton, nextButton);
-                questionPane.setText("");
+                String finalResponse = response;
+                SwingUtilities.invokeLater(() -> {
+                    EditorUtil.updateEditors(topComponent, finalResponse);
+                    submitButton.setIcon(startIcon);
+                    submitButton.setEnabled(true);
+                    saveButton.setEnabled(javaCode != null);
+                    updateButtons(prevButton, nextButton);
+                    questionPane.setText("");
+                });
             } catch (Exception e) {
                 e.printStackTrace();
                 submitButton.setIcon(startIcon);
@@ -627,11 +707,11 @@ public class LearnFix extends JavaFix {
     private void updateButtons(JButton prevButton, JButton nextButton) {
         prevButton.setEnabled(currentResponseIndex > 0);
         nextButton.setEnabled(currentResponseIndex < responseHistory.size() - 1);
-        
+
         int javaEditorCount = topComponent.getAllJavaEditorCount();
         copyButton.setEnabled(javaEditorCount > 0);
         saveButton.setEnabled(javaEditorCount > 0);
-        
+
         openInBrowserButton.setEnabled(topComponent.getAllEditorCount() > 0);
     }
 
