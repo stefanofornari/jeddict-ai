@@ -20,7 +20,7 @@ package io.github.jeddict.ai.settings;
 
 /**
  *
- * @author Gaurav Gupta
+ * @author Gaurav Gupta, Shiwani Gupta
  */
 import static io.github.jeddict.ai.settings.GenAIModel.DEFAULT_MODEL;
 import java.util.Arrays;
@@ -41,6 +41,79 @@ public class PreferencesManager {
     private static final String PROVIDER_LOCATION_PREFERENCES = "provider_location";
     private static final String PROVIDER_PREFERENCE = "provider";
     private static final String MODEL_PREFERENCE = "model";
+
+    private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
+            // Test Resources
+            "src/test/java",
+            "src/test/resources",
+            "test",
+            // Main Resources
+            "src/main/resources",
+            "src/main/webapp",
+            // Build Directories
+            "target",
+            "build",
+            "out", // Output directory for compiled files
+
+            // IDE Specific Directories
+            ".idea",
+            ".vscode",
+            ".settings",
+            ".classpath", // Eclipse classpath file
+            ".project", // Eclipse project file
+            "nbproject",
+            "nbactions.xml",
+            "nb-configuration.xml",
+            // Version Control Directories
+            ".git",
+            ".svn",
+            // Temporary Directories
+            "tmp",
+            "temp",
+            // Log Directories
+            "logs",
+            "log",
+            "debug",
+            "trace",
+            "cache",
+            "backup",
+
+            // Other Configuration/Files
+            ".env", // Environment variable definitions
+            "docker-compose.yml", // Docker Compose config
+            "Dockerfile", // Docker configuration
+
+            // JavaScript Project Directories
+            "node_modules",
+            "dist",
+            "public",
+            "build",
+            ".next",
+            // Gradle
+            "gradle",
+            "gradlew",
+            "gradlew.bat",
+            // Github
+            ".github",
+            ".dependabot",
+            ".gitignore",
+            "CODE_OF_CONDUCT.md",
+            "CONTRIBUTING.md",
+            "LICENSE",
+            
+            // Security and Configuration Files
+            "secrets", // Directory for secrets
+            "credentials", // Directory for credentials
+            "private",
+            "confidential",
+            "vault",
+
+            // CI configuration
+            ".gitlab-ci.yml",
+            ".travis.yml",
+            "azure-pipelines.yml",
+            "Jenkinsfile"
+    );
 
     private PreferencesManager() {
         preferences = NbPreferences.forModule(AIAssistancePanel.class);
@@ -253,12 +326,6 @@ public class PreferencesManager {
         return acceptedExtensions;
     }
 
-    private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
-            "src/test/java", "src/test/resources", 
-            "src/main/resources", "src/main/webapp",
-            "target", "build",
-            "nb-configurations.xml"," "
-    );
     private List<String> excludeDir = Collections.EMPTY_LIST;
 
     public String getExcludeDirs() {
