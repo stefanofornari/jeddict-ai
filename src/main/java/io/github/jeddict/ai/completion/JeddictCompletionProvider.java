@@ -351,7 +351,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     String lineTextBeforeCaret = getLineTextBeforeCaret(doc, caretOffset);
                     TreePath path = findTreePathAtCaret(compilationUnit, task);
                     FileObject fileObject = getFileObjectFromEditor(doc);
-                    
+
                     Tree.Kind kind = path.getLeaf().getKind();
                     Tree.Kind parentKind = path.getParentPath().getLeaf().getKind();
                     AIClassContext activeClassContext = prefsManager.getClassContext();
@@ -535,7 +535,6 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 resultSet.finish();
             }
         }
-
 
         private static boolean isJavaIdentifierPart(String text, boolean allowForDor) {
             for (int i = 0; i < text.length(); i++) {

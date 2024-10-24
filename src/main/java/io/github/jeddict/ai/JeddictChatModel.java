@@ -723,39 +723,39 @@ public class JeddictChatModel {
         return enhanced;
     }
 
-public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage) {
-    StringBuilder prompt = new StringBuilder();
-    prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output. ")
-            .append("""
+    public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output. ")
+                .append("""
                     Please provide various types of commit messages based on the changes: 
                     Your goal is to create commit messages that reflect business or domain features rather than technical details like dependency updates or refactoring.
                     """)
-            .append("- Very Short\n")
-            .append("- Short\n")
-            .append("- Medium\n")
-            .append("- Long\n")
-            .append("- Descriptive\n\n")
-            .append("Here is the 'git diff' and 'git status' output:\n")
-            .append(gitDiffOutput)
-            .append("\n");
+                .append("- Very Short\n")
+                .append("- Short\n")
+                .append("- Medium\n")
+                .append("- Long\n")
+                .append("- Descriptive\n\n")
+                .append("Here is the 'git diff' and 'git status' output:\n")
+                .append(gitDiffOutput)
+                .append("\n");
 
-    // Add reference commit message to the prompt if it is not empty or null
-    if (referenceCommitMessage != null && !referenceCommitMessage.isEmpty()) {
-        prompt.append("Reference Commit Message:\n").append(referenceCommitMessage).append("<br><br>")
-              .append("Ensure that all the following commit message suggestions are aligned with this reference message. "
-                      + "The suggestions should reflect the intent and context of the reference commit message, focusing on the business or domain features, adapting it as necessary to fit the changes in the 'git diff' output. "
-                      + "The goal is to keep all suggestions consistent with the meaning of the reference commit message.<br>");
-    } else {
-        prompt.append("No reference commit message provided.<br><br>")
-              .append("Please generate commit message suggestions based on the 'git diff' output and the context of the changes, emphasizing business or domain features.");
+        // Add reference commit message to the prompt if it is not empty or null
+        if (referenceCommitMessage != null && !referenceCommitMessage.isEmpty()) {
+            prompt.append("Reference Commit Message:\n").append(referenceCommitMessage).append("<br><br>")
+                    .append("Ensure that all the following commit message suggestions are aligned with this reference message. "
+                            + "The suggestions should reflect the intent and context of the reference commit message, focusing on the business or domain features, adapting it as necessary to fit the changes in the 'git diff' output. "
+                            + "The goal is to keep all suggestions consistent with the meaning of the reference commit message.<br>");
+        } else {
+            prompt.append("No reference commit message provided.<br><br>")
+                    .append("Please generate commit message suggestions based on the 'git diff' output and the context of the changes, emphasizing business or domain features.");
+        }
+
+        // Generate the commit message suggestions
+        String answer = generate(prompt.toString());
+        System.out.println(answer);
+        answer = removeCodeBlockMarkers(answer);
+        return answer;
     }
-
-    // Generate the commit message suggestions
-    String answer = generate(prompt.toString());
-    System.out.println(answer);
-    answer = removeCodeBlockMarkers(answer);
-    return answer;
-}
 
     private String wrapLongLinesWithBr(String input, int maxLineLength) {
         StringBuilder wrapped = new StringBuilder();
@@ -785,16 +785,16 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
 
         return wrapped.toString();
     }
-    
-public String assistDbMetadata(String dbMetadata, String developerQuestion) {
-    StringBuilder dbPrompt = new StringBuilder("You are an API server that provides assistance with SQL queries and database-related questions. ");
 
-    dbPrompt.append("Given the following database schema metadata:\n")
-            .append(dbMetadata)
-            .append("\nRespond to the developer's question: \n")
-            .append(developerQuestion)
-            .append("\n")
-            .append("""
+    public String assistDbMetadata(String dbMetadata, String developerQuestion) {
+        StringBuilder dbPrompt = new StringBuilder("You are an API server that provides assistance with SQL queries and database-related questions. ");
+
+        dbPrompt.append("Given the following database schema metadata:\n")
+                .append(dbMetadata)
+                .append("\nRespond to the developer's question: \n")
+                .append(developerQuestion)
+                .append("\n")
+                .append("""
               Analyze the metadata and provide a relevant SQL query with a description. Offer guidance 
               or explanations to address the developer's question, error, or inquiry related to the database. 
               Ensure the SQL queries match the database structure, constraints, and relationships. 
@@ -803,11 +803,10 @@ public String assistDbMetadata(String dbMetadata, String developerQuestion) {
               Always include a detailed explanation of the query, including its purpose and how it relates to the developer's question.
               """);
 
-    String response = generate(dbPrompt.toString());
-    System.out.println(response);
-    return response;
-}
-
+        String response = generate(dbPrompt.toString());
+        System.out.println(response);
+        return response;
+    }
 
     public String assistJavaClass(String classContent) {
         String prompt = "You are an API server that provides description of following class. "
@@ -836,10 +835,10 @@ public String assistDbMetadata(String dbMetadata, String developerQuestion) {
                     + "Do not return complete Java Class, return only Method";// and wrap it in <code type=\"full\" class=\"java\">. \n";
         } else if (projectContent != null) {
             promptExtend = "Project Full Content:\n" + projectContent + "\n\n";
-        } else  if (classContent != null) {
+        } else if (classContent != null) {
             promptExtend = "Java Class Content:\n" + classContent + "\n\n";
         }
-        
+
         prompt = "You are an API server that provides an answer to a user's query. ";
         if (previousChatResponse == null) {
             prompt = prompt + "Given the following content, and the user's query to addresses the specific query. ";
@@ -848,7 +847,7 @@ public String assistDbMetadata(String dbMetadata, String developerQuestion) {
                     + "Previous Chat Response:\n" + previousChatResponse + "\n\n";
         }
         prompt = prompt + promptExtend
-                    + "User Query:\n" + userQuery;
+                + "User Query:\n" + userQuery;
 
         String answer = generate(prompt);
         System.out.println(answer);
@@ -865,7 +864,7 @@ public String assistDbMetadata(String dbMetadata, String developerQuestion) {
 
         // Determine the test case type based on the user query
         if (userQuery != null) {
-            userQuery = userQuery +" ,\n "+ PreferencesManager.getInstance().getTestCasePrompt();
+            userQuery = userQuery + " ,\n " + PreferencesManager.getInstance().getTestCasePrompt();
         } else {
             userQuery = PreferencesManager.getInstance().getTestCasePrompt();
         }
@@ -907,7 +906,7 @@ public String assistDbMetadata(String dbMetadata, String developerQuestion) {
         if (userQuery.toLowerCase().contains("spring test")) {
             testCaseTypes.add("Spring Test");
         }
-        
+
         if (userQuery.toLowerCase().contains("arquillian")) {
             testCaseTypes.add("Arquillian Test");
         }

@@ -26,7 +26,7 @@ import java.util.Map;
  * @author Shiwani Gupta
  */
 public class MimeUtil {
-    
+
     public static final String JAVA_MIME = "text/x-java";
     public static final String MIME_HTML = "text/html";
     public static final String MIME_CSS = "text/css";

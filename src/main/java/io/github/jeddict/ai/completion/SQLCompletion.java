@@ -49,7 +49,7 @@ public class SQLCompletion {
         if (dbConnection != null) {
             Connection connection = dbConnection.getJDBCConnection();
             if (connection == null) {
-               JOptionPane.showMessageDialog(null, "Warning: Database connection is not active!", "Connection Error", javax.swing.JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Warning: Database connection is not active!", "Connection Error", javax.swing.JOptionPane.WARNING_MESSAGE);
             }
             try {
                 DatabaseMetaData metaData = connection.getMetaData();

@@ -74,6 +74,7 @@ public class AssistantTopComponent extends TopComponent {
     private final Project project;
 
     private String type = "java";
+
     public AssistantTopComponent(String name, String type, Project project) {
         setName(name);
         setLayout(new BorderLayout());
@@ -131,7 +132,6 @@ public class AssistantTopComponent extends TopComponent {
         return editorPane;
     }
 
-    
     private void addContextMenu(JEditorPane editorPane) {
         JPopupMenu contextMenu = new JPopupMenu();
 
@@ -172,11 +172,11 @@ public class AssistantTopComponent extends TopComponent {
     }
 
     public void saveAs(String mimeType, String content) {
-        
+
         // Create the file chooser
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save As");
-        
+
         if (mimeType == null || mimeType.equals("text/x-java")) {
             fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Java Files", "java"));
             String className = extractClassName(content);
@@ -217,7 +217,6 @@ public class AssistantTopComponent extends TopComponent {
                 fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(convertToCapitalized(fileExtension) + " Files", fileExtension));
             }
         }
-        
 
         // Show the save dialog
         int userSelection = fileChooser.showSaveDialog(null);
@@ -235,8 +234,8 @@ public class AssistantTopComponent extends TopComponent {
             }
         }
     }
-    
-     public String extractClassName(String content) {
+
+    public String extractClassName(String content) {
         String regex = "(?<=\\bclass\\s+)\\w+";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(content);
@@ -247,8 +246,8 @@ public class AssistantTopComponent extends TopComponent {
             return null; // No class name found
         }
     }
-     
-      // Method to extract Java package name using regex
+
+    // Method to extract Java package name using regex
     public String extractPackageName(String content) {
         String regex = "(?<=\\bpackage\\s+)([a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*);?";
         Pattern pattern = Pattern.compile(regex);
@@ -260,7 +259,6 @@ public class AssistantTopComponent extends TopComponent {
             return null; // No package name found
         }
     }
-
 
     public static EditorKit createEditorKit(String mimeType) {
         return MimeLookup.getLookup(MimePath.parse(mimeType)).lookup(EditorKit.class);
@@ -286,7 +284,7 @@ public class AssistantTopComponent extends TopComponent {
     public JPanel getParentPanel() {
         return parentPanel;
     }
-    
+
     public String getAllCodeEditorText() {
         StringBuilder allText = new StringBuilder();
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
@@ -300,12 +298,12 @@ public class AssistantTopComponent extends TopComponent {
         }
         return allText.toString().trim();
     }
-    
+
     public String getAllEditorText() {
         StringBuilder allText = new StringBuilder();
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
-                if (!editorPane.getEditorKit().getContentType().equals("text/html") 
+                if (!editorPane.getEditorKit().getContentType().equals("text/html")
                         && editorPane.getEditorKit().getContentType().startsWith("text")) {
                     allText.append("<pre><code>");
                     allText.append(editorPane.getText());
@@ -317,13 +315,13 @@ public class AssistantTopComponent extends TopComponent {
         }
         return allText.toString().trim();
     }
-    
+
     public int getAllCodeEditorCount() {
         int count = 0;
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane) {
                 JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
-                if (!editorPane.getEditorKit().getContentType().equals("text/html") 
+                if (!editorPane.getEditorKit().getContentType().equals("text/html")
                         && editorPane.getEditorKit().getContentType().startsWith("text")) {
                     count++;
                 }
@@ -421,7 +419,7 @@ public class AssistantTopComponent extends TopComponent {
         styleSheet.addRule("pre { display: block; font-size: 87.5%; color: #212529; }");
         styleSheet.addRule("pre code { font-size: inherit; color: inherit; word-break: normal; }");
         styleSheet.addRule("strong { font-weight: bold; }");
-    
+
         return htmlEditorKit;
     }
 

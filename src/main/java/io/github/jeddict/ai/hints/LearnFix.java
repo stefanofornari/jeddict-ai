@@ -268,56 +268,56 @@ public class LearnFix extends JavaFix {
         }
         return inputForAI.toString();
     }
-public List<FileObject> getFilesContextList() {
-    List<FileObject> sourceFiles = new ArrayList<>();
-    boolean includeNestedFiles = selectedFileObjects.stream()
-            .anyMatch(fileObject -> fileObject.getPath().contains("src/main/webapp")
-                    || fileObject.getPath().endsWith("src/main")
-            );
 
-    for (FileObject sourceFile : selectedFileObjects) {
-        System.out.println("");
-    }
-    // Function to collect files recursively
-    if (includeNestedFiles) {
-        for (FileObject selectedFile : selectedFileObjects) {
-            if (selectedFile.isFolder()) {
-                collectNestedFiles(selectedFile, sourceFiles);
-            } else if (selectedFile.isData() && pm.getFileExtensionListToInclude().contains(selectedFile.getExt())) {
-                sourceFiles.add(selectedFile);
-            }
+    public List<FileObject> getFilesContextList() {
+        List<FileObject> sourceFiles = new ArrayList<>();
+        boolean includeNestedFiles = selectedFileObjects.stream()
+                .anyMatch(fileObject -> fileObject.getPath().contains("src/main/webapp")
+                || fileObject.getPath().endsWith("src/main")
+                );
+
+        for (FileObject sourceFile : selectedFileObjects) {
+            System.out.println("");
         }
-    } else {
-        // Collect only immediate children files
-        sourceFiles.addAll(selectedFileObjects.stream()
-            .filter(FileObject::isFolder)
-            .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
-                .filter(FileObject::isData)
-                .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt())))
-            .collect(Collectors.toList()));
-        
-        sourceFiles.addAll(selectedFileObjects.stream()
-            .filter(FileObject::isData)
-            .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
-            .collect(Collectors.toList()));
+        // Function to collect files recursively
+        if (includeNestedFiles) {
+            for (FileObject selectedFile : selectedFileObjects) {
+                if (selectedFile.isFolder()) {
+                    collectNestedFiles(selectedFile, sourceFiles);
+                } else if (selectedFile.isData() && pm.getFileExtensionListToInclude().contains(selectedFile.getExt())) {
+                    sourceFiles.add(selectedFile);
+                }
+            }
+        } else {
+            // Collect only immediate children files
+            sourceFiles.addAll(selectedFileObjects.stream()
+                    .filter(FileObject::isFolder)
+                    .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
+                    .filter(FileObject::isData)
+                    .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt())))
+                    .collect(Collectors.toList()));
+
+            sourceFiles.addAll(selectedFileObjects.stream()
+                    .filter(FileObject::isData)
+                    .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
+                    .collect(Collectors.toList()));
+        }
+
+        return sourceFiles;
     }
-    
-    return sourceFiles;
-}
 
-private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles) {
-    // Collect immediate data files
-    Arrays.stream(folder.getChildren())
-        .filter(FileObject::isData)
-        .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
-        .forEach(sourceFiles::add);
+    private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles) {
+        // Collect immediate data files
+        Arrays.stream(folder.getChildren())
+                .filter(FileObject::isData)
+                .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
+                .forEach(sourceFiles::add);
 
-    // Recursively collect from subfolders
-    Arrays.stream(folder.getChildren())
-        .filter(FileObject::isFolder)
-        .forEach(subFolder -> collectNestedFiles(subFolder, sourceFiles));
-}
-
+        // Recursively collect from subfolders
+        Arrays.stream(folder.getChildren())
+                .filter(FileObject::isFolder)
+                .forEach(subFolder -> collectNestedFiles(subFolder, sourceFiles));
+    }
 
     public String getFileContext() {
         StringBuilder inputForAI = new StringBuilder();
@@ -600,7 +600,7 @@ private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles)
         } else {
             fileObjects = Collections.EMPTY_LIST;
         }
-        JDialog dialog = new JDialog((JFrame)SwingUtilities.windowForComponent(topComponent), true);
+        JDialog dialog = new JDialog((JFrame) SwingUtilities.windowForComponent(topComponent), true);
         dialog.setTitle("Context Paths");
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setSize(800, 800);
@@ -609,7 +609,7 @@ private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles)
         String[][] data = new String[fileObjects.size()][2];
         for (int i = 0; i < fileObjects.size(); i++) {
             FileObject contextFile = fileObjects.get(i);
-             String relativePath = contextFile.getPath();
+            String relativePath = contextFile.getPath();
             if (projectRootDir != null) {
                 relativePath = relativePath.replaceFirst(projectRootDir + "/", "");
             }

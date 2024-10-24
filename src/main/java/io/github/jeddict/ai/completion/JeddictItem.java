@@ -62,7 +62,7 @@ public class JeddictItem extends JavaCompletionItem {
     private CharSequence assignToVarText;
     int caretToEndLength;
 
-    public JeddictItem(CompilationInfo info, TypeMirror type, String varName,String description, List<String> imports, int substitutionOffset, int caretToEndLength, boolean newVarName, boolean smartType, int assignToVarOffset) {
+    public JeddictItem(CompilationInfo info, TypeMirror type, String varName, String description, List<String> imports, int substitutionOffset, int caretToEndLength, boolean newVarName, boolean smartType, int assignToVarOffset) {
         super(substitutionOffset);
         this.varName = varName;
         this.imports = imports;
@@ -75,7 +75,7 @@ public class JeddictItem extends JavaCompletionItem {
         this.assignToVarText = assignToVarOffset < 0 ? null : createAssignToVarText(info, type, varName);
     }
 
-    public JeddictItem(CompilationInfo info, TypeMirror type, String varName, String description,List<String> imports, int substitutionOffset, boolean newVarName, boolean smartType, int assignToVarOffset) {
+    public JeddictItem(CompilationInfo info, TypeMirror type, String varName, String description, List<String> imports, int substitutionOffset, boolean newVarName, boolean smartType, int assignToVarOffset) {
         super(substitutionOffset);
         this.varName = varName;
         this.description = description;

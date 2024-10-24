@@ -30,7 +30,7 @@ public class Snippet {
     List<String> imports = new ArrayList<>();
 
     String snippet;
-    
+
     String description;
 
     public Snippet(String snippet, String description, List<String> imports) {

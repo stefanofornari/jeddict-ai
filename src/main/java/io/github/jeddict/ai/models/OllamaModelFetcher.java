@@ -34,7 +34,7 @@ import org.json.JSONObject;
 public class OllamaModelFetcher {
 
     private static final String API_URL = "http://localhost:11434";
-    
+
     public String getAPIUrl() {
         return API_URL;
     }
