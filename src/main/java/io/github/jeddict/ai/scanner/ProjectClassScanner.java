@@ -82,6 +82,9 @@ public class ProjectClassScanner {
         }
     }
 
+    public static void scanJavaFile(DataObject javaFile, Map<FileObject, ClassData> classList) throws IOException {
+        scanJavaFile(javaFile.getPrimaryFile(), classList) ;
+    }
     public static void scanJavaFile(FileObject javaFile, Map<FileObject, ClassData> classList) throws IOException {
         JavaSource javaSource = JavaSource.forFileObject(javaFile);
 
@@ -257,10 +260,10 @@ public class ProjectClassScanner {
                     projectClassListeners.put(key, projectClassListener);
                 }
                 if (projectClassListeners.get(key) != null) {
-                    Iterator<FileObject> iterator = projectClassListeners.get(key).getPending().iterator();
+                    Iterator<DataObject> iterator = projectClassListeners.get(key).getPendingDataObject().iterator();
                     while (iterator.hasNext()) {
-                        FileObject javaFile = iterator.next();
-                        if (javaFile.equals(fileObject)) {
+                        DataObject javaFile = iterator.next();
+                        if (javaFile.getPrimaryFile().equals(fileObject)) {
                             // Ignore current editor
                             System.out.println("Ignoring " + fileObject.getName());
                         } else {

@@ -21,18 +21,19 @@ import org.openide.loaders.DataObject;
  */
 public class ProjectClassListener {
 
-    private Project project;
+    private final Project project;
 
-    private Map<FileObject, ClassData> classDatas;
-    private Set<FileObject> pending = new HashSet<>();
+    private final Map<FileObject, ClassData> classDatas;
+    private final Set<DataObject> pendingDO = new HashSet<>();
 
     public ProjectClassListener(Project project, Map<FileObject, ClassData> classDatas) {
         this.project = project;
         this.classDatas = classDatas;
     }
 
-    public Set<FileObject> getPending() {
-        return pending;
+
+    public Set<DataObject> getPendingDataObject() {
+        return pendingDO;
     }
 
     public void register() {
@@ -62,7 +63,7 @@ public class ProjectClassListener {
             DataObject[] modifiedObjects = registry.getModified();
             for (DataObject dataObj : modifiedObjects) {
                 if (FileUtil.isParentOf(javaFolder2, dataObj.getPrimaryFile())) {
-                    pending.add(dataObj.getPrimaryFile());
+                    pendingDO.add(dataObj);
                     classDatas.remove(dataObj.getPrimaryFile());
                     System.out.println("Modified DataObject: " + dataObj.getName());
                 } else {
