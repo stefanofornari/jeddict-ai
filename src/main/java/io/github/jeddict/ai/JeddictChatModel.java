@@ -736,6 +736,7 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
             .append("- Long\n")
             .append("- Descriptive\n\n")
             .append("Here is the 'git diff' and 'git status' output:\n")
+            .append(gitDiffOutput)
             .append("\n");
 
     // Add reference commit message to the prompt if it is not empty or null
