@@ -1,6 +1,20 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package io.github.jeddict.ai.actions;
 
@@ -11,8 +25,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.StyledDocument;
 import org.netbeans.api.editor.EditorRegistry;
-import org.netbeans.api.project.FileOwnerQuery;
-import org.netbeans.api.project.Project;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.filesystems.FileObject;
@@ -59,77 +71,41 @@ public class OpenChatAction implements ActionListener {
         learnFix.openChat(null, selectedText, file.getName(), "Chat with AI", content -> {
             NbDocument.runAtomic(document, () -> {
                 if (!text.isEmpty()) {
-                    try {
-                        document.remove(startLocation, text.length());
-                        document.insertString(startLocation, content, null);
-                        Reformat reformat = Reformat.get(document);
-                        reformat.lock();
-                        try {
-                            reformat.reformat(startLocation, startLocation + content.length());
-                        } finally {
-                            reformat.unlock();
-                        }
-                    } catch (BadLocationException ex) {
-                        Exceptions.printStackTrace(ex);
-                    }
+                    insertAndReformat(document, content, startLocation, text.length());
                 } else {
-
                     JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
-                    String currentselectedText = currenteditor.getSelectedText();
-                    final StyledDocument currentdocument = (StyledDocument) currenteditor.getDocument();
-                    int currentselectionStartPosition = currenteditor.getSelectionStart();
-                    FileObject currentfile = NbEditorUtilities.getDataObject(currentdocument).getPrimaryFile();
+                    String currentSelectedText = currenteditor.getSelectedText();
+                    final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
+                    int currentSelectionStartPosition = currenteditor.getSelectionStart();
+                    FileObject currentfile = NbEditorUtilities.getDataObject(currentDocument).getPrimaryFile();
                     if (currentfile != null) {
-                        if (currentselectedText == null || currentselectedText.isEmpty()) {
-                            try {
-                                document.insertString(currentselectionStartPosition, content, null);
-                                Reformat reformat = Reformat.get(document);
-                                reformat.lock();
-                                try {
-                                    reformat.reformat(currentselectionStartPosition, currentselectionStartPosition + content.length());
-                                } finally {
-                                    reformat.unlock();
-                                }
-                            } catch (BadLocationException ex) {
-                                Exceptions.printStackTrace(ex);
-                            }
+                        if (currentSelectedText == null || currentSelectedText.isEmpty()) {
+                            insertAndReformat(currentDocument, content, currentSelectionStartPosition, 0);
                         } else {
-                            try {
-                                document.remove(currentselectionStartPosition, currentselectedText.length());
-                                document.insertString(currentselectionStartPosition, content, null);
-                                Reformat reformat = Reformat.get(document);
-                                reformat.lock();
-                                try {
-                                    reformat.reformat(currentselectionStartPosition, currentselectionStartPosition + content.length());
-                                } finally {
-                                    reformat.unlock();
-                                }
-                            } catch (BadLocationException ex) {
-                                Exceptions.printStackTrace(ex);
-                            }
+                            insertAndReformat(currentDocument, content, currentSelectionStartPosition, currentSelectedText.length());
                         }
                     }
-                    System.out.println("");
                 }
             });
         });
     }
 
-    /**
-     * Retrieves the project associated with the given JTextComponent.
-     *
-     * @param editor The JTextComponent from which to derive the project.
-     * @return The Project associated with the document, or null if not found.
-     */
-    private Project getProject(FileObject fileObject) {
+    private void insertAndReformat(StyledDocument document, String content, int startPosition, int lengthToRemove) {
         try {
-            if (fileObject != null) {
-                return FileOwnerQuery.getOwner(fileObject);
+            if (lengthToRemove > 0) {
+                document.remove(startPosition, lengthToRemove);
             }
-        } catch (Exception ex) {
+            document.insertString(startPosition, content, null);
+            Reformat reformat = Reformat.get(document);
+            reformat.lock();
+            try {
+                reformat.reformat(startPosition, startPosition + content.length());
+            } finally {
+                reformat.unlock();
+            }
+        } catch (BadLocationException ex) {
             Exceptions.printStackTrace(ex);
         }
-        return null;
     }
 
     /**
