@@ -32,11 +32,11 @@ public class EditorUtil {
         String[] parts = text.split("```");
         String regex = "(\\w+)\\n([\\s\\S]+)";
         Pattern pattern = Pattern.compile(regex);
-
-        int width = ((int)(topComponent.getWidth()/topComponent.getFontMetrics(topComponent.getFont()).charWidth('O')));
+        
+        int wordBreakLimit = getWordBreakLimit(topComponent);
         for (int i = 0; i < parts.length; i++) {
             if (i % 2 == 0) {
-                String newText = addLineBreaksToMarkdown(parts[i].trim(), width);
+                String newText = addLineBreaksToMarkdown(parts[i].trim(), wordBreakLimit);
                 String html = renderer.render(parser.parse(newText));
                 editorPane = topComponent.createHtmlPane(html);
             } else {
@@ -59,6 +59,15 @@ public class EditorUtil {
         return code.toString();
     }
     
+    private static int getWordBreakLimit(AssistantTopComponent topComponent) {
+        int width;
+        try {
+            width = ((int) (topComponent.getWidth() / topComponent.getFontMetrics(topComponent.getFont()).charWidth('O')));
+        } catch (Exception ex) {
+            width = 100;
+        }
+        return width;
+    }
     
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
         String[] lines = markdown.split("\n");  // Split the markdown by new lines
