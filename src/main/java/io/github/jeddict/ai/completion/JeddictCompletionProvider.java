@@ -244,6 +244,10 @@ public class JeddictCompletionProvider implements CompletionProvider {
             for (Tree tree : compilationUnit.getTypeDecls()) {
                 if (tree instanceof ClassTree) {
                     ClassTree classTree = (ClassTree) tree;
+                    Tree superclass = classTree.getExtendsClause();
+                    if (superclass != null) {
+                        referencedClasses.add(superclass.toString());
+                    }
                     for (Tree member : classTree.getMembers()) {
                         if (member instanceof VariableTree) {
                             VariableTree variable = (VariableTree) member;
