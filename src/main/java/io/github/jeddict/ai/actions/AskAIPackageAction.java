@@ -45,7 +45,7 @@ import org.openide.util.NbBundle.Messages;
         displayName = "#CTL_AskAIPackageAction", lazy = true, asynchronous = true, iconBase = "icons/logo28.png")
 @ActionReferences({
     @ActionReference(path = "Projects/package/Actions", position = 100),
-    @ActionReference(path = "UI/ToolActions/Files", position = 2045),
+    @ActionReference(path = "Loaders/folder/any/Actions", position = 300),  
     @ActionReference(path = "Toolbars/Build", position = 100)})
 @Messages({"CTL_AskAIPackageAction=AI Assistant"})
 public final class AskAIPackageAction extends AbstractAction implements ContextAwareAction {
@@ -59,9 +59,13 @@ public final class AskAIPackageAction extends AbstractAction implements ContextA
     @Override
     public Action createContextAwareInstance(Lookup actionContext) {
         if (actionContext != null) {
+            Collection<? extends FileObject> selectedFileObjects = actionContext.lookupAll(FileObject.class);
+            if(selectedFileObjects.isEmpty()) {
+                 return new AskAIPackageAction.ContextAction(false, null);
+            }
             return new AskAIPackageAction.ContextAction(
                     PreferencesManager.getInstance().isAiAssistantActivated(),
-                    actionContext.lookupAll(FileObject.class)
+                    selectedFileObjects
             );
         }
         return new AskAIPackageAction.ContextAction(false, null);

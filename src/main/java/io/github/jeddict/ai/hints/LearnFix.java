@@ -52,7 +52,6 @@ import java.awt.Insets;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,7 +63,6 @@ import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
-import javax.swing.event.HyperlinkEvent;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
@@ -89,7 +87,6 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.newEditorIco
 import static io.github.jeddict.ai.components.AssistantTopComponent.progressIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.saveToEditorIcon;
 import io.github.jeddict.ai.util.EditorUtil;
-import io.github.jeddict.ai.util.HtmlEscapeUtil;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -99,10 +96,9 @@ import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 
 /**
  *
@@ -119,7 +115,7 @@ public class LearnFix extends JavaFix {
     private AssistantTopComponent topComponent;
     private final List<String> responseHistory = new ArrayList<>();
     private int currentResponseIndex = -1;
-    private String javaCode = null;
+    private String sourceCode = null;
     private Project project;
     private Collection<? extends FileObject> selectedFileObjects;
     private FileObject selectedFileObject;
@@ -133,6 +129,8 @@ public class LearnFix extends JavaFix {
             return project;
         } else if (selectedFileObjects != null && !selectedFileObjects.isEmpty()) {
             return FileOwnerQuery.getOwner(selectedFileObjects.toArray(FileObject[]::new)[0]);
+        } else if (selectedFileObject != null) {
+            return FileOwnerQuery.getOwner(selectedFileObject);
         } else if (fileObject != null) {
             return FileOwnerQuery.getOwner(fileObject);
         } else {
@@ -247,14 +245,12 @@ public class LearnFix extends JavaFix {
         StringBuilder inputForAI = new StringBuilder();
         for (FileObject file : getProjectContextList()) {
             try {
-                if (pm.getFileExtensionListToInclude().contains(file.getExt())) {
-                    String text = file.asText();
-                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                        text = removeJavadoc(text);
-                    }
-                    inputForAI.append(text);
-                    inputForAI.append("\n");
+                String text = file.asText();
+                if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                    text = removeJavadoc(text);
                 }
+                inputForAI.append(text);
+                inputForAI.append("\n");
             } catch (Exception ex) {
                 Exceptions.printStackTrace(ex);
             }
@@ -279,21 +275,56 @@ public class LearnFix extends JavaFix {
         }
         return inputForAI.toString();
     }
+public List<FileObject> getFilesContextList() {
+    List<FileObject> sourceFiles = new ArrayList<>();
+    boolean includeNestedFiles = selectedFileObjects.stream()
+            .anyMatch(fileObject -> fileObject.getPath().contains("src/main/webapp")
+                    || fileObject.getPath().endsWith("src/main")
+            );
 
-    public List<FileObject> getFilesContextList() {
-        List<FileObject> sourceFiles = selectedFileObjects.stream()
-                .filter(FileObject::isFolder)
-                .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
+    for (FileObject sourceFile : selectedFileObjects) {
+        System.out.println("");
+    }
+    // Function to collect files recursively
+    if (includeNestedFiles) {
+        for (FileObject selectedFile : selectedFileObjects) {
+            if (selectedFile.isFolder()) {
+                collectNestedFiles(selectedFile, sourceFiles);
+            } else if (selectedFile.isData() && pm.getFileExtensionListToInclude().contains(selectedFile.getExt())) {
+                sourceFiles.add(selectedFile);
+            }
+        }
+    } else {
+        // Collect only immediate children files
+        sourceFiles.addAll(selectedFileObjects.stream()
+            .filter(FileObject::isFolder)
+            .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
                 .filter(FileObject::isData)
                 .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt())))
-                .collect(Collectors.toList());
-
+            .collect(Collectors.toList()));
+        
         sourceFiles.addAll(selectedFileObjects.stream()
-                .filter(FileObject::isData)
-                .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
-                .collect(Collectors.toList()));
-        return sourceFiles;
+            .filter(FileObject::isData)
+            .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
+            .collect(Collectors.toList()));
     }
+    
+    return sourceFiles;
+}
+
+private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles) {
+    // Collect immediate data files
+    Arrays.stream(folder.getChildren())
+        .filter(FileObject::isData)
+        .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
+        .forEach(sourceFiles::add);
+
+    // Recursively collect from subfolders
+    Arrays.stream(folder.getChildren())
+        .filter(FileObject::isFolder)
+        .forEach(subFolder -> collectNestedFiles(subFolder, sourceFiles));
+}
+
 
     public String getFileContext() {
         StringBuilder inputForAI = new StringBuilder();
@@ -323,7 +354,7 @@ public class LearnFix extends JavaFix {
             Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
             prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
             topComponent = new AssistantTopComponent(title, null, getProject());
-            EditorUtil.updateEditors(topComponent, response);
+            sourceCode = EditorUtil.updateEditors(topComponent, response);
 
             JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
             topComponent.add(scrollPane, BorderLayout.CENTER);
@@ -493,7 +524,7 @@ public class LearnFix extends JavaFix {
             clipboard.setContents(stringSelection, null);
         });
         saveButton.addActionListener(e -> {
-            topComponent.saveAs(topComponent.getAllJavaEditorText());
+            topComponent.saveAs(null, topComponent.getAllJavaEditorText());
         });
         saveToEditorButton.addActionListener(e -> {
             if (action != null) {
@@ -540,7 +571,7 @@ public class LearnFix extends JavaFix {
             if (currentResponseIndex > 0) {
                 currentResponseIndex--;
                 String historyResponse = responseHistory.get(currentResponseIndex);
-                EditorUtil.updateEditors(topComponent, historyResponse);
+                sourceCode = EditorUtil.updateEditors(topComponent, historyResponse);
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -549,7 +580,7 @@ public class LearnFix extends JavaFix {
             if (currentResponseIndex < responseHistory.size() - 1) {
                 currentResponseIndex++;
                 String historyResponse = responseHistory.get(currentResponseIndex);
-                EditorUtil.updateEditors(topComponent, historyResponse);
+                sourceCode = EditorUtil.updateEditors(topComponent, historyResponse);
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -561,21 +592,22 @@ public class LearnFix extends JavaFix {
 
     private void showFilePathPopup() {
         List<FileObject> fileObjects;
-        String projectRootDir;
+        String projectRootDir = null;
         if (project != null) {
             fileObjects = getProjectContextList();
             projectRootDir = project.getProjectDirectory().getPath();
         } else if (selectedFileObjects != null) {
             fileObjects = getFilesContextList();
-            projectRootDir = FileOwnerQuery.getOwner(fileObjects.get(0)).getProjectDirectory().getPath();
+            if (!fileObjects.isEmpty()) {
+                projectRootDir = FileOwnerQuery.getOwner(fileObjects.get(0)).getProjectDirectory().getPath();
+            }
         } else if (selectedFileObject != null) {
             fileObjects = Collections.singletonList(selectedFileObject);
             projectRootDir = FileOwnerQuery.getOwner(selectedFileObject).getProjectDirectory().getPath();
         } else {
             fileObjects = Collections.EMPTY_LIST;
-            projectRootDir = "";
         }
-        JDialog dialog = new JDialog();
+        JDialog dialog = new JDialog((JFrame)SwingUtilities.windowForComponent(topComponent), true);
         dialog.setTitle("Context Paths");
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setSize(800, 800);
@@ -583,9 +615,12 @@ public class LearnFix extends JavaFix {
 
         String[][] data = new String[fileObjects.size()][2];
         for (int i = 0; i < fileObjects.size(); i++) {
-            FileObject fileObject = fileObjects.get(i);
-            String relativePath = fileObject.getPath().replaceFirst(projectRootDir + "/", "");
-            data[i][0] = fileObject.getName();
+            FileObject contextFile = fileObjects.get(i);
+             String relativePath = contextFile.getPath();
+            if (projectRootDir != null) {
+                relativePath = relativePath.replaceFirst(projectRootDir + "/", "");
+            }
+            data[i][0] = contextFile.getName();
             data[i][1] = relativePath;
         }
         String[] columnNames = {"File Name", "Path"};
@@ -631,23 +666,6 @@ public class LearnFix extends JavaFix {
         return button;
     }
 
-//    private JEditorPane updateEditor(String response) {
-//        response = response.replaceAll("<code(?!\\s*\\w+)[^>]*>(.*?)</code>", "<strong>$1</strong>");
-//        response = response.replaceAll("<pre(?!\\s*\\w+)[^>]*>(.*?)</pre>", "<strong>$1</strong>");
-//        String[] parts = response.split("<code type=\"[^\"]*\">|<code class=\"[^\"]*\">|<code class=\"[^\"]*\" type=\"[^\"]*\">|<code type=\"[^\"]*\" class=\"[^\"]*\">|</code>");
-//        topComponent.clear();
-//        for (int i = 0; i < parts.length; i++) {
-//            if (i % 2 == 1) {
-//                editorPane = topComponent.createCodePane(HtmlEscapeUtil.decodeHtml(parts[i]));
-//                javaCode = parts[i];
-//            } else {
-//                String html = renderer.render(parser.parse(parts[i]));
-//                editorPane = topComponent.createHtmlPane(html);
-//            }
-//        }
-//        return editorPane;
-//    }
-
     private void handleQuestion(String question, JButton submitButton) {
         executorService.submit(() -> {
             try {
@@ -689,10 +707,10 @@ public class LearnFix extends JavaFix {
                 }
                 String finalResponse = response;
                 SwingUtilities.invokeLater(() -> {
-                    EditorUtil.updateEditors(topComponent, finalResponse);
+                    sourceCode = EditorUtil.updateEditors(topComponent, finalResponse);
                     submitButton.setIcon(startIcon);
                     submitButton.setEnabled(true);
-                    saveButton.setEnabled(javaCode != null);
+                    saveButton.setEnabled(sourceCode != null);
                     updateButtons(prevButton, nextButton);
                     questionPane.setText("");
                 });
