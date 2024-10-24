@@ -129,15 +129,19 @@ public class PreferencesManager {
     }
 
     public void clearApiKey() {
-        preferences.remove(API_KEY_PREFERENCES);
+        preferences.remove(getProvider().name()+ API_KEY_PREFERENCES);
     }
 
     public void setApiKey(String key) {
-        preferences.put(API_KEY_PREFERENCES, key);
+        preferences.put(getProvider().name()+API_KEY_PREFERENCES, key);
     }
-
+    
     public String getApiKey() {
         return getApiKey(false);
+    }
+    
+    String getApiKey(GenAIProvider provider) {
+        return preferences.get(provider.name() + API_KEY_PREFERENCES, null);
     }
 
     public String getApiKey(boolean headless) {
@@ -149,7 +153,7 @@ public class PreferencesManager {
         }
         if (apiKey == null || apiKey.isEmpty()) {
             // If not found in environment or system properties, check Preferences
-            apiKey = preferences.get(API_KEY_PREFERENCES, null);
+            apiKey = preferences.get(getProvider().name() +API_KEY_PREFERENCES, null);
         }
 
         if (apiKey == null || apiKey.isEmpty()) {
@@ -163,7 +167,7 @@ public class PreferencesManager {
 
             if (apiKey != null && !apiKey.isEmpty()) {
                 // Save the entered API key in Preferences for future use
-                preferences.put(API_KEY_PREFERENCES, apiKey);
+                preferences.put(getProvider().name() + API_KEY_PREFERENCES, apiKey);
             } else {
                 if (!headless) {
                     // If user didn't provide a valid key, show error and throw exception
@@ -182,11 +186,11 @@ public class PreferencesManager {
     }
 
     public void setProviderLocation(String providerLocation) {
-        preferences.put(getModel() + PROVIDER_LOCATION_PREFERENCES, providerLocation);
+        preferences.put(getProvider().name() + PROVIDER_LOCATION_PREFERENCES, providerLocation);
     }
 
     public String getProviderLocation() {
-        return preferences.get(getModel() + PROVIDER_LOCATION_PREFERENCES, null);
+        return preferences.get(getProvider().name() + PROVIDER_LOCATION_PREFERENCES, null);
     }
 
     public String getModelName() {
