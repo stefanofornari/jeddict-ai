@@ -47,6 +47,9 @@ public class GenAIModel {
                 0.150, 0.600));
         MODELS.put("o1-mini", new GenAIModel(OPEN_AI, "o1-mini", "A compact model for diverse tasks.",
                 3.00, 12.00));
+        MODELS.put("o1-preview", new GenAIModel(OPEN_AI, "o1-preview", "A preview version of the O1 model, designed for early testing and feedback.",
+                0.300, 1.200));
+        
         MODELS.put("chatgpt-4o-latest", new GenAIModel(OPEN_AI, "chatgpt-4o-latest", "Latest ChatGPT model offering powerful capabilities.",
                 5.00, 15.00));
         MODELS.put("gpt-4o", new GenAIModel(OPEN_AI, "gpt-4o", "The premium choice for complex tasks requiring deep analysis and understanding.",
