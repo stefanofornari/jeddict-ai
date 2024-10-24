@@ -725,15 +725,17 @@ public class JeddictChatModel {
 
 public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage) {
     StringBuilder prompt = new StringBuilder();
-    prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output in HTML format. ")
-            .append("Your goal is to create commit messages that reflect business or domain features rather than technical details like dependency updates or refactoring. Please provide various types of commit messages based on the changes: \n")
+    prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output. ")
+            .append("""
+                    Please provide various types of commit messages based on the changes: 
+                    Your goal is to create commit messages that reflect business or domain features rather than technical details like dependency updates or refactoring.
+                    """)
             .append("- Very Short\n")
             .append("- Short\n")
             .append("- Medium\n")
             .append("- Long\n")
             .append("- Descriptive\n\n")
             .append("Here is the 'git diff' and 'git status' output:\n")
-            .append(gitDiffOutput.replace("\n", "<br>")) // Use <br> for HTML rendering
             .append("\n");
 
     // Add reference commit message to the prompt if it is not empty or null
@@ -747,25 +749,10 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
               .append("Please generate commit message suggestions based on the 'git diff' output and the context of the changes, emphasizing business or domain features.");
     }
 
-    prompt.append("Please respond with the commit messages strictly in HTML format only. "
-            + "Do not use any Markdown or code formatting (like backticks or triple backticks). "
-            + "Ensure the HTML content is well-structured, styled using Bootstrap CSS, "
-            + "and split any long lines (over 100 characters) with <br> tags for multiline display. "
-            + "Your response should look like this: <br>"
-            + "<h3>Very Short:</h3> Commit message here<br>"
-            + "<h3>Short:</h3> Commit message here<br>"
-            + "<h3>Medium:</h3> Commit message here<br>"
-            + "<h3>Long:</h3> Commit message here<br>"
-            + "<h3>Descriptive:</h3> Commit message here<br>"
-            + "Do not include any other text or formatting outside of HTML.");
-
     // Generate the commit message suggestions
     String answer = generate(prompt.toString());
     System.out.println(answer);
-    // Wrap long lines with <br> tags
-    answer = wrapLongLinesWithBr(removeCodeBlockMarkers(answer), 100);
-    System.out.println("===========================================");
-    System.out.println(answer);
+    answer = removeCodeBlockMarkers(answer);
     return answer;
 }
 
@@ -798,7 +785,7 @@ public String generateCommitMessageSuggestions(String gitDiffOutput, String refe
         return wrapped.toString();
     }
     
-public String generateHtmlResponseFromDbMetadata(String dbMetadata, String developerQuestion) {
+public String assistDbMetadata(String dbMetadata, String developerQuestion) {
     StringBuilder dbPrompt = new StringBuilder("You are an API server that provides assistance with SQL queries and database-related questions. ");
 
     dbPrompt.append("Given the following database schema metadata:\n")
@@ -810,98 +797,58 @@ public String generateHtmlResponseFromDbMetadata(String dbMetadata, String devel
               Analyze the metadata and provide a relevant SQL query with a description. Offer guidance 
               or explanations to address the developer's question, error, or inquiry related to the database. 
               Ensure the SQL queries match the database structure, constraints, and relationships. 
-              Wrap only the full SQL query in <code type="full" class="sql"> tags without adding any HTML tags inside this block, 
               and do not wrap individual SQL keywords or table/column names in <code> tags
               and do not wrap any partial sql query segment  in <code> tags. 
-              Always include a detailed explanation of the query, including its purpose and how it relates to the developer's question. 
-              Respond with the answer directly in HTML format (not in Markdown syntax), including both the SQL query and the explanation, 
-              and do not include any text outside the HTML response.
+              Always include a detailed explanation of the query, including its purpose and how it relates to the developer's question.
               """);
 
-    String htmlResponse = generate(dbPrompt.toString());
-    System.out.println(htmlResponse);
-    return htmlResponse;
+    String response = generate(dbPrompt.toString());
+    System.out.println(response);
+    return response;
 }
 
 
-    public String generateHtmlDescriptionForProject(String projectContent, String query) {
-        String prompt = "You are an API server that provides answer to query of following project in HTML. "
-                + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                + "Do not include text in <code> block.\n\n"
-                + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
-                + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
-                + "Projects Content:\n" + projectContent + "\n\n"
-                + "Query:\n" + query;
-
-        // Generate the HTML description
+    public String assistJavaClass(String classContent) {
+        String prompt = "You are an API server that provides description of following class. "
+                + "Java Class:\n" + classContent;
         String answer = generate(prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String generateHtmlDescriptionForClass(String classContent) {
-        String prompt = "You are an API server that provides description of following class in HTML. "
-                + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
-                + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
-                + "Java Class Content:\n" + classContent;
+    public String assistJavaMethod(String methodContent) {
+        String prompt = "You are an API server that provides description of following Method. "
+                + "Java Method:\n" + methodContent;
 
-        // Generate the HTML description
         String answer = generate(prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String generateHtmlDescriptionForMethod(String methodContent) {
-        String prompt = "You are an API server that provides description of following Method in HTML. "
-                + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
-                + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. "
-                + "Java Method Content:\n" + methodContent;
-
-        // Generate the HTML description
-        String answer = generate(prompt);
-        System.out.println(answer);
-        return answer;
-    }
-
-    public String generateHtmlDescription(
+    public String generateDescription(
             String projectContent, String classContent, String methodContent,
             String previousChatResponse, String userQuery) {
         String prompt;
-        String promptExtend;
+        String promptExtend = "";
         if (methodContent != null) {
             promptExtend = "Method Content:\n" + methodContent + "\n\n"
-                    + "Do not return complete Java Class, return only Method and wrap it in <code type=\"full\" class=\"java\">. \n";
+                    + "Do not return complete Java Class, return only Method";// and wrap it in <code type=\"full\" class=\"java\">. \n";
         } else if (projectContent != null) {
-            promptExtend = "Project Full Content:\n" + projectContent + "\n\n"
-                    + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
-                    + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. ";
-        } else {
-            promptExtend = "Orignal Java Class Content:\n" + classContent + "\n\n"
-                    + "If Full Java Class is in response then wrap it in <code type=\"full\" class=\"java\">. "
-                    + "If partial snippet of Java Class are in response then wrap it in <code type=\"snippet\" class=\"java\">. ";
+            promptExtend = "Project Full Content:\n" + projectContent + "\n\n";
+        } else  if (classContent != null) {
+            promptExtend = "Java Class Content:\n" + classContent + "\n\n";
         }
+        
+        prompt = "You are an API server that provides an answer to a user's query. ";
         if (previousChatResponse == null) {
-            prompt = "You are an API server that provides an interactive HTML-formatted answer to a user's query based on Orignal Java class content. "
-                    + "Given the following Java class content, and the user's query, generate an HTML document that directly addresses the specific query. "
-                    + "Ensure the HTML content is well-structured, clearly answers the query. "
-                    + "Use Bootstrap CSS for overall styling and highlight.js for code examples in the response. "
-                    + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                    + promptExtend
-                    + "\n User Query:\n" + userQuery;
+            prompt = prompt + "Given the following content, and the user's query to addresses the specific query. ";
         } else {
-            prompt = "You are an API server that provides an interactive HTML-formatted answer to a user's query based on Orignal Java class content and Previous Chat Content. "
-                    + "Given the following Java class content, the previous chat response, and the user's query, generate an HTML document that directly addresses the specific query. "
-                    + "Ensure the HTML content is well-structured, clearly answers the query, and reflects any modifications or updates suggested in the previous chat response. "
-                    + "Use Bootstrap CSS for overall styling and highlight.js for code examples in the response. "
-                    + "Do not include additional text or explanations outside of the HTML content.\n\n"
-                    + "Previous Chat Response:\n" + previousChatResponse + "\n\n"
-                    + promptExtend
-                    + "User Query:\n" + userQuery;
+            prompt = prompt + "Given the following content, the previous chat response, and the user's query to addresses the specific query. "
+                    + "Previous Chat Response:\n" + previousChatResponse + "\n\n";
         }
+        prompt = prompt + promptExtend
+                    + "User Query:\n" + userQuery;
 
-        // Generate the HTML description
         String answer = generate(prompt);
         System.out.println(answer);
         return answer;
@@ -967,37 +914,24 @@ public String generateHtmlResponseFromDbMetadata(String dbMetadata, String devel
         String testCaseType = String.join(", ", testCaseTypes);
         if (methodContent != null) {
             promptExtend = "Method Content:\n" + methodContent + "\n\n"
-                    + "Generate " + testCaseType + " test cases for this method. Include assertions and necessary mock setups. "
-                    + "Wrap the " + testCaseType + " test cases in <code type=\"full\" class=\"java\">. ";
+                    + "Generate " + testCaseType + " test cases for this method. Include assertions and necessary mock setups. ";
         } else if (projectContent != null) {
             promptExtend = "Project Full Content:\n" + projectContent + "\n\n"
-                    + "Generate " + testCaseType + " test cases for all classes. Include assertions and necessary mock setups. "
-                    + "If Full Java Class is in response, wrap the generated " + testCaseType + " test class in <code type=\"full\" class=\"java\">. "
-                    + "If partial snippets are in response, wrap them in <code type=\"snippet\" class=\"java\">. ";
+                    + "Generate " + testCaseType + " test cases for all classes. Include assertions and necessary mock setups. ";
         } else {
-            promptExtend = "Original Java Class Content:\n" + classContent + "\n\n"
-                    + "Generate " + testCaseType + " test cases for the main methods in this class. Include assertions and necessary mock setups. "
-                    + "If Full Java Class is in response, wrap the generated " + testCaseType + " test class in <code type=\"full\" class=\"java\">. "
-                    + "If partial snippets are in response, wrap them in <code type=\"snippet\" class=\"java\">. ";
+            promptExtend = "Java Class Content:\n" + classContent + "\n\n"
+                    + "Generate " + testCaseType + " test cases for this class. Include assertions and necessary mock setups. ";
         }
 
         if (previousChatResponse == null) {
             prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content. "
                     + "Given the following Java class or method content and the user's query, generate " + testCaseType + " test cases that are well-structured and functional. "
-                    + "Provide an interactive HTML-formatted descriptive answer with test case. "
-                    + "Ensure the HTML content is well-structured, clearly answers the query. "
-                    + "Use Bootstrap CSS for overall styling for code examples in the response. "
-                    + "Do not include additional text or explanations outside of the HTML content.\n\n"
                     + promptExtend
                     + userQuery;
         } else {
             prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content and previous chat content. "
                     + "Given the following Java class content, previous chat response, and the user's query, generate " + testCaseType + " test cases that directly address the user's query. "
                     + "Ensure the " + testCaseType + " test cases are well-structured and reflect any modifications or updates suggested in the previous chat response. "
-                    + "Provide an interactive HTML-formatted descriptive answer with test case. "
-                    + "Ensure the HTML content is well-structured, clearly answers the query. "
-                    + "Use Bootstrap CSS for overall styling for code examples in the response. "
-                    + "Do not include additional text or explanations outside of the HTML content.\n\n"
                     + "Previous Chat Response:\n" + previousChatResponse + "\n\n"
                     + promptExtend
                     + userQuery;

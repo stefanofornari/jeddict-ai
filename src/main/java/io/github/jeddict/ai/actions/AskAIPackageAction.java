@@ -20,11 +20,14 @@ package io.github.jeddict.ai.actions;
 
 import io.github.jeddict.ai.hints.LearnFix;
 import io.github.jeddict.ai.settings.PreferencesManager;
-import static io.github.jeddict.ai.util.UIUtil.askQuery;
 import java.awt.event.ActionEvent;
 import java.util.Collection;
+import java.util.Iterator;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import org.netbeans.api.project.FileOwnerQuery;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectUtils;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
@@ -39,13 +42,18 @@ import org.openide.util.NbBundle.Messages;
         category = "Project",
         id = "io.github.jeddict.ai.actions.AskAIPackageAction")
 @ActionRegistration(
-        displayName = "#CTL_AskAIPackageAction", lazy = false, asynchronous = true)
-@ActionReference(path = "Projects/package/Actions", position = 100)
-@Messages({"CTL_AskAIPackageAction=AI Query Package"})
+        displayName = "#CTL_AskAIPackageAction", lazy = true, asynchronous = true, iconBase = "icons/logo28.png")
+@ActionReferences({
+    @ActionReference(path = "Projects/package/Actions", position = 100),
+    @ActionReference(path = "UI/ToolActions/Files", position = 2045),
+    @ActionReference(path = "Toolbars/Build", position = 100)})
+@Messages({"CTL_AskAIPackageAction=AI Assistant"})
 public final class AskAIPackageAction extends AbstractAction implements ContextAwareAction {
 
     @Override
     public void actionPerformed(ActionEvent ev) {
+        LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY);
+        learnFix.openChat(null, "", null, "AI Assistant", null);
     }
 
     @Override
@@ -61,23 +69,24 @@ public final class AskAIPackageAction extends AbstractAction implements ContextA
 
     private static final class ContextAction extends AbstractAction {
 
-        private final Collection<? extends FileObject> selectedPackages;
+        private final Collection<? extends FileObject> selectedFileObjects;
 
         private ContextAction(boolean enable, Collection<? extends FileObject> selectedPackages) {
             super(Bundle.CTL_AskAIPackageAction());
             this.putValue(DynamicMenuContent.HIDE_WHEN_DISABLED, true);
             this.setEnabled(enable);
-            this.selectedPackages = selectedPackages;
+            this.selectedFileObjects = selectedPackages;
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) {
-            String query = askQuery();
-            if (query == null) {
-                return;
+            LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, selectedFileObjects);
+            Iterator<? extends FileObject> selectedPackagesIterator = selectedFileObjects.iterator();
+            if (selectedPackagesIterator.hasNext()) {
+                Project project = FileOwnerQuery.getOwner(selectedPackagesIterator.next());
+                String projectName = ProjectUtils.getInformation(project).getDisplayName();
+                learnFix.openChat(null, "", null, projectName + "* AI Assistant", null);
             }
-            LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY);
-            learnFix.askQueryForPackage(selectedPackages, query);
         }
 
     }

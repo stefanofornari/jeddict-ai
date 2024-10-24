@@ -20,11 +20,11 @@ package io.github.jeddict.ai.actions;
 
 import io.github.jeddict.ai.hints.LearnFix;
 import io.github.jeddict.ai.settings.PreferencesManager;
-import static io.github.jeddict.ai.util.UIUtil.askQuery;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectUtils;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
@@ -35,13 +35,14 @@ import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 
 @ActionID(
-        category = "Project",
+        category = "Edit",
         id = "io.github.jeddict.ai.actions.AskAIProjectAction")
 @ActionRegistration(
         displayName = "#CTL_AskAIProjectAction", lazy = false, asynchronous = true)
 @ActionReferences({
-    @ActionReference(path = "Projects/Actions", position = 100),})
-@Messages({"CTL_AskAIProjectAction=AI Query Project"})
+    @ActionReference(path = "Projects/Actions", position = 100),
+})
+@Messages({"CTL_AskAIProjectAction=AI Assistant"})
 public final class AskAIProjectAction extends AbstractAction implements ContextAwareAction {
 
     @Override
@@ -72,12 +73,9 @@ public final class AskAIProjectAction extends AbstractAction implements ContextA
 
         @Override
         public void actionPerformed(ActionEvent evt) {
-            String query = askQuery();
-            if (query == null) {
-                return;
-            }
-            LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY);
-            learnFix.askQueryForProject(project, query);
+            LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, project);
+            String projectName = ProjectUtils.getInformation(project).getDisplayName();
+            learnFix.openChat(null, "", null, projectName + " AI Assistant", null);
         }
 
     }

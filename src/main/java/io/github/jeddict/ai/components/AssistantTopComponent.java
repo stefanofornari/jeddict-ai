@@ -41,6 +41,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
+import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.project.Project;
@@ -53,6 +54,7 @@ import org.openide.windows.TopComponent;
 public class AssistantTopComponent extends TopComponent {
 
     public static final ImageIcon icon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo16.png"));
+    public static final ImageIcon logoIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo28.png"));
     public static final ImageIcon copyIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/copyIcon.gif"));
     public static final ImageIcon saveasIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveIcon.png"));
     public static final ImageIcon startIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/startIcon.png"));
@@ -60,12 +62,13 @@ public class AssistantTopComponent extends TopComponent {
     public static final ImageIcon upIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/browserIcon.png"));
     public static final ImageIcon forwardIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/forwardIcon.png"));
     public static final ImageIcon backIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/backIcon.png"));
-    public static final ImageIcon saveToEditor = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveToEditorIcon.png"));
-    public static final ImageIcon newEditor = new ImageIcon(AssistantTopComponent.class.getResource("/icons/newEditorIcon.png"));
+    public static final ImageIcon saveToEditorIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveToEditorIcon.png"));
+    public static final ImageIcon newEditorIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/newEditorIcon.png"));
+    public static final ImageIcon attachIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/attachIcon.gif"));
 
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
-    private HTMLEditorKit editorKit;
+    private HTMLEditorKit htmlEditorKit;
     private final Project project;
 
     private String type = "java";
@@ -109,6 +112,17 @@ public class AssistantTopComponent extends TopComponent {
     public JEditorPane createCodePane(String content) {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setEditorKit(createEditorKit("text/x-" + type));
+        editorPane.setText(content);
+        addContextMenu(editorPane);
+        parentPanel.add(editorPane);
+        return editorPane;
+    }
+
+    public JEditorPane createCodePane(String mimeType, String content) {
+        JEditorPane editorPane = new JEditorPane();
+        EditorKit editorKit = createEditorKit(mimeType == null ? ("text/x-" + type) : mimeType);
+        System.out.println("Mime " + mimeType + " - " + editorKit);
+        editorPane.setEditorKit(editorKit);
         editorPane.setText(content);
         addContextMenu(editorPane);
         parentPanel.add(editorPane);
@@ -160,26 +174,28 @@ public class AssistantTopComponent extends TopComponent {
         String packageName = extractPackageName(content);
         boolean isTestClass = className != null && className.endsWith("Test");
         String baseDir = isTestClass ? "src/test/java" : "src/main/java";
-        String projectRootDir = project.getProjectDirectory().getPath();
-        String filePath = Paths.get(projectRootDir, baseDir).toString();
-        if (packageName != null) {
-            filePath = Paths.get(filePath, packageName.split("\\.")).toString();
-        }
-        File targetDir = new File(filePath);
-        if (!targetDir.exists()) {
-            boolean dirsCreated = targetDir.mkdirs(); // Create the directory and any necessary parent directories
-            if (!dirsCreated) {
-                JOptionPane.showMessageDialog(null, "Failed to create directories: " + targetDir.getAbsolutePath());
-                return; // Exit the method if directories couldn't be created
-            }
-        }
+        
         // Create the file chooser
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save As");
         fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Java Files", "java"));
         
-        // Set the current directory to the constructed file path
-        fileChooser.setCurrentDirectory(new File(filePath));
+        if (project != null) {
+            String projectRootDir = project.getProjectDirectory().getPath();
+            String filePath = Paths.get(projectRootDir, baseDir).toString();
+            if (packageName != null) {
+                filePath = Paths.get(filePath, packageName.split("\\.")).toString();
+            }
+            File targetDir = new File(filePath);
+            if (!targetDir.exists()) {
+                boolean dirsCreated = targetDir.mkdirs();
+                if (!dirsCreated) {
+                    JOptionPane.showMessageDialog(null, "Failed to create directories: " + targetDir.getAbsolutePath());
+                    return;
+                }
+            }
+            fileChooser.setCurrentDirectory(new File(filePath));
+        }
         if (className != null) {
             String defaultFileName = className.endsWith(".java") ? className : className + ".java";
             fileChooser.setSelectedFile(new File(defaultFileName));
@@ -269,10 +285,11 @@ public class AssistantTopComponent extends TopComponent {
         StringBuilder allText = new StringBuilder();
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
-                if (editorPane.getEditorKit().getContentType().equals("text/x-" + type)) {
-                    allText.append("<code type=\"full\" class=\"").append(type).append("\">");
+                if (!editorPane.getEditorKit().getContentType().equals("text/html") 
+                        && editorPane.getEditorKit().getContentType().startsWith("text")) {
+                    allText.append("<pre><code class=\"").append(type).append("\">");
                     allText.append(editorPane.getText());
-                    allText.append("</code>");
+                    allText.append("</code></pre>");
                 } else {
                     allText.append(editorPane.getText());
                 }
@@ -306,11 +323,11 @@ public class AssistantTopComponent extends TopComponent {
 
 
     private HTMLEditorKit getHTMLEditorKit() {
-        if (editorKit != null) {
-            return editorKit;
+        if (htmlEditorKit != null) {
+            return htmlEditorKit;
         }
-        editorKit = new HTMLEditorKit();
-        StyleSheet styleSheet = editorKit.getStyleSheet();
+        htmlEditorKit = new HTMLEditorKit();
+        StyleSheet styleSheet = htmlEditorKit.getStyleSheet();
         styleSheet.addRule("html { font-family: sans-serif; line-height: 1.15; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }");
         styleSheet.addRule("article, aside, figcaption, figure, footer, header, hgroup, main, nav, section { display: block; }");
         styleSheet.addRule("body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; text-align: left; background-color: #fff; }");
@@ -385,7 +402,7 @@ public class AssistantTopComponent extends TopComponent {
         styleSheet.addRule("pre code { font-size: inherit; color: inherit; word-break: normal; }");
         styleSheet.addRule("strong { font-weight: bold; }");
 
-        return editorKit;
+        return htmlEditorKit;
     }
 
 }
