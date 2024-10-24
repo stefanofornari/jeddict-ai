@@ -113,7 +113,6 @@ public class JeddictHint {
                     fixes.add(new RestEndpointFix(tpHandle, Action.CREATE, elementHandle).toEditorFix());
                 }
                 fixes.add(new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix());
-                fixes.add(new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix());
                 fixes.add(new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix());
                 break;
 //            case IDENTIFIER:
@@ -157,7 +156,6 @@ public class JeddictHint {
                         }
                     }
                     fixes.add(new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix());
-                    fixes.add(new LearnFix(tpHandle, Action.QUERY, treePath).toEditorFix());
                     fixes.add(new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix());
                 }
                 break;
