@@ -32,7 +32,7 @@ public class StringUtil {
     }
 
     public static String removeCodeBlockMarkers(String input) {
-        if(input == null) {
+        if (input == null) {
             return null;
         }
         input = input.trim();

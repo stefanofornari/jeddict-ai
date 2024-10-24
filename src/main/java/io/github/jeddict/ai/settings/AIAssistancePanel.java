@@ -593,7 +593,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     }//GEN-LAST:event_excludeJavadocCommentsCheckBoxActionPerformed
 
     private void varContextComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_varContextComboBoxActionPerformed
-       AIClassContext selectedContext = (AIClassContext) varContextComboBox.getSelectedItem();
+        AIClassContext selectedContext = (AIClassContext) varContextComboBox.getSelectedItem();
         if (selectedContext != null) {
             varContextHelp.setText(selectedContext.getDescription());
         }
@@ -622,7 +622,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 && !providerLocationField.getText().isEmpty()) {
             GPT4AllModelFetcher fetcher = new GPT4AllModelFetcher();
             return fetcher.fetchModelNames(providerLocationField.getText());
-        }else if (selectedProvider == GenAIProvider.GROQ
+        } else if (selectedProvider == GenAIProvider.GROQ
                 && !providerLocationField.getText().isEmpty()) {
             GroqModelFetcher fetcher = new GroqModelFetcher();
             return fetcher.fetchModels(providerLocationField.getText(), new String(apiKeyField.getPassword()));
@@ -714,6 +714,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     }
 
     private DefaultTableModel excludeTableModel;
+
     private DefaultTableModel getExcludeTableModel() {
         excludeDirTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         List<String> excludeDirList = preferencesManager.getExcludeDirList();
@@ -725,7 +726,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         excludeTableModel = new DefaultTableModel(
                 excludeDirArray,
                 new String[]{
-                   NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeDir.text")
+                    NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeDir.text")
                 }
         ) {
             @Override
@@ -743,7 +744,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         };
         return excludeTableModel;
     }
-    
+
     private String getCommaSeparatedValues(DefaultTableModel model) {
         StringBuilder sb = new StringBuilder();
         int rowCount = model.getRowCount();
@@ -758,11 +759,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         return sb.toString();
     }
-    
-       static class CustomTableCellRenderer extends DefaultTableCellRenderer {
+
+    static class CustomTableCellRenderer extends DefaultTableCellRenderer {
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column) {
+                boolean hasFocus, int row, int column) {
             // Get the default component
             Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
@@ -771,14 +773,13 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 JComponent jComponent = (JComponent) cell;
 
                 // Set a border with a custom color
-                jComponent.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,  new Color(225, 225, 225)));  // Red border as an example
+                jComponent.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(225, 225, 225)));  // Red border as an example
             }
 
             // Return the cell component
             return cell;
         }
     }
-    
 
     boolean valid() {
         return true;

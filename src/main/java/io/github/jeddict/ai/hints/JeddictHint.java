@@ -74,6 +74,7 @@ public class JeddictHint {
 
     public JeddictHint() {
     }
+
     @TriggerTreeKind({Tree.Kind.CLASS, Tree.Kind.INTERFACE, Tree.Kind.METHOD, Tree.Kind.VARIABLE,
         Tree.Kind.BLOCK,
         Tree.Kind.STRING_LITERAL,

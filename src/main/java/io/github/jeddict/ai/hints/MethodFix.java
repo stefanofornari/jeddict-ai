@@ -138,7 +138,7 @@ public class MethodFix extends JavaFix {
         }
 
         // Formating
-       String lastLine = geIndentaion(copy, leaf);
+        String lastLine = geIndentaion(copy, leaf);
         if (lastLine.isBlank() && lastLine.length() <= 12) {
             StringBuilder indentedContent = new StringBuilder();
             boolean ignore = true;
@@ -155,7 +155,5 @@ public class MethodFix extends JavaFix {
         copy.rewrite(leaf, copy.getTreeMaker().QualIdent(methodContent));
 
     }
-    
-
 
 }

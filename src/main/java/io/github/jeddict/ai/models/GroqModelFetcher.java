@@ -48,20 +48,20 @@ public class GroqModelFetcher {
         }
         try {
             HttpClient client = HttpClient.newHttpClient();
-            
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/models"))
                     .header("Authorization", "Bearer " + token)
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();
-            
+
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            
+
             if (response.statusCode() == 200) {
                 JSONObject jsonResponse = new JSONObject(response.body());
                 JSONArray modelsArray = jsonResponse.getJSONArray("data"); // Fetch data array
-                
+
                 List<String> modelList = new ArrayList<>();
                 for (int i = 0; i < modelsArray.length(); i++) {
                     JSONObject modelObject = modelsArray.getJSONObject(i);

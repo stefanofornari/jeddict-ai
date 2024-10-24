@@ -49,7 +49,7 @@ public class GenAIModel {
                 3.00, 12.00));
         MODELS.put("o1-preview", new GenAIModel(OPEN_AI, "o1-preview", "A preview version of the O1 model, designed for early testing and feedback.",
                 0.300, 1.200));
-        
+
         MODELS.put("chatgpt-4o-latest", new GenAIModel(OPEN_AI, "chatgpt-4o-latest", "Latest ChatGPT model offering powerful capabilities.",
                 5.00, 15.00));
         MODELS.put("gpt-4o", new GenAIModel(OPEN_AI, "gpt-4o", "The premium choice for complex tasks requiring deep analysis and understanding.",
@@ -76,7 +76,7 @@ public class GenAIModel {
         MODELS.put("google/gemma-2-9b-it", new GenAIModel(DEEPINFRA, "google/gemma-2-9b-it", "Gemini model specialized for IT tasks, with a focus on performance.", 0.10, 0.30));
         MODELS.put("microsoft/WizardLM-2-8x22B", new GenAIModel(DEEPINFRA, "microsoft/WizardLM-2-8x22B", "An 8x22B model designed for advanced conversational applications.", 0.25, 0.75));
         MODELS.put("mistralai/Mistral-7B-Instruct-v0.3", new GenAIModel(DEEPINFRA, "mistralai/Mistral-7B-Instruct-v0.3", "A 7B instruct model optimized for general tasks.", 0.15, 0.45));
-    
+
         MODELS.put("deepseek-chat", new GenAIModel(DEEPSEEK, "deepseek-chat", "", 0.014, 0.28));
     }
 

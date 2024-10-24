@@ -113,7 +113,7 @@ public class SourceUtil {
 
         // Alternatively, save changes and let the IDE apply auto-format on save if configured
     }
-    
+
     public static String geIndentaion(WorkingCopy copy, Tree leaf) {
         try {
             if (copy.getDocument() != null) {
@@ -128,8 +128,7 @@ public class SourceUtil {
         }
         return "";
     }
-    
-        
+
     public static String removeJavadoc(String content) {
         return content.replaceAll("/\\*{1,2}[\\s\\S]*?\\*/|//.*|^\\s*///.*$", "");
     }

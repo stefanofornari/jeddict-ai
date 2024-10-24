@@ -124,8 +124,6 @@ public class JavaDocFixImpl extends JavaFix {
         }
         javadocContent = removeCodeBlockMarkers(javadocContent);
 
-         
-         
         int startOffset = (int) wc.getTrees().getSourcePositions()
                 .getStartPosition(wc.getCompilationUnit(), tree);
 
@@ -133,7 +131,7 @@ public class JavaDocFixImpl extends JavaFix {
             String lastLine = geIndentaion(wc, tree);
             if (lastLine.isBlank() && lastLine.length() <= 12) {
                 StringBuilder indentedContent = new StringBuilder();
-                
+
                 boolean ignore = true;
                 for (String line : javadocContent.split("\n")) {
                     if (ignore) {
@@ -149,7 +147,7 @@ public class JavaDocFixImpl extends JavaFix {
             }
             document.insertString(startOffset, javadocContent, null);
         }
-        
+
         if (action == ENHANCE && oldDocCommentTree != null && document != null) {
             DocTrees docTrees = wc.getDocTrees();
             CompilationUnitTree cuTree = wc.getCompilationUnit();
@@ -159,7 +157,7 @@ public class JavaDocFixImpl extends JavaFix {
 
             int startPos = (int) start;
             int endPos = (int) end;
-            
+
             try {
                 // Search for '*/' after the end position of the current comment
                 String content = document.getText(endPos, document.getLength() - endPos);
@@ -182,7 +180,7 @@ public class JavaDocFixImpl extends JavaFix {
                 e.printStackTrace();
             }
         }
-       
+
     }
 
 }

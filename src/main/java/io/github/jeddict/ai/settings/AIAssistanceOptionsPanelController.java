@@ -26,7 +26,6 @@ import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
-
 @OptionsPanelController.TopLevelRegistration(
         categoryName = "#OptionsCategory_Name_JeddictAIAssistant",
         iconBase = "icons/logo32.png",

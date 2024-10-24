@@ -73,42 +73,42 @@ public class OpenChatAction implements ActionListener {
                         Exceptions.printStackTrace(ex);
                     }
                 } else {
-                    
-        JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
-        String currentselectedText = currenteditor.getSelectedText();
-        final StyledDocument currentdocument = (StyledDocument) currenteditor.getDocument();
-        int currentselectionStartPosition = currenteditor.getSelectionStart();
-         FileObject currentfile = NbEditorUtilities.getDataObject(currentdocument).getPrimaryFile();
-         if(currentfile != null) {
-             if(currentselectedText == null || currentselectedText.isEmpty()) {
-                 try {
-                        document.insertString(currentselectionStartPosition, content, null);
-                        Reformat reformat = Reformat.get(document);
-                        reformat.lock();
-                        try {
-                            reformat.reformat(currentselectionStartPosition, currentselectionStartPosition + content.length());
-                        } finally {
-                            reformat.unlock();
+
+                    JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
+                    String currentselectedText = currenteditor.getSelectedText();
+                    final StyledDocument currentdocument = (StyledDocument) currenteditor.getDocument();
+                    int currentselectionStartPosition = currenteditor.getSelectionStart();
+                    FileObject currentfile = NbEditorUtilities.getDataObject(currentdocument).getPrimaryFile();
+                    if (currentfile != null) {
+                        if (currentselectedText == null || currentselectedText.isEmpty()) {
+                            try {
+                                document.insertString(currentselectionStartPosition, content, null);
+                                Reformat reformat = Reformat.get(document);
+                                reformat.lock();
+                                try {
+                                    reformat.reformat(currentselectionStartPosition, currentselectionStartPosition + content.length());
+                                } finally {
+                                    reformat.unlock();
+                                }
+                            } catch (BadLocationException ex) {
+                                Exceptions.printStackTrace(ex);
+                            }
+                        } else {
+                            try {
+                                document.remove(currentselectionStartPosition, currentselectedText.length());
+                                document.insertString(currentselectionStartPosition, content, null);
+                                Reformat reformat = Reformat.get(document);
+                                reformat.lock();
+                                try {
+                                    reformat.reformat(currentselectionStartPosition, currentselectionStartPosition + content.length());
+                                } finally {
+                                    reformat.unlock();
+                                }
+                            } catch (BadLocationException ex) {
+                                Exceptions.printStackTrace(ex);
+                            }
                         }
-                    } catch (BadLocationException ex) {
-                        Exceptions.printStackTrace(ex);
                     }
-             } else {
-                 try {
-                        document.remove(currentselectionStartPosition, currentselectedText.length());
-                        document.insertString(currentselectionStartPosition, content, null);
-                        Reformat reformat = Reformat.get(document);
-                        reformat.lock();
-                        try {
-                            reformat.reformat(currentselectionStartPosition, currentselectionStartPosition + content.length());
-                        } finally {
-                            reformat.unlock();
-                        }
-                    } catch (BadLocationException ex) {
-                        Exceptions.printStackTrace(ex);
-                    }
-             }
-         }
                     System.out.println("");
                 }
             });

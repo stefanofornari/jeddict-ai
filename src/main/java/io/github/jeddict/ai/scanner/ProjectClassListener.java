@@ -45,7 +45,6 @@ public class ProjectClassListener {
         this.classDatas = classDatas;
     }
 
-
     public Set<DataObject> getPendingDataObject() {
         return pendingDO;
     }

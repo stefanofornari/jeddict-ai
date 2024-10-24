@@ -96,8 +96,9 @@ public class ProjectClassScanner {
     }
 
     public static void scanJavaFile(DataObject javaFile, Map<FileObject, ClassData> classList) throws IOException {
-        scanJavaFile(javaFile.getPrimaryFile(), classList) ;
+        scanJavaFile(javaFile.getPrimaryFile(), classList);
     }
+
     public static void scanJavaFile(FileObject javaFile, Map<FileObject, ClassData> classList) throws IOException {
         JavaSource javaSource = JavaSource.forFileObject(javaFile);
 
@@ -257,7 +258,7 @@ public class ProjectClassScanner {
 
     public static List<ClassData> getClassData(FileObject fileObject, Set<String> findReferencedClasses, AIClassContext classAnalysisContext) {
 
-        if (classAnalysisContext == AIClassContext.CURRENT_CLASS 
+        if (classAnalysisContext == AIClassContext.CURRENT_CLASS
                 || fileObject == null) {
             return Collections.emptyList();
         }

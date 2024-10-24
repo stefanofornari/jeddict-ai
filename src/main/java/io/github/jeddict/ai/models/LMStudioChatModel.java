@@ -41,7 +41,6 @@ import java.util.List;
 
 public class LMStudioChatModel implements ChatLanguageModel {
 
-    
     public static final String LMSTUDIO_MODEL_URL = "http://localhost:1234/v1/";
     private final OpenAiClient client;
     private final String modelName;
@@ -51,29 +50,29 @@ public class LMStudioChatModel implements ChatLanguageModel {
     private final Integer maxRetries;
 
     private LMStudioChatModel(String baseUrl,
-                             String modelName,
-                             Double temperature,
-                             Double topP,
-                             Integer maxTokens,
-                             Duration timeout,
-                             Integer maxRetries,
-                             Boolean logRequests,
-                             Boolean logResponses) {
+            String modelName,
+            Double temperature,
+            Double topP,
+            Integer maxTokens,
+            Duration timeout,
+            Integer maxRetries,
+            Boolean logRequests,
+            Boolean logResponses) {
 
         temperature = temperature == null ? 0.7 : temperature;
         timeout = timeout == null ? ofSeconds(60) : timeout;
         maxRetries = maxRetries == null ? 3 : maxRetries;
 
         this.client = OpenAiClient.builder()
-            .openAiApiKey("ignored")
-            .baseUrl(ensureNotBlank(baseUrl, "baseUrl"))
-            .callTimeout(timeout)
-            .connectTimeout(timeout)
-            .readTimeout(timeout)
-            .writeTimeout(timeout)
-            .logRequests(logRequests)
-            .logResponses(logResponses)
-            .build();
+                .openAiApiKey("ignored")
+                .baseUrl(ensureNotBlank(baseUrl, "baseUrl"))
+                .callTimeout(timeout)
+                .connectTimeout(timeout)
+                .readTimeout(timeout)
+                .writeTimeout(timeout)
+                .logRequests(logRequests)
+                .logResponses(logResponses)
+                .build();
         this.modelName = ensureNotBlank(modelName, "modelName");
         this.temperature = temperature;
         this.topP = topP;
@@ -86,6 +85,7 @@ public class LMStudioChatModel implements ChatLanguageModel {
     }
 
     public static class Builder {
+
         private String baseUrl;
         private String modelName;
         private Double temperature;
@@ -162,15 +162,15 @@ public class LMStudioChatModel implements ChatLanguageModel {
     }
 
     private Response<AiMessage> generate(List<ChatMessage> messages,
-                                         List<ToolSpecification> toolSpecifications,
-                                         ToolSpecification toolThatMustBeExecuted
+            List<ToolSpecification> toolSpecifications,
+            ToolSpecification toolThatMustBeExecuted
     ) {
         ChatCompletionRequest.Builder requestBuilder = ChatCompletionRequest.builder()
-            .model(modelName)
-            .messages(toOpenAiMessages(messages))
-            .temperature(temperature)
-            .topP(topP)
-            .maxTokens(maxTokens);
+                .model(modelName)
+                .messages(toOpenAiMessages(messages))
+                .temperature(temperature)
+                .topP(topP)
+                .maxTokens(maxTokens);
 
         if (toolSpecifications != null && !toolSpecifications.isEmpty()) {
             requestBuilder.functions(toFunctions(toolSpecifications));
@@ -186,9 +186,9 @@ public class LMStudioChatModel implements ChatLanguageModel {
         Usage usage = response.usage();
 
         return Response.from(
-            aiMessageFrom(response),
-            new TokenUsage(usage.promptTokens(), usage.completionTokens()),
-            finishReasonFrom(response.choices().get(0).finishReason())
+                aiMessageFrom(response),
+                new TokenUsage(usage.promptTokens(), usage.completionTokens()),
+                finishReasonFrom(response.choices().get(0).finishReason())
         );
     }
 }
