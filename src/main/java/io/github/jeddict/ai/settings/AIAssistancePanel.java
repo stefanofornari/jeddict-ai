@@ -523,6 +523,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 }
             }
         }
+        apiKeyField.setText(preferencesManager.getApiKey((GenAIProvider) providerComboBox.getSelectedItem()));
         if (apiKeyLabel.isVisible()
                 && selectedProvider != null
                 && !selectedProvider.getApiKeyUrl().isEmpty()) {
