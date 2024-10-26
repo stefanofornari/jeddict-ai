@@ -22,8 +22,9 @@ import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.lang.JeddictChatModel;
 import io.github.jeddict.ai.util.StringUtil;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
@@ -48,7 +49,7 @@ public class ExpressionFix extends JavaFix {
 
     @Override
     protected String getText() {
-        return NbBundle.getMessage(JeddictChatModel.class, "HINT_ENHANCE_EXPRESSION");
+        return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_ENHANCE_EXPRESSION");
     }
 
     @Override

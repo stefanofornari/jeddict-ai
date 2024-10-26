@@ -26,9 +26,11 @@ import static com.sun.source.tree.Tree.Kind.ENUM;
 import static com.sun.source.tree.Tree.Kind.INTERFACE;
 import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.output.Response;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.lang.JeddictChatModel;
 import io.github.jeddict.ai.completion.SQLCompletion;
 import io.github.jeddict.ai.components.AssistantTopComponent;
 import static io.github.jeddict.ai.components.AssistantTopComponent.attachIcon;
@@ -87,6 +89,7 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.progressIcon
 import static io.github.jeddict.ai.components.AssistantTopComponent.saveToEditorIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.settingsIcon;
 import io.github.jeddict.ai.components.ContextDialog;
+import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -175,13 +178,13 @@ public class LearnFix extends JavaFix {
     @Override
     protected String getText() {
         if (action == Action.LEARN) {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_LEARN",
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_LEARN",
                     StringUtil.convertToCapitalized(treePath.getLeaf().getKind().toString()));
         } else if (action == Action.QUERY) {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_QUERY",
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_QUERY",
                     StringUtil.convertToCapitalized(treePath.getLeaf().getKind().toString()));
         } else if (action == Action.TEST) {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_TEST",
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_TEST",
                     StringUtil.convertToCapitalized(treePath.getLeaf().getKind().toString()));
         }
         return null;
@@ -201,31 +204,44 @@ public class LearnFix extends JavaFix {
                 || leaf.getKind() == ENUM
                 || leaf.getKind() == METHOD) {
             executorService.submit(() -> {
-                String response;
-                String fileName = fileObject != null ? fileObject.getName() : null;
-                if (action == Action.TEST) {
-                    if (leaf instanceof MethodTree) {
-                        response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), null, null);
-                    } else {
-                        response = new JeddictChatModel().generateTestCase(null, treePath.getCompilationUnit().toString(), null, null, null);
-                    }
-                } else {
-                    if (leaf instanceof MethodTree) {
-                        response = new JeddictChatModel().assistJavaMethod(leaf.toString());
-                    } else {
-                        response = new JeddictChatModel().assistJavaClass(treePath.getCompilationUnit().toString());
-                    }
-                }
                 String name;
                 if (leaf instanceof MethodTree) {
                     name = ((MethodTree) leaf).getName().toString();
                 } else {
                     name = ((ClassTree) leaf).getSimpleName().toString();
-
                 }
+                String fileName = fileObject != null ? fileObject.getName() : null;
+
                 SwingUtilities.invokeLater(() -> {
-                    displayHtmlContent(removeCodeBlockMarkers(response), fileName, name + " AI Assistant");
+                    displayHtmlContent(fileName, name + " AI Assistant");
+                    JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
+                        @Override
+                        public void onComplete(String response) {
+                            sourceCode = EditorUtil.updateEditors(topComponent, response);
+                            responseHistory.add(response);
+                            currentResponseIndex = responseHistory.size() - 1;
+                        }
+                    };
+                    String response;
+                    if (action == Action.TEST) {
+                        if (leaf instanceof MethodTree) {
+                            response = new JeddictChatModel(handler).generateTestCase(null, null, leaf.toString(), null, null);
+                        } else {
+                            response = new JeddictChatModel(handler).generateTestCase(null, treePath.getCompilationUnit().toString(), null, null, null);
+                        }
+                    } else {
+                        if (leaf instanceof MethodTree) {
+                            response = new JeddictChatModel(handler).assistJavaMethod(leaf.toString());
+                        } else {
+                            response = new JeddictChatModel(handler).assistJavaClass(treePath.getCompilationUnit().toString());
+                        }
+                    }
+                    if (response != null && !response.isEmpty()) {
+                        response = removeCodeBlockMarkers(response);
+                        handler.onComplete(response);
+                    }
                 });
+
             });
         }
     }
@@ -337,33 +353,42 @@ public class LearnFix extends JavaFix {
     public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
         ProjectInformation info = ProjectUtils.getInformation(project);
         String projectName = info.getDisplayName();
-        String response = new JeddictChatModel().generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
-        displayHtmlContent(removeCodeBlockMarkers(response), null, projectName + " GenAI Commit");
-        this.commitChanges = commitChanges;
+        SwingUtilities.invokeLater(() -> {
+            displayHtmlContent(null, projectName + " GenAI Commit");
+            JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
+                @Override
+                public void onComplete(String response) {
+                    response = removeCodeBlockMarkers(response);
+                    sourceCode = EditorUtil.updateEditors(topComponent, response);
+                    responseHistory.add(response);
+                    currentResponseIndex = responseHistory.size() - 1;
+                    LearnFix.this.commitChanges = commitChanges;
+                }
+            };
+            String response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
+            if (response != null && !response.isEmpty()) {
+                response = removeCodeBlockMarkers(response);
+                handler.onComplete(response);
+            }
+        });
     }
 
-    public void displayHtmlContent(final String response, String filename, String title) {
-        SwingUtilities.invokeLater(() -> {
-            Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
-            prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-            topComponent = new AssistantTopComponent(title, null, getProject());
-            sourceCode = EditorUtil.updateEditors(topComponent, response);
-
-            JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
-            topComponent.add(scrollPane, BorderLayout.CENTER);
-
-            responseHistory.add(response);
-            currentResponseIndex = responseHistory.size() - 1;
-
-            topComponent.add(createBottomPanel(null, filename, title, null), BorderLayout.SOUTH);
-            topComponent.open();
-            topComponent.requestActive();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+    public void displayHtmlContent(String filename, String title) {
+        Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
+        prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
+        topComponent = new AssistantTopComponent(title, null, getProject());
+        JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
+        topComponent.add(scrollPane, BorderLayout.CENTER);
+        topComponent.add(createBottomPanel(null, filename, title, null), BorderLayout.SOUTH);
+        topComponent.open();
+        topComponent.requestActive();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            SwingUtilities.invokeLater(() -> {
                 if (topComponent != null) {
                     topComponent.close();
                 }
-            }));
-        });
+            });
+        }));
     }
 
     public void openChat(String type, final String query, String fileName, String title, Consumer<String> action) {
@@ -465,7 +490,7 @@ public class LearnFix extends JavaFix {
         openInBrowserButton.setMaximumSize(buttonSize);
         openInBrowserButton.setEnabled(topComponent.getAllEditorCount() > 0);
         westButtonPanel.add(openInBrowserButton);
-        
+
         JButton optionsButton = createButton(settingsIcon); // Replace with actual icon path
         optionsButton.setToolTipText("Open Jeddict AI Assistant Settings");
         optionsButton.setPreferredSize(buttonSize);
@@ -485,7 +510,6 @@ public class LearnFix extends JavaFix {
 //            }
 //        });
 //        westButtonPanel.add(jeddictButton);
-
         // New Chat Button (West)
         JButton newChatButton = createButton(newEditorIcon);
         newChatButton.setToolTipText("Start a new chat");
@@ -613,7 +637,7 @@ public class LearnFix extends JavaFix {
 
         boolean enableRules = true;
         String rules = pm.getCommonPromptRules();
-        if(commitChanges != null) {
+        if (commitChanges != null) {
             rules = commitChanges;
             enableRules = false;
         }
@@ -624,11 +648,11 @@ public class LearnFix extends JavaFix {
         dialog.setSize(800, 800);
         dialog.setLocationRelativeTo(SwingUtilities.windowForComponent(topComponent));
         dialog.setVisible(true);
-        if(commitChanges == null) {
+        if (commitChanges == null) {
             pm.setCommonPromptRules(dialog.getRules());
         }
     }
-    
+
     private JButton createButton(ImageIcon icon) {
         JButton button = new JButton(icon);
         // Set button preferred size to match the icon's size (24x24)
@@ -671,42 +695,51 @@ public class LearnFix extends JavaFix {
                 if (prevChat != null) {
                     prevChat = responseHistory.get(currentResponseIndex);
                 }
+                JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
+                    @Override
+                    public void onComplete(String response) {
+                        if (responseHistory.isEmpty() || !response.equals(responseHistory.get(responseHistory.size() - 1))) {
+                            responseHistory.add(response);
+                            currentResponseIndex = responseHistory.size() - 1;
+                        }
+                        String finalResponse = response;
+                        SwingUtilities.invokeLater(() -> {
+                            sourceCode = EditorUtil.updateEditors(topComponent, finalResponse);
+                            submitButton.setIcon(startIcon);
+                            submitButton.setEnabled(true);
+                            saveButton.setEnabled(sourceCode != null);
+                            updateButtons(prevButton, nextButton);
+                            questionPane.setText("");
+                        });
+                    }
+                };
                 String response;
                 if (sqlCompletion != null) {
-                    response = new JeddictChatModel().assistDbMetadata(sqlCompletion.getMetaData(), question);
+                    response = new JeddictChatModel(handler).assistDbMetadata(sqlCompletion.getMetaData(), question);
                 } else if (commitChanges != null) {
-                    response = new JeddictChatModel().generateCommitMessageSuggestions(commitChanges, question);
+                    response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, question);
                 } else if (project != null) {
-                    response = new JeddictChatModel().generateDescription(getProjectContext(), null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProjectContext(), null, null, prevChat, question);
                 } else if (selectedFileObjects != null) {
-                    response = new JeddictChatModel().generateDescription(getFilesContext(), null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getFilesContext(), null, null, prevChat, question);
                 } else if (selectedFileObject != null) {
-                    response = new JeddictChatModel().generateDescription(null, getFileContext(), null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(null, getFileContext(), null, prevChat, question);
                 } else if (treePath == null) {
-                    response = new JeddictChatModel().generateDescription(null, null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(null, null, null, prevChat, question);
                 } else if (action == Action.TEST) {
                     if (leaf instanceof MethodTree) {
-                        response = new JeddictChatModel().generateTestCase(null, null, leaf.toString(), prevChat, question);
+                        response = new JeddictChatModel(handler).generateTestCase(null, null, leaf.toString(), prevChat, question);
                     } else {
-                        response = new JeddictChatModel().generateTestCase(null, treePath.getCompilationUnit().toString(), null, prevChat, question);
+                        response = new JeddictChatModel(handler).generateTestCase(null, treePath.getCompilationUnit().toString(), null, prevChat, question);
                     }
                 } else {
-                    response = new JeddictChatModel().generateDescription(null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
                 }
-//                response = removeCodeBlockMarkers(response);
-                if (responseHistory.isEmpty() || !response.equals(responseHistory.get(responseHistory.size() - 1))) {
-                    responseHistory.add(response);
-                    currentResponseIndex = responseHistory.size() - 1;
+
+                if (response != null && !response.isEmpty()) {
+                    response = removeCodeBlockMarkers(response);
+                    handler.onComplete(response);
                 }
-                String finalResponse = response;
-                SwingUtilities.invokeLater(() -> {
-                    sourceCode = EditorUtil.updateEditors(topComponent, finalResponse);
-                    submitButton.setIcon(startIcon);
-                    submitButton.setEnabled(true);
-                    saveButton.setEnabled(sourceCode != null);
-                    updateButtons(prevButton, nextButton);
-                    questionPane.setText("");
-                });
             } catch (Exception e) {
                 e.printStackTrace();
                 submitButton.setIcon(startIcon);

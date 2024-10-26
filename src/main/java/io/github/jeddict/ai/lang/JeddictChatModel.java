@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.github.jeddict.ai;
+package io.github.jeddict.ai.lang;
 
 /**
  *
@@ -24,18 +24,31 @@ package io.github.jeddict.ai;
  */
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
+import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
+import dev.langchain4j.model.mistralai.MistralAiStreamingChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
-import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import io.github.jeddict.ai.models.LMStudioChatModel;
+import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
+import static io.github.jeddict.ai.settings.GenAIProvider.CUSTOM_OPEN_AI;
 import static io.github.jeddict.ai.settings.GenAIProvider.DEEPINFRA;
+import static io.github.jeddict.ai.settings.GenAIProvider.DEEPSEEK;
+import static io.github.jeddict.ai.settings.GenAIProvider.GOOGLE;
+import static io.github.jeddict.ai.settings.GenAIProvider.GPT4ALL;
+import static io.github.jeddict.ai.settings.GenAIProvider.GROQ;
 import static io.github.jeddict.ai.settings.GenAIProvider.LM_STUDIO;
+import static io.github.jeddict.ai.settings.GenAIProvider.MISTRAL;
+import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
@@ -58,66 +71,123 @@ import org.json.JSONObject;
 public class JeddictChatModel {
 
     private ChatLanguageModel model;
+    private StreamingChatLanguageModel streamModel;
     private int cachedClassDatasLength = -1; // Cache the length of classDatas
-    PreferencesManager preferencesManager = PreferencesManager.getInstance();
-
+    private PreferencesManager preferencesManager = PreferencesManager.getInstance();
+    private StreamingResponseHandler handler;
+    
     public JeddictChatModel() {
+        this(null);
+    }
+
+    public JeddictChatModel(StreamingResponseHandler handler) {
+        this.handler = handler;
         if (null != preferencesManager.getModel()) {
-            switch (preferencesManager.getProvider()) {
-                case GOOGLE ->
-                    model = GoogleAiGeminiChatModel.builder()
-                            .apiKey(preferencesManager.getApiKey())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
-                case OPEN_AI ->
-                    model = OpenAiChatModel.builder()
-                            .apiKey(preferencesManager.getApiKey())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
-                case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI ->
-                    model = OpenAiChatModel.builder()
-                            .baseUrl(preferencesManager.getProviderLocation())
-                            .apiKey(preferencesManager.getApiKey())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
-                case MISTRAL ->
-                    model = MistralAiChatModel.builder()
-                            .apiKey(preferencesManager.getApiKey())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
-                case ANTHROPIC ->
-                    model = AnthropicChatModel.builder()
-                            .apiKey(preferencesManager.getApiKey())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
-                case OLLAMA ->
-                    model = OllamaChatModel.builder()
-                            .baseUrl(preferencesManager.getProviderLocation())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
-                case LM_STUDIO ->
-                    model = LMStudioChatModel.builder()
-                            .baseUrl(preferencesManager.getProviderLocation())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
-                case GPT4ALL ->
-                    model = LocalAiChatModel.builder()
-                            .baseUrl(preferencesManager.getProviderLocation())
-                            .modelName(preferencesManager.getModelName())
-                            .build();
+            if (preferencesManager.isStreamEnabled() && handler != null) {
+                switch (preferencesManager.getProvider()) {
+                    case GOOGLE ->
+                        model = GoogleAiGeminiChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case OPEN_AI ->
+                        streamModel = OpenAiStreamingChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI ->
+                        streamModel = OpenAiStreamingChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case MISTRAL ->
+                        streamModel = MistralAiStreamingChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case ANTHROPIC ->
+                        streamModel = AnthropicStreamingChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case OLLAMA ->
+                        streamModel = OllamaStreamingChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case LM_STUDIO ->
+                        model = LMStudioChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case GPT4ALL ->
+                        streamModel = LocalAiStreamingChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                }
+            } else {
+                switch (preferencesManager.getProvider()) {
+                    case GOOGLE ->
+                        model = GoogleAiGeminiChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case OPEN_AI ->
+                        model = OpenAiChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI ->
+                        model = OpenAiChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case MISTRAL ->
+                        model = MistralAiChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case ANTHROPIC ->
+                        model = AnthropicChatModel.builder()
+                                .apiKey(preferencesManager.getApiKey())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case OLLAMA ->
+                        model = OllamaChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case LM_STUDIO ->
+                        model = LMStudioChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                    case GPT4ALL ->
+                        model = LocalAiChatModel.builder()
+                                .baseUrl(preferencesManager.getProviderLocation())
+                                .modelName(preferencesManager.getModelName())
+                                .build();
+                }
             }
         }
     }
 
     private String generate(String prompt) {
-        if (model == null) {
+        if (model == null && handler == null) {
             JOptionPane.showMessageDialog(null,
                     "AI assistance model not intitalized.",
                     "Error in AI Assistance",
                     JOptionPane.ERROR_MESSAGE);
         }
         try {
-            return model.generate(prompt);
+            if (streamModel != null) {
+                streamModel.generate(prompt, handler);
+            } else {
+                return model.generate(prompt);
+            }
         } catch (Exception e) {
             String errorMessage = e.getMessage();
             if (e.getCause() != null
@@ -974,7 +1044,7 @@ public class JeddictChatModel {
             promptExtend.append("Java Class Content:\n").append(classContent).append("\n\n")
                     .append("Generate ").append(testCaseType).append(" test cases for this class. Include assertions and necessary mock setups. ");
         }
-        
+
         promptBuilder.append("You are an API server that provides ");
         String rules = preferencesManager.getCommonPromptRules();
         if (rules != null && !rules.isEmpty()) {

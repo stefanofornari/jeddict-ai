@@ -23,8 +23,9 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.lang.JeddictChatModel;
 import io.github.jeddict.ai.util.SourceUtil;
 import static io.github.jeddict.ai.util.SourceUtil.geIndentaion;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
@@ -67,11 +68,11 @@ public class MethodFix extends JavaFix {
     @Override
     protected String getText() {
         if (action == Action.COMPILATION_ERROR) {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_METHOD_COMPILATION_ERROR", actionTitleParam);
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_METHOD_COMPILATION_ERROR", actionTitleParam);
         } else if (action == Action.ENHANCE) {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_METHOD_ENHANCE");
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_METHOD_ENHANCE");
         } else {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_METHOD_QUERY");
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_METHOD_QUERY");
         }
     }
 

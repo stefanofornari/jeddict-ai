@@ -147,6 +147,7 @@
                     </moduleDependencies>
                     <publicPackages>
                         <publicPackage>io.github.jeddict.ai</publicPackage>
+                        <publicPackage>io.github.jeddict.ai.lang</publicPackage>
                     </publicPackages>
                     <useOSGiDependencies>false</useOSGiDependencies>
                 </configuration>

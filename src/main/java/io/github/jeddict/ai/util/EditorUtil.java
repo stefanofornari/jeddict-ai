@@ -63,15 +63,14 @@ public class EditorUtil {
                     code.append('\n').append(codeContent).append('\n');
                     editorPane = topComponent.createCodePane(getMimeType(codeType), codeContent);
                 } else {
-                    String html = renderer.render(parser.parse(parts[i].trim()));
-                    editorPane = topComponent.createHtmlPane(html);
+                    editorPane = topComponent.createCodePane(getMimeType(null), parts[i]);
                 }
             }
         }
 
-        if (editorPane != null) {
-            editorPane.setCaretPosition(0);
-        }
+//        if (editorPane != null) {
+//            editorPane.setCaretPosition(0);
+//        }
         return code.toString();
     }
 
@@ -220,6 +219,9 @@ public class EditorUtil {
 
     // Method to get the NetBeans MIME type for a given ChatGPT code block type
     public static String getMimeType(String chatGptType) {
+         if (chatGptType == null) {
+            return "text/plain";
+        }
         return OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(chatGptType, "text/plain"); // Default to binary if not found
     }
 

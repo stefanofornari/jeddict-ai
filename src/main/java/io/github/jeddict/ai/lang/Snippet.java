@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.github.jeddict.ai;
+package io.github.jeddict.ai.lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +27,11 @@ import java.util.List;
  */
 public class Snippet {
 
-    List<String> imports = new ArrayList<>();
+    private List<String> imports = new ArrayList<>();
 
-    String snippet;
+    private final String snippet;
 
-    String description;
+    private String description;
 
     public Snippet(String snippet, String description, List<String> imports) {
         this.snippet = snippet;

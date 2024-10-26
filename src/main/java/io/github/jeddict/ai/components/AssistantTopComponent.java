@@ -22,6 +22,7 @@ import static io.github.jeddict.ai.util.EditorUtil.getExtension;
 import static io.github.jeddict.ai.util.EditorUtil.isSuitableForWebAppDirectory;
 import static io.github.jeddict.ai.util.StringUtil.convertToCapitalized;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -111,6 +112,14 @@ public class AssistantTopComponent extends TopComponent {
         });
         editorPane.setEditable(false);
         editorPane.setText(content);
+        parentPanel.add(editorPane);
+        return editorPane;
+    }
+    
+    public JEditorPane createPane() {
+        JEditorPane editorPane = new JEditorPane();
+        editorPane.setEditable(false);
+        editorPane.setBackground(Color.WHITE);
         parentPanel.add(editorPane);
         return editorPane;
     }

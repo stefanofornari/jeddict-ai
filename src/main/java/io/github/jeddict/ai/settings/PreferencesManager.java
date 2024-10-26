@@ -41,6 +41,8 @@ public class PreferencesManager {
     private static final String PROVIDER_LOCATION_PREFERENCES = "provider_location";
     private static final String PROVIDER_PREFERENCE = "provider";
     private static final String MODEL_PREFERENCE = "model";
+    private static final String COMMON_PROMPT_RULES_PREFERENCE = "commonPromptRules";
+    private static final String ENABLE_STREAM_PREFERENCE = "enableStream";
 
     private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
             // Test Resources
@@ -77,7 +79,6 @@ public class PreferencesManager {
             "trace",
             "cache",
             "backup",
-
             // Other Configuration/Files
             ".env", // Environment variable definitions
             "docker-compose.yml", // Docker Compose config
@@ -100,14 +101,12 @@ public class PreferencesManager {
             "CODE_OF_CONDUCT.md",
             "CONTRIBUTING.md",
             "LICENSE",
-            
             // Security and Configuration Files
             "secrets", // Directory for secrets
             "credentials", // Directory for credentials
             "private",
             "confidential",
             "vault",
-
             // CI configuration
             ".gitlab-ci.yml",
             ".travis.yml",
@@ -129,17 +128,17 @@ public class PreferencesManager {
     }
 
     public void clearApiKey() {
-        preferences.remove(getProvider().name()+ API_KEY_PREFERENCES);
+        preferences.remove(getProvider().name() + API_KEY_PREFERENCES);
     }
 
     public void setApiKey(String key) {
-        preferences.put(getProvider().name()+API_KEY_PREFERENCES, key);
+        preferences.put(getProvider().name() + API_KEY_PREFERENCES, key);
     }
-    
+
     public String getApiKey() {
         return getApiKey(false);
     }
-    
+
     String getApiKey(GenAIProvider provider) {
         return preferences.get(provider.name() + API_KEY_PREFERENCES, null);
     }
@@ -153,7 +152,7 @@ public class PreferencesManager {
         }
         if (apiKey == null || apiKey.isEmpty()) {
             // If not found in environment or system properties, check Preferences
-            apiKey = preferences.get(getProvider().name() +API_KEY_PREFERENCES, null);
+            apiKey = preferences.get(getProvider().name() + API_KEY_PREFERENCES, null);
         }
 
         if (apiKey == null || apiKey.isEmpty()) {
@@ -359,17 +358,23 @@ public class PreferencesManager {
             preferences.put("testCasePrompt", prompt);
         }
     }
-    
-        private static final String COMMON_PROMPT_RULES_PREFERENCE = "commonPromptRules";
 
     public String getCommonPromptRules() {
-        return preferences.get(COMMON_PROMPT_RULES_PREFERENCE, "Default rules for prompts.");
+        return preferences.get(COMMON_PROMPT_RULES_PREFERENCE, "");
     }
 
     public void setCommonPromptRules(String rules) {
         if (rules != null) {
             preferences.put(COMMON_PROMPT_RULES_PREFERENCE, rules.trim());
         }
+    }
+
+    public boolean isStreamEnabled() {
+        return preferences.getBoolean(ENABLE_STREAM_PREFERENCE, false); // Default to false
+    }
+
+    public void setStreamEnabled(boolean enabled) {
+        preferences.putBoolean(ENABLE_STREAM_PREFERENCE, enabled);
     }
 
 }
