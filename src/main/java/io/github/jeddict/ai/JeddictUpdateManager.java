@@ -46,7 +46,7 @@ public class JeddictUpdateManager {
     }
 
     private static String getCurrentJeddictVersion() {
-        return "1.8";
+        return "1.9";
     }
 
     private File saveFile;
@@ -80,6 +80,7 @@ public class JeddictUpdateManager {
             NodeList nList = doc.getElementsByTagName("release");
             String nbmFile = null;
             String version = null;
+            String releaseNotes = null;
             // Iterate through each release node
             for (int i = 0; i < nList.getLength(); i++) {
                 Node node = nList.item(i);
@@ -89,7 +90,7 @@ public class JeddictUpdateManager {
                     version = element.getElementsByTagName("version").item(0).getTextContent();
                     String compatibleNetBeansVersion = element.getElementsByTagName("compatibleNetBeansVersion").item(0).getTextContent();
                     nbmFile = element.getElementsByTagName("nbmFile").item(0).getTextContent();
-
+                    releaseNotes = element.getElementsByTagName("releaseNotes").item(0).getTextContent();
                     if (compatibleNetBeansVersion.equals(currentNetBeansVersion)
                             && isVersionGreater(version, getCurrentJeddictVersion())) {
                         break;
@@ -101,7 +102,7 @@ public class JeddictUpdateManager {
             }
 
             if (nbmFile != null) {
-                showInstallPopup(version, nbmFile);
+                showInstallPopup(version, releaseNotes, nbmFile);
             }
 
         } catch (Exception e) {
@@ -127,7 +128,7 @@ public class JeddictUpdateManager {
         return false;
     }
 
-    private void showInstallPopup(String version, String nbmUrl) {
+    private void showInstallPopup(String version, String releaseNotes, String nbmUrl) {
 
         if (loadPreference(PREF_KEY_SHOW_POPUP)) {
             return;
@@ -148,6 +149,7 @@ public class JeddictUpdateManager {
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel infoLabel = new JLabel("<html>Version: " + version + "<br>"
+                +  ((releaseNotes != null && !releaseNotes.trim().isEmpty()) ? (releaseNotes + "<br>") : "")
                 + "Click below to download the update or learn more.</html>");
         infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
