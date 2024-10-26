@@ -23,7 +23,7 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
-import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.lang.JeddictChatModel;
 import io.github.jeddict.ai.settings.AIClassContext;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;

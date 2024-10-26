@@ -86,8 +86,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         aiAssistantActivationCheckBox = new javax.swing.JCheckBox();
         enableHintCheckBox = new javax.swing.JCheckBox();
         enableSmartCodeCheckBox = new javax.swing.JCheckBox();
-        excludeJavadocCommentsPane = new javax.swing.JLayeredPane();
-        excludeJavadocCommentsCheckBox = new javax.swing.JCheckBox();
         askAIPane = new javax.swing.JLayeredPane();
         fileFilterationPane = new javax.swing.JLayeredPane();
         fileExtLabel = new javax.swing.JLabel();
@@ -97,6 +95,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         jLayeredPane2 = new javax.swing.JLayeredPane();
         jScrollPane2 = new javax.swing.JScrollPane();
         excludeDirTable = new javax.swing.JTable();
+        jLayeredPane1 = new javax.swing.JLayeredPane();
+        enableStreamCheckbox = new javax.swing.JCheckBox();
+        excludeJavadocCommentsCheckBox = new javax.swing.JCheckBox();
         inlineCompletionPane = new javax.swing.JLayeredPane();
         classContextPane = new javax.swing.JLayeredPane();
         classContextLabelPane = new javax.swing.JLayeredPane();
@@ -235,19 +236,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         activationParentPane.add(activationPane);
 
-        excludeJavadocCommentsPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-
-        org.openide.awt.Mnemonics.setLocalizedText(excludeJavadocCommentsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.text")); // NOI18N
-        excludeJavadocCommentsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.toolTipText")); // NOI18N
-        excludeJavadocCommentsCheckBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                excludeJavadocCommentsCheckBoxActionPerformed(evt);
-            }
-        });
-        excludeJavadocCommentsPane.add(excludeJavadocCommentsCheckBox);
-
-        activationParentPane.add(excludeJavadocCommentsPane);
-
         providersPane.add(activationParentPane);
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providersPane.TabConstraints.tabTitle"), providersPane); // NOI18N
@@ -279,7 +267,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         fileFilterationPane.setLayout(fileFilterationPaneLayout);
         fileFilterationPaneLayout.setHorizontalGroup(
             fileFilterationPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE)
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 558, Short.MAX_VALUE)
             .addGroup(fileFilterationPaneLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(fileExtLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -293,7 +281,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 .addGroup(fileFilterationPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(fileExtLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -308,6 +296,23 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         jLayeredPane2.add(jScrollPane2);
 
         askAIPane.add(jLayeredPane2);
+
+        jLayeredPane1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 15, 5));
+
+        org.openide.awt.Mnemonics.setLocalizedText(enableStreamCheckbox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableStreamCheckbox.text")); // NOI18N
+        enableStreamCheckbox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableStreamCheckbox.toolTipText")); // NOI18N
+        jLayeredPane1.add(enableStreamCheckbox);
+
+        org.openide.awt.Mnemonics.setLocalizedText(excludeJavadocCommentsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.text")); // NOI18N
+        excludeJavadocCommentsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.toolTipText")); // NOI18N
+        excludeJavadocCommentsCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                excludeJavadocCommentsCheckBoxActionPerformed(evt);
+            }
+        });
+        jLayeredPane1.add(excludeJavadocCommentsCheckBox);
+
+        askAIPane.add(jLayeredPane1);
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.askAIPane.TabConstraints.tabTitle"), askAIPane); // NOI18N
 
@@ -420,17 +425,31 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 543, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 558, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 344, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(80, Short.MAX_VALUE))
+                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 329, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 95, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void cleanDataButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cleanDataButtonActionPerformed
+        ProjectClassScanner.clear();
+        JOptionPane.showMessageDialog(this, "Cache has been cleared successfully!", "Information", JOptionPane.INFORMATION_MESSAGE);
+    }//GEN-LAST:event_cleanDataButtonActionPerformed
+
+    private void showDescriptionCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showDescriptionCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_showDescriptionCheckBoxActionPerformed
+
+    private void varContextComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_varContextComboBoxActionPerformed
+        AIClassContext selectedContext = (AIClassContext) varContextComboBox.getSelectedItem();
+        if (selectedContext != null) {
+            varContextHelp.setText(selectedContext.getDescription());
+        }
+    }//GEN-LAST:event_varContextComboBoxActionPerformed
 
     private void classContextComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_classContextComboBoxActionPerformed
         AIClassContext selectedContext = (AIClassContext) classContextComboBox.getSelectedItem();
@@ -438,6 +457,14 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             classContextHelp.setText(selectedContext.getDescription());
         }
     }//GEN-LAST:event_classContextComboBoxActionPerformed
+
+    private void excludeJavadocCommentsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_excludeJavadocCommentsCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_excludeJavadocCommentsCheckBoxActionPerformed
+
+    private void enableHintCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enableHintCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_enableHintCheckBoxActionPerformed
 
     private void aiAssistantActivationCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aiAssistantActivationCheckBoxActionPerformed
         // if unchecked then disable the hint and smart checkbox
@@ -450,10 +477,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_aiAssistantActivationCheckBoxActionPerformed
 
-    private void enableHintCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enableHintCheckBoxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_enableHintCheckBoxActionPerformed
-
     private void modelComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modelComboBoxActionPerformed
         String selectedContext = (String) modelComboBox.getSelectedItem();
         if (selectedContext != null && getModel(selectedContext) != null) {
@@ -463,21 +486,19 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_modelComboBoxActionPerformed
 
-    private void cleanDataButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cleanDataButtonActionPerformed
-        ProjectClassScanner.clear();
-        JOptionPane.showMessageDialog(this, "Cache has been cleared successfully!", "Information", JOptionPane.INFORMATION_MESSAGE);
-    }//GEN-LAST:event_cleanDataButtonActionPerformed
-
-    private void showDescriptionCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showDescriptionCheckBoxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_showDescriptionCheckBoxActionPerformed
+    private void apiKeyFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_apiKeyFieldFocusLost
+        GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
+        if (selectedProvider != null) {
+            updateModelComboBox(selectedProvider);
+        }
+    }//GEN-LAST:event_apiKeyFieldFocusLost
 
     private void providerComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_providerComboBoxActionPerformed
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.DEEPINFRA
-                || selectedProvider == GenAIProvider.DEEPSEEK
-                || selectedProvider == GenAIProvider.GROQ
-                || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
+            || selectedProvider == GenAIProvider.DEEPSEEK
+            || selectedProvider == GenAIProvider.GROQ
+            || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
             apiKeyLabel.setVisible(true);
             apiKeyField.setVisible(true);
             apiKeyPane.setVisible(true);
@@ -494,9 +515,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             providerLocationField.setVisible(true);
             providerLocationPane.setVisible(true);
         } else if (selectedProvider == GenAIProvider.GOOGLE
-                || selectedProvider == GenAIProvider.OPEN_AI
-                || selectedProvider == GenAIProvider.MISTRAL
-                || selectedProvider == GenAIProvider.ANTHROPIC) {
+            || selectedProvider == GenAIProvider.OPEN_AI
+            || selectedProvider == GenAIProvider.MISTRAL
+            || selectedProvider == GenAIProvider.ANTHROPIC) {
             apiKeyLabel.setVisible(true);
             apiKeyField.setVisible(true);
             apiKeyPane.setVisible(true);
@@ -515,18 +536,18 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             if (null != selectedProvider) {
                 switch (selectedProvider) {
                     case OLLAMA ->
-                        providerLocationField.setText(new OllamaModelFetcher().getAPIUrl());
+                    providerLocationField.setText(new OllamaModelFetcher().getAPIUrl());
                     case LM_STUDIO ->
-                        providerLocationField.setText(new LMStudioModelFetcher().getAPIUrl());
+                    providerLocationField.setText(new LMStudioModelFetcher().getAPIUrl());
                     case GPT4ALL ->
-                        providerLocationField.setText(new GPT4AllModelFetcher().getAPIUrl());
+                    providerLocationField.setText(new GPT4AllModelFetcher().getAPIUrl());
                 }
             }
         }
         apiKeyField.setText(preferencesManager.getApiKey((GenAIProvider) providerComboBox.getSelectedItem()));
         if (apiKeyLabel.isVisible()
-                && selectedProvider != null
-                && !selectedProvider.getApiKeyUrl().isEmpty()) {
+            && selectedProvider != null
+            && !selectedProvider.getApiKeyUrl().isEmpty()) {
             String apiKeyUrl = selectedProvider.getApiKeyUrl();
             apiKeyInfo.setText("<html><a href=''>" + apiKeyUrl + "</a></html>");
             apiKeyInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -552,7 +573,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             });
         }
         if (selectedProvider != null
-                && !selectedProvider.getModelInfoUrl().isEmpty()) {
+            && !selectedProvider.getModelInfoUrl().isEmpty()) {
             String modelInfoUrl = selectedProvider.getModelInfoUrl();
             modelsInfo.setText("<html><a href=''>" + modelInfoUrl + "</a></html>");
             modelsInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -581,24 +602,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             updateModelComboBox(selectedProvider);
         }
     }//GEN-LAST:event_providerComboBoxActionPerformed
-
-    private void apiKeyFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_apiKeyFieldFocusLost
-        GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
-        if (selectedProvider != null) {
-            updateModelComboBox(selectedProvider);
-        }
-    }//GEN-LAST:event_apiKeyFieldFocusLost
-
-    private void excludeJavadocCommentsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_excludeJavadocCommentsCheckBoxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_excludeJavadocCommentsCheckBoxActionPerformed
-
-    private void varContextComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_varContextComboBoxActionPerformed
-        AIClassContext selectedContext = (AIClassContext) varContextComboBox.getSelectedItem();
-        if (selectedContext != null) {
-            varContextHelp.setText(selectedContext.getDescription());
-        }
-    }//GEN-LAST:event_varContextComboBoxActionPerformed
 
     private void updateModelComboBox(GenAIProvider selectedProvider) {
         modelComboBox.removeAllItems();
@@ -659,6 +662,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         modelComboBox.setSelectedItem(preferencesManager.getModel());
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
+        enableStreamCheckbox.setSelected(preferencesManager.isStreamEnabled());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
         testPromptField.setText(preferencesManager.getTestCasePrompt());
 
@@ -692,6 +696,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
         preferencesManager.setFileExtensionToInclude(fileExtField.getText());
         preferencesManager.setExcludeDirs(getCommaSeparatedValues(excludeTableModel));
+        preferencesManager.setStreamEnabled(enableStreamCheckbox.isSelected());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
         preferencesManager.setTestCasePrompt(testPromptField.getText());
 
@@ -806,9 +811,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JButton cleanDataButton;
     private javax.swing.JCheckBox enableHintCheckBox;
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
+    private javax.swing.JCheckBox enableStreamCheckbox;
     private javax.swing.JTable excludeDirTable;
     private javax.swing.JCheckBox excludeJavadocCommentsCheckBox;
-    private javax.swing.JLayeredPane excludeJavadocCommentsPane;
     private javax.swing.JTextArea fileExtField;
     private javax.swing.JLabel fileExtLabel;
     private javax.swing.JLayeredPane fileFilterationPane;
@@ -817,6 +822,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane hintPane;
     private javax.swing.JLayeredPane inlineCompletionPane;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JLayeredPane jLayeredPane2;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;

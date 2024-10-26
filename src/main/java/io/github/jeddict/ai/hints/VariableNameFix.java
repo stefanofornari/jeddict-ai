@@ -28,8 +28,9 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreeScanner;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.lang.JeddictChatModel;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
@@ -59,7 +60,7 @@ public class VariableNameFix extends JavaFix {
 
     @Override
     protected String getText() {
-        return NbBundle.getMessage(JeddictChatModel.class, "HINT_VARIABLE_NAME_ENHANCE");
+        return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_VARIABLE_NAME_ENHANCE");
     }
 
     @Override

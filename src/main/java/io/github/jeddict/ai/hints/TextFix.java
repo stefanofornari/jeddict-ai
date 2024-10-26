@@ -22,8 +22,9 @@ import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.Tree;
 import static com.sun.source.tree.Tree.Kind.STRING_LITERAL;
 import com.sun.source.util.TreePath;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.lang.JeddictChatModel;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
@@ -48,9 +49,9 @@ public class TextFix extends JavaFix {
     @Override
     protected String getText() {
         if (action == Action.ENHANCE) {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_ENHANCE_TEXT");
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_ENHANCE_TEXT");
         } else {
-            return NbBundle.getMessage(JeddictChatModel.class, "HINT_FIX_GRAMMAR");
+            return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_FIX_GRAMMAR");
         }
     }
 

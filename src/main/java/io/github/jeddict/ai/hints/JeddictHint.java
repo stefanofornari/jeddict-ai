@@ -31,7 +31,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import io.github.jeddict.ai.JeddictChatModel;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.util.ArrayList;
@@ -189,7 +189,7 @@ public class JeddictHint {
                 return null;
         }
         Fix[] fixesArray = fixes.toArray(new Fix[0]); // Convert to array
-        String desc = NbBundle.getMessage(JeddictChatModel.class, "ERR_HINT"); //NOI18N
+        String desc = NbBundle.getMessage(JeddictUpdateManager.class, "ERR_HINT"); //NOI18N
         return ErrorDescriptionFactory.forTree(ctx, ctx.getPath(), desc, fixesArray); //NOI18N
     }
 

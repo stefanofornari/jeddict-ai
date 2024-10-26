@@ -18,9 +18,7 @@
  */
 package io.github.jeddict.ai.hints;
 
-import io.github.jeddict.ai.util.StringUtil;
 import com.sun.source.doctree.DocCommentTree;
-import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
@@ -31,21 +29,18 @@ import static com.sun.source.tree.Tree.Kind.VARIABLE;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.JeddictChatModel;
 import static io.github.jeddict.ai.completion.Action.ENHANCE;
+import io.github.jeddict.ai.lang.JeddictChatModel;
 import static io.github.jeddict.ai.util.SourceUtil.geIndentaion;
+import io.github.jeddict.ai.util.StringUtil;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
-import static io.github.jeddict.ai.util.StringUtil.trimLeadingSpaces;
-import java.util.LinkedList;
-import java.util.List;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
-import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.spi.java.hints.JavaFix;
@@ -71,9 +66,9 @@ public class JavaDocFixImpl extends JavaFix {
     protected String getText() {
         switch (action) {
             case ENHANCE:
-                return NbBundle.getMessage(JeddictChatModel.class, "HINT_JAVADOC_GENERATED", StringUtil.convertToCapitalized(classType.getKind().toString()));//NOI18N
+                return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_JAVADOC_GENERATED", StringUtil.convertToCapitalized(classType.getKind().toString()));//NOI18N
             default:
-                return NbBundle.getMessage(JeddictChatModel.class, "HINT_JAVADOC", StringUtil.convertToCapitalized(classType.getKind().toString()));//NOI18N
+                return NbBundle.getMessage(JeddictUpdateManager.class, "HINT_JAVADOC", StringUtil.convertToCapitalized(classType.getKind().toString()));//NOI18N
             }
     }
 
