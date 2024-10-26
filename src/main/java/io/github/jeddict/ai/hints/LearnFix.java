@@ -26,6 +26,7 @@ import static com.sun.source.tree.Tree.Kind.ENUM;
 import static com.sun.source.tree.Tree.Kind.INTERFACE;
 import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.JeddictChatModel;
 import io.github.jeddict.ai.completion.SQLCompletion;
@@ -368,6 +369,7 @@ public class LearnFix extends JavaFix {
 
     public void openChat(String type, final String query, String fileName, String title, Consumer<String> action) {
         SwingUtilities.invokeLater(() -> {
+            new JeddictUpdateManager().checkForJeddictUpdate();
             Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
             prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
             topComponent = new AssistantTopComponent(title, type, getProject());
