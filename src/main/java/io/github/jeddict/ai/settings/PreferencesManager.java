@@ -367,7 +367,7 @@ public class PreferencesManager {
     }
 
     public void setCommonPromptRules(String rules) {
-        if (rules != null && !rules.isEmpty()) {
+        if (rules != null) {
             preferences.put(COMMON_PROMPT_RULES_PREFERENCE, rules.trim());
         }
     }
