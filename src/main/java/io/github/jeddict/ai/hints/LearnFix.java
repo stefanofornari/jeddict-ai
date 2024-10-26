@@ -36,7 +36,6 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.backIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.copyIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.createEditorKit;
 import static io.github.jeddict.ai.components.AssistantTopComponent.forwardIcon;
-import static io.github.jeddict.ai.components.AssistantTopComponent.logoIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.saveasIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.startIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.upIcon;
@@ -87,19 +86,17 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.newEditorIco
 import static io.github.jeddict.ai.components.AssistantTopComponent.progressIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.saveToEditorIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.settingsIcon;
+import io.github.jeddict.ai.components.ContextDialog;
 import io.github.jeddict.ai.util.EditorUtil;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionListener;
-import java.net.URI;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JTable;
-import javax.swing.table.TableColumn;
 import org.netbeans.api.options.OptionsDisplayer;
 
 /**
@@ -613,35 +610,25 @@ public class LearnFix extends JavaFix {
         } else {
             fileObjects = Collections.EMPTY_LIST;
         }
-        JDialog dialog = new JDialog((JFrame) SwingUtilities.windowForComponent(topComponent), true);
-        dialog.setTitle("Context Paths");
+
+        boolean enableRules = true;
+        String rules = pm.getCommonPromptRules();
+        if(commitChanges != null) {
+            rules = commitChanges;
+            enableRules = false;
+        }
+        ContextDialog dialog = new ContextDialog((JFrame) SwingUtilities.windowForComponent(topComponent),
+                enableRules, rules,
+                projectRootDir, fileObjects);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setSize(800, 800);
         dialog.setLocationRelativeTo(SwingUtilities.windowForComponent(topComponent));
-
-        String[][] data = new String[fileObjects.size()][2];
-        for (int i = 0; i < fileObjects.size(); i++) {
-            FileObject contextFile = fileObjects.get(i);
-            String relativePath = contextFile.getPath();
-            if (projectRootDir != null) {
-                relativePath = relativePath.replaceFirst(projectRootDir + "/", "");
-            }
-            data[i][0] = contextFile.getName();
-            data[i][1] = relativePath;
-        }
-        String[] columnNames = {"File Name", "Path"};
-
-        JTable table = new JTable(data, columnNames);
-        TableColumn column1 = table.getColumnModel().getColumn(0);
-        TableColumn column2 = table.getColumnModel().getColumn(1);
-        column1.setPreferredWidth(200); // 25% width
-        column2.setPreferredWidth(600); // 75% width
-        table.setEnabled(false);
-        JScrollPane scrollPane = new JScrollPane(table);
-        dialog.add(scrollPane);
         dialog.setVisible(true);
+        if(commitChanges == null) {
+            pm.setCommonPromptRules(dialog.getRules());
+        }
     }
-
+    
     private JButton createButton(ImageIcon icon) {
         JButton button = new JButton(icon);
         // Set button preferred size to match the icon's size (24x24)
