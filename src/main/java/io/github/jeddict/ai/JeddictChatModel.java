@@ -790,8 +790,16 @@ public class JeddictChatModel {
         StringBuilder dbPrompt = new StringBuilder("You are an API server that provides assistance with SQL queries and database-related questions. ");
 
         dbPrompt.append("Given the following database schema metadata:\n")
-                .append(dbMetadata)
-                .append("\nRespond to the developer's question: \n")
+                .append(dbMetadata);
+
+        String rules = preferencesManager.getCommonPromptRules();
+        if (rules != null && !rules.isEmpty()) {
+            dbPrompt.append("\n\n")
+                    .append(rules)
+                    .append("\n\n");
+        }
+
+        dbPrompt.append("\nRespond to the developer's question: \n")
                 .append(developerQuestion)
                 .append("\n")
                 .append("""
@@ -809,17 +817,36 @@ public class JeddictChatModel {
     }
 
     public String assistJavaClass(String classContent) {
-        String prompt = "You are an API server that provides description of following class. "
-                + "Java Class:\n" + classContent;
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("You are an API server that provides a description of the following class. ");
+        String rules = preferencesManager.getCommonPromptRules();
+        if (rules != null && !rules.isEmpty()) {
+            promptBuilder.append("\n\n")
+                    .append(rules)
+                    .append("\n\n");
+        }
+        promptBuilder.append("Java Class:\n")
+                .append(classContent);
+
+        String prompt = promptBuilder.toString();
         String answer = generate(prompt);
         System.out.println(answer);
         return answer;
     }
 
     public String assistJavaMethod(String methodContent) {
-        String prompt = "You are an API server that provides description of following Method. "
-                + "Java Method:\n" + methodContent;
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("You are an API server that provides a description of the following Method. ");
+        String rules = preferencesManager.getCommonPromptRules();
+        if (rules != null && !rules.isEmpty()) {
+            promptBuilder.append("\n\n")
+                    .append(rules)
+                    .append("\n\n");
+        }
+        promptBuilder.append("Java Method:\n")
+                .append(methodContent);
 
+        String prompt = promptBuilder.toString();
         String answer = generate(prompt);
         System.out.println(answer);
         return answer;
@@ -828,28 +855,45 @@ public class JeddictChatModel {
     public String generateDescription(
             String projectContent, String classContent, String methodContent,
             String previousChatResponse, String userQuery) {
-        String prompt;
+        StringBuilder prompt = new StringBuilder();
         String promptExtend = "";
+
+        // Build the promptExtend based on the available content
         if (methodContent != null) {
             promptExtend = "Method Content:\n" + methodContent + "\n\n"
-                    + "Do not return complete Java Class, return only Method";// and wrap it in <code type=\"full\" class=\"java\">. \n";
+                    + "Do not return complete Java Class, return only Method";
         } else if (projectContent != null) {
             promptExtend = "Project Full Content:\n" + projectContent + "\n\n";
         } else if (classContent != null) {
             promptExtend = "Java Class Content:\n" + classContent + "\n\n";
         }
 
-        prompt = "You are an API server that provides an answer to a user's query. ";
-        if (previousChatResponse == null) {
-            prompt = prompt + "Given the following content, and the user's query to addresses the specific query. ";
-        } else {
-            prompt = prompt + "Given the following content, the previous chat response, and the user's query to addresses the specific query. "
-                    + "Previous Chat Response:\n" + previousChatResponse + "\n\n";
+        // Initialize the prompt
+        prompt.append("You are an API server that provides an answer to a user's query. ");
+        String rules = preferencesManager.getCommonPromptRules();
+        if (rules != null && !rules.isEmpty()) {
+            prompt.append("\n\n")
+                    .append(rules)
+                    .append("\n\n");
         }
-        prompt = prompt + promptExtend
-                + "User Query:\n" + userQuery;
 
-        String answer = generate(prompt);
+        // Append previous chat response and user query
+        if (previousChatResponse == null) {
+            prompt.append("Given the following content, and the user's query to addresses the specific query. ");
+        } else {
+            prompt.append("Given the following content, the previous chat response, and the user's query to addresses the specific query. ")
+                    .append("Previous Chat Response:\n")
+                    .append(previousChatResponse)
+                    .append("\n\n");
+        }
+
+        // Append the extended prompt content and user query
+        prompt.append(promptExtend)
+                .append("User Query:\n")
+                .append(userQuery);
+
+        // Generate the answer
+        String answer = generate(prompt.toString());
         System.out.println(answer);
         return answer;
     }
@@ -858,8 +902,8 @@ public class JeddictChatModel {
             String projectContent, String classContent, String methodContent,
             String previousChatResponse, String userQuery) {
 
-        String prompt;
-        String promptExtend;
+        StringBuilder promptBuilder = new StringBuilder();
+        StringBuilder promptExtend = new StringBuilder();
         Set<String> testCaseTypes = new HashSet<>(); // Using a Set to avoid duplicates
 
         // Determine the test case type based on the user query
@@ -910,35 +954,49 @@ public class JeddictChatModel {
         if (userQuery.toLowerCase().contains("arquillian")) {
             testCaseTypes.add("Arquillian Test");
         }
+
         userQuery = "User Query: " + userQuery;
         String testCaseType = String.join(", ", testCaseTypes);
+
+        // Build the promptExtend based on available content
         if (methodContent != null) {
-            promptExtend = "Method Content:\n" + methodContent + "\n\n"
-                    + "Generate " + testCaseType + " test cases for this method. Include assertions and necessary mock setups. ";
+            promptExtend.append("Method Content:\n").append(methodContent).append("\n\n")
+                    .append("Generate ").append(testCaseType).append(" test cases for this method. Include assertions and necessary mock setups. ");
         } else if (projectContent != null) {
-            promptExtend = "Project Full Content:\n" + projectContent + "\n\n"
-                    + "Generate " + testCaseType + " test cases for all classes. Include assertions and necessary mock setups. ";
+            promptExtend.append("Project Full Content:\n").append(projectContent).append("\n\n")
+                    .append("Generate ").append(testCaseType).append(" test cases for all classes. Include assertions and necessary mock setups. ");
         } else {
-            promptExtend = "Java Class Content:\n" + classContent + "\n\n"
-                    + "Generate " + testCaseType + " test cases for this class. Include assertions and necessary mock setups. ";
+            promptExtend.append("Java Class Content:\n").append(classContent).append("\n\n")
+                    .append("Generate ").append(testCaseType).append(" test cases for this class. Include assertions and necessary mock setups. ");
+        }
+        
+        promptBuilder.append("You are an API server that provides ");
+        String rules = preferencesManager.getCommonPromptRules();
+        if (rules != null && !rules.isEmpty()) {
+            promptBuilder.append("\n\n")
+                    .append(rules)
+                    .append("\n\n");
         }
 
+        // Build the main prompt
         if (previousChatResponse == null) {
-            prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content. "
-                    + "Given the following Java class or method content and the user's query, generate " + testCaseType + " test cases that are well-structured and functional. "
-                    + promptExtend
-                    + userQuery;
+            promptBuilder.append(testCaseType).append(" test cases in Java for a given class or method based on the original Java class content. ")
+                    .append("Given the following Java class or method content and the user's query, generate ")
+                    .append(testCaseType).append(" test cases that are well-structured and functional. ")
+                    .append(promptExtend)
+                    .append(userQuery);
         } else {
-            prompt = "You are an API server that provides " + testCaseType + " test cases in Java for a given class or method based on the original Java class content and previous chat content. "
-                    + "Given the following Java class content, previous chat response, and the user's query, generate " + testCaseType + " test cases that directly address the user's query. "
-                    + "Ensure the " + testCaseType + " test cases are well-structured and reflect any modifications or updates suggested in the previous chat response. "
-                    + "Previous Chat Response:\n" + previousChatResponse + "\n\n"
-                    + promptExtend
-                    + userQuery;
+            promptBuilder.append(testCaseType).append(" test cases in Java for a given class or method based on the original Java class content and previous chat content. ")
+                    .append("Given the following Java class content, previous chat response, and the user's query, generate ")
+                    .append(testCaseType).append(" test cases that directly address the user's query. ")
+                    .append("Ensure the ").append(testCaseType).append(" test cases are well-structured and reflect any modifications or updates suggested in the previous chat response. ")
+                    .append("Previous Chat Response:\n").append(previousChatResponse).append("\n\n")
+                    .append(promptExtend)
+                    .append(userQuery);
         }
 
         // Generate the test cases
-        String answer = generate(prompt);
+        String answer = generate(promptBuilder.toString());
         System.out.println(answer);
         return answer;
     }

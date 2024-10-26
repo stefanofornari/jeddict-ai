@@ -359,5 +359,17 @@ public class PreferencesManager {
             preferences.put("testCasePrompt", prompt);
         }
     }
+    
+        private static final String COMMON_PROMPT_RULES_PREFERENCE = "commonPromptRules";
+
+    public String getCommonPromptRules() {
+        return preferences.get(COMMON_PROMPT_RULES_PREFERENCE, "Default rules for prompts.");
+    }
+
+    public void setCommonPromptRules(String rules) {
+        if (rules != null && !rules.isEmpty()) {
+            preferences.put(COMMON_PROMPT_RULES_PREFERENCE, rules.trim());
+        }
+    }
 
 }
