@@ -67,6 +67,9 @@ public class AssistantTopComponent extends TopComponent {
     public static final ImageIcon saveToEditorIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveToEditorIcon.png"));
     public static final ImageIcon newEditorIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/newEditorIcon.png"));
     public static final ImageIcon attachIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/attachIcon.gif"));
+    public static final ImageIcon settingsIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/settingsIcon.png"));
+    
+    
 
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;

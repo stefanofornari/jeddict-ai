@@ -27,6 +27,7 @@ import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
 @OptionsPanelController.TopLevelRegistration(
+        id = "JeddictAIAssistant",
         categoryName = "#OptionsCategory_Name_JeddictAIAssistant",
         iconBase = "icons/logo32.png",
         keywords = "#OptionsCategory_Keywords_JeddictAIAssistant",

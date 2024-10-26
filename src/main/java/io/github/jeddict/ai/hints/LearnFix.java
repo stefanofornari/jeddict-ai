@@ -86,6 +86,7 @@ import javax.swing.ImageIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.newEditorIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.progressIcon;
 import static io.github.jeddict.ai.components.AssistantTopComponent.saveToEditorIcon;
+import static io.github.jeddict.ai.components.AssistantTopComponent.settingsIcon;
 import io.github.jeddict.ai.util.EditorUtil;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -99,6 +100,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
+import org.netbeans.api.options.OptionsDisplayer;
 
 /**
  *
@@ -466,17 +468,26 @@ public class LearnFix extends JavaFix {
         openInBrowserButton.setMaximumSize(buttonSize);
         openInBrowserButton.setEnabled(topComponent.getAllEditorCount() > 0);
         westButtonPanel.add(openInBrowserButton);
+        
+        JButton optionsButton = createButton(settingsIcon); // Replace with actual icon path
+        optionsButton.setToolTipText("Open Jeddict AI Assistant Settings");
+        optionsButton.setPreferredSize(buttonSize);
+        optionsButton.setMaximumSize(buttonSize);
+        optionsButton.addActionListener(e -> {
+            OptionsDisplayer.getDefault().open("JeddictAIAssistant");
+        });
+        westButtonPanel.add(optionsButton);
 
         // Jeddict Button (West)
-        JButton jeddictButton = createButton(logoIcon);
-        jeddictButton.addActionListener(e -> {
-            try {
-                Desktop.getDesktop().browse(new URI("https://jeddict.github.io/page.html?l=tutorial/AI"));
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-        westButtonPanel.add(jeddictButton);
+//        JButton jeddictButton = createButton(logoIcon);
+//        jeddictButton.addActionListener(e -> {
+//            try {
+//                Desktop.getDesktop().browse(new URI("https://jeddict.github.io/page.html?l=tutorial/AI"));
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//            }
+//        });
+//        westButtonPanel.add(jeddictButton);
 
         // New Chat Button (West)
         JButton newChatButton = createButton(newEditorIcon);
