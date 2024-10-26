@@ -45,6 +45,7 @@ import org.openide.util.NbBundle.Messages;
         displayName = "#CTL_AskAIPackageAction", lazy = true, asynchronous = true, iconBase = "icons/logo28.png")
 @ActionReferences({
     @ActionReference(path = "Projects/package/Actions", position = 100),
+    @ActionReference(path="Loaders/text/x-java/Actions", position=100),
     @ActionReference(path = "Loaders/folder/any/Actions", position = 300),
     @ActionReference(path = "Toolbars/Build", position = 100)})
 @Messages({"CTL_AskAIPackageAction=AI Assistant"})
