@@ -217,7 +217,7 @@ public class LearnFix extends JavaFix {
                     JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                         @Override
                         public void onComplete(String response) {
-                            sourceCode = EditorUtil.updateEditors(topComponent, response);
+                            sourceCode = EditorUtil.updateEditors(topComponent, response, getContextFiles());
                             responseHistory.add(response);
                             currentResponseIndex = responseHistory.size() - 1;
                         }
@@ -237,7 +237,7 @@ public class LearnFix extends JavaFix {
                         }
                     }
                     if (response != null && !response.isEmpty()) {
-                        response = removeCodeBlockMarkers(response);
+//                        response = removeCodeBlockMarkers(response);
                         handler.onComplete(response);
                     }
                 });
@@ -358,8 +358,8 @@ public class LearnFix extends JavaFix {
             JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                 @Override
                 public void onComplete(String response) {
-                    response = removeCodeBlockMarkers(response);
-                    sourceCode = EditorUtil.updateEditors(topComponent, response);
+//                    response = removeCodeBlockMarkers(response);
+                    sourceCode = EditorUtil.updateEditors(topComponent, response, getContextFiles());
                     responseHistory.add(response);
                     currentResponseIndex = responseHistory.size() - 1;
                     LearnFix.this.commitChanges = commitChanges;
@@ -367,7 +367,7 @@ public class LearnFix extends JavaFix {
             };
             String response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
             if (response != null && !response.isEmpty()) {
-                response = removeCodeBlockMarkers(response);
+//                response = removeCodeBlockMarkers(response);
                 handler.onComplete(response);
             }
         });
@@ -598,7 +598,7 @@ public class LearnFix extends JavaFix {
             if (currentResponseIndex > 0) {
                 currentResponseIndex--;
                 String historyResponse = responseHistory.get(currentResponseIndex);
-                sourceCode = EditorUtil.updateEditors(topComponent, historyResponse);
+                sourceCode = EditorUtil.updateEditors(topComponent, historyResponse, getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -607,7 +607,7 @@ public class LearnFix extends JavaFix {
             if (currentResponseIndex < responseHistory.size() - 1) {
                 currentResponseIndex++;
                 String historyResponse = responseHistory.get(currentResponseIndex);
-                sourceCode = EditorUtil.updateEditors(topComponent, historyResponse);
+                sourceCode = EditorUtil.updateEditors(topComponent, historyResponse, getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -617,22 +617,26 @@ public class LearnFix extends JavaFix {
         return bottomPanel;
     }
 
-    private void showFilePathPopup() {
-        List<FileObject> fileObjects;
-        String projectRootDir = null;
+    private List<FileObject> getContextFiles() {
+          List<FileObject> fileObjects;
         if (project != null) {
             fileObjects = getProjectContextList();
-            projectRootDir = project.getProjectDirectory().getPath();
         } else if (selectedFileObjects != null) {
             fileObjects = getFilesContextList();
-            if (!fileObjects.isEmpty()) {
-                projectRootDir = FileOwnerQuery.getOwner(fileObjects.get(0)).getProjectDirectory().getPath();
-            }
         } else if (selectedFileObject != null) {
             fileObjects = Collections.singletonList(selectedFileObject);
-            projectRootDir = FileOwnerQuery.getOwner(selectedFileObject).getProjectDirectory().getPath();
         } else {
             fileObjects = Collections.EMPTY_LIST;
+        }
+        return fileObjects;
+    }
+    private void showFilePathPopup() {
+        List<FileObject> fileObjects = getContextFiles();
+        String projectRootDir = null;
+        if (project != null) {
+            projectRootDir = project.getProjectDirectory().getPath();
+        } else if (!fileObjects.isEmpty()) {
+            projectRootDir = FileOwnerQuery.getOwner(fileObjects.get(0)).getProjectDirectory().getPath();
         }
 
         boolean enableRules = true;
@@ -704,7 +708,7 @@ public class LearnFix extends JavaFix {
                         }
                         String finalResponse = response;
                         SwingUtilities.invokeLater(() -> {
-                            sourceCode = EditorUtil.updateEditors(topComponent, finalResponse);
+                            sourceCode = EditorUtil.updateEditors(topComponent, finalResponse, getContextFiles());
                             submitButton.setIcon(startIcon);
                             submitButton.setEnabled(true);
                             saveButton.setEnabled(sourceCode != null);
@@ -737,7 +741,7 @@ public class LearnFix extends JavaFix {
                 }
 
                 if (response != null && !response.isEmpty()) {
-                    response = removeCodeBlockMarkers(response);
+//                    response = removeCodeBlockMarkers(response);
                     handler.onComplete(response);
                 }
             } catch (Exception e) {

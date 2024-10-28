@@ -370,7 +370,7 @@ public class PreferencesManager {
     }
 
     public boolean isStreamEnabled() {
-        return preferences.getBoolean(ENABLE_STREAM_PREFERENCE, false); // Default to false
+        return preferences.getBoolean(ENABLE_STREAM_PREFERENCE, true);
     }
 
     public void setStreamEnabled(boolean enabled) {

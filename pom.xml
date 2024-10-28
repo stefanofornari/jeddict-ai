@@ -54,7 +54,6 @@
                     <distributionUrl>https://github.com/jeddict/jeddict-ai</distributionUrl>
                     <codeNameBase>io.github.jeddict.jeddict.ai</codeNameBase>
                     <moduleDependencies>
-                        
                         <dependency>
                             <id>org.netbeans.api:org-netbeans-modules-editor-lib</id>
                             <type>impl</type>
@@ -218,7 +217,12 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20240303</version>
-        </dependency> 
+        </dependency>
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.26.2</version>
+        </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-editor-lib</artifactId>

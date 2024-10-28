@@ -18,6 +18,7 @@
  */
 package io.github.jeddict.ai.components;
 
+import com.github.javaparser.ast.CompilationUnit;
 import static io.github.jeddict.ai.util.EditorUtil.getExtension;
 import static io.github.jeddict.ai.util.EditorUtil.isSuitableForWebAppDirectory;
 import static io.github.jeddict.ai.util.StringUtil.convertToCapitalized;
@@ -28,8 +29,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +41,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -47,9 +52,30 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
-import org.openide.windows.TopComponent;
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.util.TreePathScanner;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.lang.model.element.Name;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import org.netbeans.modules.editor.indent.api.Reformat;
+import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.EditorCookie;
+import org.openide.util.Exceptions;
 
+    import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.windows.TopComponent;
 /**
  *
  * @author Shiwani Gupta
@@ -69,8 +95,6 @@ public class AssistantTopComponent extends TopComponent {
     public static final ImageIcon newEditorIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/newEditorIcon.png"));
     public static final ImageIcon attachIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/attachIcon.gif"));
     public static final ImageIcon settingsIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/settingsIcon.png"));
-    
-    
 
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
@@ -95,6 +119,7 @@ public class AssistantTopComponent extends TopComponent {
 
     public void clear() {
         parentPanel.removeAll();
+        menus.clear();
     }
 
     public JEditorPane createHtmlPane(String content) {
@@ -115,7 +140,7 @@ public class AssistantTopComponent extends TopComponent {
         parentPanel.add(editorPane);
         return editorPane;
     }
-    
+
     public JEditorPane createPane() {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setEditable(false);
@@ -144,9 +169,13 @@ public class AssistantTopComponent extends TopComponent {
         return editorPane;
     }
 
+    private final Map<JEditorPane, JPopupMenu> menus = new HashMap<>();
+    private final Map<JEditorPane, List<JMenuItem>> menuItems = new HashMap<>();
+
     private void addContextMenu(JEditorPane editorPane) {
         JPopupMenu contextMenu = new JPopupMenu();
-
+        menus.put(editorPane, contextMenu);
+        menuItems.clear();
         JMenuItem copyItem = new JMenuItem("Copy");
         copyItem.addActionListener(e -> {
             if (editorPane.getSelectedText() != null) {
@@ -342,6 +371,166 @@ public class AssistantTopComponent extends TopComponent {
         return count;
     }
 
+    public int getParseCodeEditor(List<FileObject> fileObjects) {
+        Map<JEditorPane, Map<String, String>> editorMethodCache = new HashMap<>();
+        for (FileObject fileObject : fileObjects) {
+            try (InputStream stream = fileObject.getInputStream()) {
+                String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+                CompilationUnit cu = StaticJavaParser.parse(content);
+                List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
+                Set<String> fileMethodSignatures = methods.stream()
+                        .map(method -> method.getNameAsString() + "("
+                        + method.getParameters().stream()
+                                .map(param -> param.getType().asString())
+                                .collect(Collectors.joining(",")) + ")")
+                        .collect(Collectors.toSet());
+
+                for (int i = 0; i < parentPanel.getComponentCount(); i++) {
+                    if (parentPanel.getComponent(i) instanceof JEditorPane) {
+                        JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
+                        if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
+
+                            Map<String, String> cachedMethodSignatures = editorMethodCache.computeIfAbsent(editorPane, ep -> {
+                                Map<String, String> methodSignatures = new HashMap<>();
+                                try {
+                                    MethodDeclaration editorMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
+                                    String signature = editorMethod.getNameAsString() + "("
+                                            + editorMethod.getParameters().stream()
+                                                    .map(param -> param.getType().asString())
+                                                    .collect(Collectors.joining(",")) + ")";
+                                    methodSignatures.put(signature, editorPane.getText());
+                                } catch (Exception e) {
+                                    CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
+                                    List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
+                                    for (MethodDeclaration edMethod : edMethods) {
+                                        String signature = edMethod.getNameAsString() + "("
+                                            + edMethod.getParameters().stream()
+                                                    .map(param -> param.getType().asString())
+                                                    .collect(Collectors.joining(",")) + ")";
+                                    methodSignatures.put(signature, edMethod.toString());
+                                    }
+                                }
+                                return methodSignatures;
+                            });
+
+                            try {
+                                for (String signature : fileMethodSignatures) {
+                                    if (cachedMethodSignatures.get(signature) != null) {
+                                        JMenuItem methodItem = new JMenuItem("Update " + signature + " in " + fileObject.getName());
+                                        methodItem.addActionListener(e -> {
+                                            SwingUtilities.invokeLater(() -> {
+                                            updateMethodInSource(fileObject, signature, cachedMethodSignatures.get(signature));
+                                            });
+                                        });
+                                        if (menuItems.get(editorPane) == null) {
+                                            menuItems.put(editorPane, new ArrayList<>());
+                                        }
+                                        menuItems.get(editorPane).add(methodItem);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                System.out.println("Error parsing single method declaration from editor content: " + e.getMessage());
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error parsing file: " + fileObject.getName() + " - " + e.getMessage());
+            }
+        }
+
+        for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
+            if (entry.getValue().size() > 3) {
+                JMenu methodMenu = new JMenu("Methods");
+                for (JMenuItem jMenuItem : entry.getValue()) {
+                    methodMenu.add(jMenuItem);
+                }
+                menus.get(entry.getKey()).add(methodMenu);
+            } else {
+                JPopupMenu mainMenu = menus.get(entry.getKey());
+                for (JMenuItem jMenuItem : entry.getValue()) {
+                    mainMenu.add(jMenuItem);
+                }
+            }
+        }
+        return 0;
+    }
+    private void updateMethodInSource(FileObject fileObject, String sourceMethodSignature, String methodContent) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        try {
+            javaSource.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitMethod(MethodTree methodTree, Void v) {
+                        Name name = methodTree.getName();
+                        String targetMethodSignature = name.toString() + "("
+                                + methodTree.getParameters().stream()
+                                        .map(param -> param.getType().toString())
+                                        .collect(Collectors.joining(",")) + ")";
+
+                        // Compare the signature with the method being updated
+                        if (targetMethodSignature.equals(sourceMethodSignature)) {
+                            long startPos = copy.getTrees().getSourcePositions().getStartPosition(copy.getCompilationUnit(), methodTree);
+                            long endPos = copy.getTrees().getSourcePositions().getEndPosition(copy.getCompilationUnit(), methodTree);
+                            
+                            try {
+                                if (copy.getDocument() == null) {
+                                    openFileInEditor(fileObject);
+                                }
+                                insertAndReformat(copy.getDocument(), methodContent, (int) startPos, (int) endPos - (int) startPos);
+                            } catch (IOException ex) {
+                                Exceptions.printStackTrace(ex);
+                            }
+                        }
+                        return super.visitMethod(methodTree, v);
+                    }
+                }.scan(copy.getCompilationUnit(), null);
+
+            }).commit();
+        } catch (IOException e) {
+            System.out.println("Error updating method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
+        }
+    }
+    
+
+public void openFileInEditor(FileObject fileObject) {
+    try {
+        // Get the DataObject associated with the FileObject
+        DataObject dataObject = DataObject.find(fileObject);
+        
+        // Lookup for the EditorCookie from the DataObject
+            EditorCookie editorCookie = dataObject.getLookup().lookup(EditorCookie.class);
+            
+            if (editorCookie != null) {
+                // Open the file in the editor
+                editorCookie.open();
+                StatusDisplayer.getDefault().setStatusText("File opened in editor: " + fileObject.getNameExt());
+            } else {
+                StatusDisplayer.getDefault().setStatusText("Failed to find EditorCookie for file: " + fileObject.getNameExt());
+            }
+    } catch (DataObjectNotFoundException e) {
+        e.printStackTrace();
+    }
+}
+private void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
+    try {
+        if (lengthToRemove > 0) {
+            document.remove(startPosition, lengthToRemove);
+        }
+        document.insertString(startPosition, content, null);
+        Reformat reformat = Reformat.get(document);
+        reformat.lock();
+        try {
+            reformat.reformat(startPosition, startPosition + content.length());
+        } finally {
+            reformat.unlock();
+        }
+    } catch (BadLocationException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}
+    
     public int getAllEditorCount() {
         int count = 0;
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
