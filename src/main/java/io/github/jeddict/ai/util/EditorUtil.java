@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JEditorPane;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.awt.FontMetrics;
-import javax.swing.text.JTextComponent;
+import java.util.List;
+import org.openide.filesystems.FileObject;
 
 /**
  *
@@ -38,10 +38,9 @@ import javax.swing.text.JTextComponent;
  */
 public class EditorUtil {
 
-    public static String updateEditors(AssistantTopComponent topComponent, String text) {
+    public static String updateEditors(AssistantTopComponent topComponent, String text, List<FileObject> fileObjects) {
         StringBuilder code = new StringBuilder();
-        JEditorPane editorPane = null;
-
+        
         topComponent.clear();
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
@@ -54,23 +53,22 @@ public class EditorUtil {
             if (i % 2 == 0) {
                 String newText = addLineBreaksToMarkdown(parts[i].trim(), wordBreakLimit);
                 String html = renderer.render(parser.parse(newText));
-                editorPane = topComponent.createHtmlPane(html);
+                topComponent.createHtmlPane(html);
             } else {
                 Matcher matcher = pattern.matcher(parts[i]);
                 if (matcher.matches()) {
                     String codeType = matcher.group(1);
                     String codeContent = matcher.group(2);
                     code.append('\n').append(codeContent).append('\n');
-                    editorPane = topComponent.createCodePane(getMimeType(codeType), codeContent);
+                    topComponent.createCodePane(getMimeType(codeType), codeContent);
                 } else {
-                    editorPane = topComponent.createCodePane(getMimeType(null), parts[i]);
+                    topComponent.createCodePane(getMimeType(null), parts[i]);
                 }
             }
         }
-
-//        if (editorPane != null) {
-//            editorPane.setCaretPosition(0);
-//        }
+        
+        topComponent.getParseCodeEditor(fileObjects);
+        
         return code.toString();
     }
 
