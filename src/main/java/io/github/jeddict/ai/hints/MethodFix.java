@@ -40,6 +40,11 @@ import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.util.NbBundle;
 import static io.github.jeddict.ai.util.UIUtil.queryToEnhance;
+import java.io.IOException;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import org.netbeans.modules.editor.indent.api.Reformat;
+import org.openide.util.Exceptions;
 
 /**
  *
@@ -116,45 +121,33 @@ public class MethodFix extends JavaFix {
         String methodContent = json.getString("methodContent");
         SourceUtil.addImports(copy, imports);
 
-        // remove comment by recreaing method
-        if (leaf instanceof MethodTree) {
-            MethodTree methodTree = (MethodTree) leaf;
-            TreeMaker treeMaker = copy.getTreeMaker();
-
-            MethodTree newMethodTree = treeMaker.Method(
-                    methodTree.getModifiers(),
-                    methodTree.getName(),
-                    methodTree.getReturnType(),
-                    methodTree.getTypeParameters(),
-                    methodTree.getParameters(),
-                    methodTree.getThrows(),
-                    methodTree.getBody(),
-                    methodTree.getDefaultValue() != null
-                    ? (ExpressionTree) methodTree.getDefaultValue()
-                    : null
-            );
-
-            // Rewrite the method with the new tree
-            copy.rewrite(methodTree, newMethodTree);
-        }
-
-        // Formating
-        String lastLine = geIndentaion(copy, leaf);
-        if (lastLine.isBlank() && lastLine.length() <= 12) {
-            StringBuilder indentedContent = new StringBuilder();
-            boolean ignore = true;
-            for (String line : methodContent.split("\n")) {
-                if (ignore) {
-                    ignore = false;
-                    indentedContent.append(line).append("\n");
-                } else {
-                    indentedContent.append(lastLine).append(line).append("\n");
-                }
+        if (leaf instanceof MethodTree methodTree) {
+            long startPos = copy.getTrees().getSourcePositions().getStartPosition(copy.getCompilationUnit(), methodTree);
+            long endPos = copy.getTrees().getSourcePositions().getEndPosition(copy.getCompilationUnit(), methodTree);
+            try {
+                insertAndReformat(copy.getDocument(), methodContent, (int) startPos, (int) endPos - (int) startPos);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
             }
-            methodContent = indentedContent.toString();
         }
-        copy.rewrite(leaf, copy.getTreeMaker().QualIdent(methodContent));
-
     }
+    
+    private void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
+    try {
+        if (lengthToRemove > 0) {
+            document.remove(startPosition, lengthToRemove);
+        }
+        document.insertString(startPosition, content, null);
+        Reformat reformat = Reformat.get(document);
+        reformat.lock();
+        try {
+            reformat.reformat(startPosition, startPosition + content.length());
+        } finally {
+            reformat.unlock();
+        }
+    } catch (BadLocationException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}
 
 }
