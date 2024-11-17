@@ -30,6 +30,7 @@ import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
 import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
@@ -86,7 +87,7 @@ public class JeddictChatModel {
             if (preferencesManager.isStreamEnabled() && handler != null) {
                 switch (preferencesManager.getProvider()) {
                     case GOOGLE ->
-                        model = GoogleAiGeminiChatModel.builder()
+                        streamModel = GoogleAiGeminiStreamingChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
                                 .modelName(preferencesManager.getModelName())
                                 .build();
