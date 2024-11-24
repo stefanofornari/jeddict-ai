@@ -225,15 +225,15 @@ public class LearnFix extends JavaFix {
                     String response;
                     if (action == Action.TEST) {
                         if (leaf instanceof MethodTree) {
-                            response = new JeddictChatModel(handler).generateTestCase(null, null, leaf.toString(), null, null);
+                            response = new JeddictChatModel(handler).generateTestCase(getProject(), null, null, leaf.toString(), null, null);
                         } else {
-                            response = new JeddictChatModel(handler).generateTestCase(null, treePath.getCompilationUnit().toString(), null, null, null);
+                            response = new JeddictChatModel(handler).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, null, null);
                         }
                     } else {
                         if (leaf instanceof MethodTree) {
-                            response = new JeddictChatModel(handler).assistJavaMethod(leaf.toString());
+                            response = new JeddictChatModel(handler).assistJavaMethod(getProject(), leaf.toString());
                         } else {
-                            response = new JeddictChatModel(handler).assistJavaClass(treePath.getCompilationUnit().toString());
+                            response = new JeddictChatModel(handler).assistJavaClass(getProject(), treePath.getCompilationUnit().toString());
                         }
                     }
                     if (response != null && !response.isEmpty()) {
@@ -339,9 +339,9 @@ public class LearnFix extends JavaFix {
         StringBuilder inputForAI = new StringBuilder();
         try {
             String text = selectedFileObject.asText();
-            if ("java".equals(selectedFileObject.getExt()) && pm.isExcludeJavadocEnabled()) {
-                text = removeJavadoc(text);
-            }
+//            if ("java".equals(selectedFileObject.getExt()) && pm.isExcludeJavadocEnabled()) {
+//                text = removeJavadoc(text);
+//            }
             inputForAI.append(text);
             inputForAI.append("\n");
         } catch (Exception ex) {
@@ -723,21 +723,21 @@ public class LearnFix extends JavaFix {
                 } else if (commitChanges != null) {
                     response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, question);
                 } else if (project != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProjectContext(), null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), getProjectContext(), null, null, prevChat, question);
                 } else if (selectedFileObjects != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getFilesContext(), null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), getFilesContext(), null, null, prevChat, question);
                 } else if (selectedFileObject != null) {
-                    response = new JeddictChatModel(handler).generateDescription(null, getFileContext(), null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, getFileContext(), null, prevChat, question);
                 } else if (treePath == null) {
-                    response = new JeddictChatModel(handler).generateDescription(null, null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, null, null, prevChat, question);
                 } else if (action == Action.TEST) {
                     if (leaf instanceof MethodTree) {
-                        response = new JeddictChatModel(handler).generateTestCase(null, null, leaf.toString(), prevChat, question);
+                        response = new JeddictChatModel(handler).generateTestCase(getProject(), null, null, leaf.toString(), prevChat, question);
                     } else {
-                        response = new JeddictChatModel(handler).generateTestCase(null, treePath.getCompilationUnit().toString(), null, prevChat, question);
+                        response = new JeddictChatModel(handler).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, prevChat, question);
                     }
                 } else {
-                    response = new JeddictChatModel(handler).generateDescription(null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
                 }
 
                 if (response != null && !response.isEmpty()) {

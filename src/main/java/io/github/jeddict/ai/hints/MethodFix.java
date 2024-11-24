@@ -43,6 +43,7 @@ import static io.github.jeddict.ai.util.UIUtil.queryToEnhance;
 import java.io.IOException;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.util.Exceptions;
 
@@ -100,15 +101,21 @@ public class MethodFix extends JavaFix {
 
         if (leaf.getKind() == METHOD) {
             if (action == Action.COMPILATION_ERROR) {
-                content = new JeddictChatModel().fixMethodCompilationError(treePath.getParentPath().getLeaf().toString(), leaf.toString(), compliationError);
+                content = new JeddictChatModel().fixMethodCompilationError(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                treePath.getParentPath().getLeaf().toString(), leaf.toString(), compliationError);
             } else if (action == Action.ENHANCE) {
-                content = new JeddictChatModel().enhanceMethodFromMethodContent(treePath.getParentPath().getLeaf().toString(), leaf.toString());
+                content = new JeddictChatModel().enhanceMethodFromMethodContent(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                treePath.getParentPath().getLeaf().toString(), leaf.toString());
             } else {
                 String query = queryToEnhance();
                 if (query == null) {
                     return;
                 }
-                content = new JeddictChatModel().updateMethodFromDevQuery(treePath.getParentPath().getLeaf().toString(), leaf.toString(), query);
+                content = new JeddictChatModel().updateMethodFromDevQuery(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                treePath.getParentPath().getLeaf().toString(), leaf.toString(), query);
             }
         }
 

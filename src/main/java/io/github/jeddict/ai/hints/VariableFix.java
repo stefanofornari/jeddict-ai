@@ -32,6 +32,7 @@ import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.util.NbBundle;
 
@@ -83,7 +84,9 @@ public class VariableFix extends JavaFix {
 
         // Check if it's a variable and there's an error to fix
         if (leaf.getKind() == Tree.Kind.VARIABLE && action == Action.COMPILATION_ERROR) {
-            content = new JeddictChatModel().fixVariableError(leaf.toString(), compliationError);
+            content = new JeddictChatModel().fixVariableError(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                leaf.toString(), compliationError);
         }
 
         if (content == null) {

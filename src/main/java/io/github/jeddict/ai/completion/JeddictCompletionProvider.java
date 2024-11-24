@@ -84,6 +84,7 @@ import static io.github.jeddict.ai.util.StringUtil.trimTrailingSpaces;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import org.netbeans.api.editor.completion.Completion;
+import org.netbeans.api.project.FileOwnerQuery;
 import static org.netbeans.spi.editor.completion.CompletionProvider.COMPLETION_QUERY_TYPE;
 import org.netbeans.modules.db.sql.loader.SQLEditorSupport;
 
@@ -377,40 +378,46 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     if (path == null
                             || kind == Tree.Kind.ERRONEOUS) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(classDataContent, updateddoc, line, path);
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path);
                         for (Snippet varName : sugs) {
                             resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if (kind == Tree.Kind.COMPILATION_UNIT) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(classDataContent, updateddoc, line, path);
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path);
                         for (Snippet varName : sugs) {
                             resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if ((trimLeadingSpaces(line).length() > 0
                             && trimLeadingSpaces(line).charAt(0) == '@') || kind == Tree.Kind.ANNOTATION) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> annotationSuggestions = getJeddictChatModel(fileObject).suggestAnnotations(classDataContent, updateddoc, line);
+                        List<Snippet> annotationSuggestions = getJeddictChatModel(fileObject)
+                                .suggestAnnotations(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line);
                         for (Snippet annotationSuggestion : annotationSuggestions) {
                             resultSet.addItem(createItem(annotationSuggestion, line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if (kind == Tree.Kind.MODIFIERS
                             || kind == Tree.Kind.IDENTIFIER) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(classDataContent, updateddoc, line, path);
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path);
                         for (Snippet varName : sugs) {
                             resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if (kind == Tree.Kind.CLASS) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(classDataContent, updateddoc, line, path);
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path);
                         for (Snippet varName : sugs) {
                             JeddictItem var = new JeddictItem(null, null, varName.getSnippet(), varName.getDescription(), varName.getImports(), caretOffset, true, false, -1);
                             resultSet.addItem(var);
                         }
                     } else if (kind == Tree.Kind.BLOCK) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(classDataContent, updateddoc, line, path);
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path);
                         for (Snippet varName : sugs) {
                             JeddictItem var = new JeddictItem(null, null, varName.getSnippet(), varName.getDescription(), varName.getImports(), caretOffset, true, false, -1);
                             resultSet.addItem(var);
@@ -418,7 +425,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     } else if (kind == Tree.Kind.VARIABLE) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_VAR_NAMES_LIST}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
-                        List<String> sugs = getJeddictChatModel(fileObject).suggestVariableNames(classDataContent, updateddoc, line);
+                        List<String> sugs = getJeddictChatModel(fileObject)
+                                .suggestVariableNames(classDataContent, updateddoc, line);
                         for (String varName : sugs) {
                             JeddictItem var = new JeddictItem(null, null, varName, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
                             resultSet.addItem(var);
@@ -435,7 +443,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     } else if (kind == Tree.Kind.METHOD_INVOCATION) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_METHOD_INVOCATION}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
-                        List<String> sugs = getJeddictChatModel(fileObject).suggestMethodInvocations(classDataContent, updateddoc, line);
+                        List<String> sugs = getJeddictChatModel(fileObject)
+                                .suggestMethodInvocations(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line);
                         for (String varName : sugs) {
                             varName = varName.replace("<", "&lt;").replace(">", "&gt;");
                             JeddictItem var = new JeddictItem(null, null, varName, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
@@ -452,7 +461,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             && parentKind != null
                             && parentKind == Tree.Kind.IF) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_IF_CONDITIONS}");
-                        List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(classDataContent, updateddoc, line, path);
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path);
                         for (Snippet varName : sugs) {
                             JeddictItem var = new JeddictItem(null, null, varName.getSnippet(), varName.getDescription(), varName.getImports(), caretOffset, true, false, -1);
                             resultSet.addItem(var);
@@ -475,7 +485,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     List<String> sugs;
                     if (line.trim().startsWith("//")) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_JAVA_COMMENT}");
-                        sugs = getJeddictChatModel(fileObject).suggestJavaComment("", updateddoc, line);
+                        sugs = getJeddictChatModel(fileObject)
+                                .suggestJavaComment(FileOwnerQuery.getOwner(fileObject), "", updateddoc, line);
                         for (String varName : sugs) {
                             int newcaretOffset = caretOffset;
                             if (varName.startsWith(line.trim())) {
@@ -489,7 +500,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         }
                     } else {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_JAVADOC}");
-                        sugs = getJeddictChatModel(fileObject).suggestJavadocOrComment("", updateddoc, line);
+                        sugs = getJeddictChatModel(fileObject)
+                                .suggestJavadocOrComment(FileOwnerQuery.getOwner(fileObject), "", updateddoc, line);
                         for (String varName : sugs) {
                             int newcaretOffset = caretOffset;
                             if (varName.trim().startsWith(line.trim())) {
@@ -516,14 +528,16 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             }
                         } else {
                             String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                            List<Snippet> sugs = getJeddictChatModel(fileObject).suggestNextLineCode(updateddoc, line, mimeType);
+                            List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                    .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), updateddoc, line, mimeType);
                             for (Snippet varName : sugs) {
                                 resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
                             }
                         }
                     } else {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
-                        List<Snippet> sugs = getJeddictChatModel(null).suggestNextLineCode(updateddoc, line, mimeType);
+                        List<Snippet> sugs = getJeddictChatModel(null)
+                                .suggestNextLineCode(null, updateddoc, line, mimeType);
                         for (Snippet varName : sugs) {
                             resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
                         }
