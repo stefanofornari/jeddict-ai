@@ -58,24 +58,40 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.util.TreePathScanner;
+import java.awt.Dimension;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Name;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import org.netbeans.api.diff.Diff;
+import org.netbeans.api.diff.DiffView;
+import org.netbeans.api.diff.StreamSource;
+import org.netbeans.modules.diff.builtin.SingleDiffPanel;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.awt.StatusDisplayer;
 import org.openide.cookies.EditorCookie;
 import org.openide.util.Exceptions;
 
-    import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.windows.TopComponent;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyledDocument;
+import org.netbeans.api.editor.EditorRegistry;
+import org.netbeans.modules.editor.NbEditorUtilities;
+
 /**
  *
  * @author Shiwani Gupta
@@ -400,33 +416,35 @@ public class AssistantTopComponent extends TopComponent {
                                                     .collect(Collectors.joining(",")) + ")";
                                     methodSignatures.put(signature, editorPane.getText());
                                 } catch (Exception e) {
-                                    CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
-                                    List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
-                                    for (MethodDeclaration edMethod : edMethods) {
-                                        String signature = edMethod.getNameAsString() + "("
-                                            + edMethod.getParameters().stream()
-                                                    .map(param -> param.getType().asString())
-                                                    .collect(Collectors.joining(",")) + ")";
-                                    methodSignatures.put(signature, edMethod.toString());
+                                    try {
+                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
+                                        List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
+                                        for (MethodDeclaration edMethod : edMethods) {
+                                            String signature = edMethod.getNameAsString() + "("
+                                                    + edMethod.getParameters().stream()
+                                                            .map(param -> param.getType().asString())
+                                                            .collect(Collectors.joining(",")) + ")";
+                                            methodSignatures.put(signature, edMethod.toString());
+                                        }
+                                    } catch (Exception e1) {
+                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
+                                        if (edCu.getTypes().isNonEmpty()) {
+                                            methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
+                                        }
                                     }
                                 }
                                 return methodSignatures;
                             });
 
                             try {
+                                int menuCreationCount = 0;
                                 for (String signature : fileMethodSignatures) {
-                                    if (cachedMethodSignatures.get(signature) != null) {
-                                        JMenuItem methodItem = new JMenuItem("Update " + signature + " in " + fileObject.getName());
-                                        methodItem.addActionListener(e -> {
-                                            SwingUtilities.invokeLater(() -> {
-                                            updateMethodInSource(fileObject, signature, cachedMethodSignatures.get(signature));
-                                            });
-                                        });
-                                        if (menuItems.get(editorPane) == null) {
-                                            menuItems.put(editorPane, new ArrayList<>());
-                                        }
-                                        menuItems.get(editorPane).add(methodItem);
+                                    if (createEditorPaneMenus(fileObject, signature, editorPane, cachedMethodSignatures)) {
+                                        menuCreationCount++;
                                     }
+                                }
+                                if (menuCreationCount == 0) {
+                                    createEditorPaneMenus(fileObject, fileObject.getName(), editorPane, cachedMethodSignatures);
                                 }
                             } catch (Exception e) {
                                 System.out.println("Error parsing single method declaration from editor content: " + e.getMessage());
@@ -436,6 +454,36 @@ public class AssistantTopComponent extends TopComponent {
                 }
             } catch (Exception e) {
                 System.out.println("Error parsing file: " + fileObject.getName() + " - " + e.getMessage());
+            }
+        }
+        
+        for (int i = 0; i < parentPanel.getComponentCount(); i++) {
+            if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
+                if (menuItems.get(editorPane) == null) {
+                    menuItems.put(editorPane, new ArrayList<>());
+                }
+                if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
+                    JMenuItem diffMethodItem = new JMenuItem("Diff with Selected Snippet");
+                    diffMethodItem.addActionListener(e -> {
+                        SwingUtilities.invokeLater(() -> {
+                            JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
+                            String currentSelectedText = currenteditor.getSelectedText();
+                            final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
+                            DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
+                            if (currentDO != null) {
+                                FileObject focusedfile = currentDO.getPrimaryFile();
+                                if (focusedfile != null && !currentSelectedText.trim().isEmpty()) {
+                                    diffActionWithSelected(currentSelectedText, focusedfile, editorPane);
+                                } else {
+                                    javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
+                                }
+                            } else {
+                                    javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
+                                }
+                        });
+                    });
+                    menuItems.get(editorPane).add(diffMethodItem);
+                }
             }
         }
 
@@ -455,6 +503,145 @@ public class AssistantTopComponent extends TopComponent {
         }
         return 0;
     }
+
+    private boolean createEditorPaneMenus(FileObject fileObject, String signature, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
+        boolean classSignature = fileObject.getName().equals(signature);
+        if (cachedMethodSignatures.get(signature) != null) {
+            if (menuItems.get(editorPane) == null) {
+                menuItems.put(editorPane, new ArrayList<>());
+            }
+            String menuSubText = (classSignature ? "" : (signature + " in "));
+            JMenuItem updateMethodItem = new JMenuItem("Update " + menuSubText + fileObject.getName());
+            updateMethodItem.addActionListener(e -> {
+                SwingUtilities.invokeLater(() -> {
+                    if (signature.equals(fileObject.getName())) {
+                        updateFullSourceInFile(fileObject, cachedMethodSignatures.get(signature));
+                    } else {
+                        updateMethodInSource(fileObject, signature, cachedMethodSignatures.get(signature));
+                    }
+                });
+            });
+            menuItems.get(editorPane).add(updateMethodItem);
+
+            JMenuItem diffMethodItem = new JMenuItem("Diff " + menuSubText + fileObject.getName());
+            diffMethodItem.addActionListener(e -> {
+                SwingUtilities.invokeLater(() -> {
+                    diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
+                });
+            });
+            menuItems.get(editorPane).add(diffMethodItem);
+            return true;
+        }
+        return false;
+    }
+    
+    
+    private void diffAction(boolean classSignature, FileObject fileObject, String signature, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
+        try {
+                        String origin;
+                        if (signature.equals(fileObject.getName())) {
+                            origin = fileObject.asText();
+                        } else {
+                            origin = findMethodSourceInFileObject(fileObject, signature);
+                        }
+                        JPanel editorParent = (JPanel) editorPane.getParent();
+                        JPanel diffPanel = new JPanel();
+                        diffPanel.setLayout(new BorderLayout());
+
+                        if (classSignature) {
+                            SingleDiffPanel sdp = new SingleDiffPanel(createTempFileObject(fileObject.getName(), cachedMethodSignatures.get(signature)), fileObject, null);
+                            diffPanel.add(sdp, BorderLayout.CENTER);
+                        } else {
+                            StreamSource ss1 = StreamSource.createSource(
+                                    "Source " + signature,
+                                    fileObject.getNameExt() + (classSignature ? "" : ("#" + signature)),
+                                    "text/java",
+                                    new StringReader(origin.trim())
+                            );
+                            StreamSource ss2 = StreamSource.createSource(
+                                    "Target " + signature,
+                                    "AI Generated " + signature,
+                                    "text/java",
+                                    new StringReader(cachedMethodSignatures.get(signature))
+                            );
+                            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
+                            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
+                        }
+
+                        JButton closeButton = new JButton("Hide Diff View");
+                        closeButton.setPreferredSize(new Dimension(30, 30));
+                        closeButton.setContentAreaFilled(false);
+
+                        closeButton.addActionListener(e1 -> {
+                            diffPanel.setVisible(false);
+                            editorPane.setVisible(true);
+                            editorParent.revalidate();
+                            editorParent.repaint();
+                        });
+                        diffPanel.add(closeButton, BorderLayout.NORTH);
+                        int index = editorParent.getComponentZOrder(editorPane);
+                        editorParent.add(diffPanel, index + 1);
+                        editorPane.setVisible(false);
+                        editorParent.revalidate();
+                        editorParent.repaint();
+                    } catch (IOException ex) {
+                        Exceptions.printStackTrace(ex);
+                    }
+    }
+
+    
+    private void diffActionWithSelected(String origin, FileObject fileObject, JEditorPane editorPane) {
+        try {
+            JPanel editorParent = (JPanel) editorPane.getParent();
+            JPanel diffPanel = new JPanel();
+            diffPanel.setLayout(new BorderLayout());
+
+            StreamSource ss1 = StreamSource.createSource(
+                    "Source",
+                    fileObject.getNameExt(),
+                    "text/java",
+                    new StringReader(origin.trim())
+            );
+            StreamSource ss2 = StreamSource.createSource(
+                    "Target",
+                    "AI Generated",
+                    "text/java",
+                    new StringReader(editorPane.getText())
+            );
+            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
+            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
+
+            JButton closeButton = new JButton("Hide Diff View");
+            closeButton.setPreferredSize(new Dimension(30, 30));
+            closeButton.setContentAreaFilled(false);
+
+            closeButton.addActionListener(e1 -> {
+                diffPanel.setVisible(false);
+                editorPane.setVisible(true);
+                editorParent.revalidate();
+                editorParent.repaint();
+            });
+            diffPanel.add(closeButton, BorderLayout.NORTH);
+            int index = editorParent.getComponentZOrder(editorPane);
+            editorParent.add(diffPanel, index + 1);
+            editorPane.setVisible(false);
+            editorParent.revalidate();
+            editorParent.repaint();
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    public FileObject createTempFileObject(String name, String content) throws IOException {
+        File tempFile = File.createTempFile("GenAI-"+name, ".java");
+        tempFile.deleteOnExit();
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write(content);
+        }
+        FileObject fileObject = FileUtil.toFileObject(tempFile);
+        return fileObject;
+    }
+    
     private void updateMethodInSource(FileObject fileObject, String sourceMethodSignature, String methodContent) {
         JavaSource javaSource = JavaSource.forFileObject(fileObject);
         try {
@@ -473,7 +660,7 @@ public class AssistantTopComponent extends TopComponent {
                         if (targetMethodSignature.equals(sourceMethodSignature)) {
                             long startPos = copy.getTrees().getSourcePositions().getStartPosition(copy.getCompilationUnit(), methodTree);
                             long endPos = copy.getTrees().getSourcePositions().getEndPosition(copy.getCompilationUnit(), methodTree);
-                            
+
                             try {
                                 if (copy.getDocument() == null) {
                                     openFileInEditor(fileObject);
@@ -492,16 +679,74 @@ public class AssistantTopComponent extends TopComponent {
             System.out.println("Error updating method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
         }
     }
-    
 
-public void openFileInEditor(FileObject fileObject) {
-    try {
-        // Get the DataObject associated with the FileObject
-        DataObject dataObject = DataObject.find(fileObject);
-        
-        // Lookup for the EditorCookie from the DataObject
+    private void updateFullSourceInFile(FileObject fileObject, String newSourceContent) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        try {
+            javaSource.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                Document document = copy.getDocument();
+
+                try {
+                    // Open the file in the editor if it is not already open
+                    if (document == null) {
+                        openFileInEditor(fileObject);
+                        document = copy.getDocument(); // Re-fetch the document after opening
+                    }
+
+                    // Replace the entire document content with the new source content
+                    document.remove(0, document.getLength());
+                    document.insertString(0, newSourceContent, null);
+
+                } catch (BadLocationException | IOException ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+            }).commit();
+        } catch (IOException e) {
+            System.out.println("Error updating source in file " + fileObject.getName() + ": " + e.getMessage());
+        }
+    }
+
+    private String findMethodSourceInFileObject(FileObject fileObject, String sourceMethodSignature) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        StringBuilder methodSource = new StringBuilder();
+
+        try {
+            javaSource.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitMethod(MethodTree methodTree, Void v) {
+                        Name name = methodTree.getName();
+                        String targetMethodSignature = name.toString() + "("
+                                + methodTree.getParameters().stream()
+                                        .map(param -> param.getType().toString())
+                                        .collect(Collectors.joining(",")) + ")";
+
+                        // Check if the signatures match
+                        if (targetMethodSignature.equals(sourceMethodSignature)) {
+                            // Construct the method source code
+                            methodSource.append(methodTree.toString());
+                        }
+                        return super.visitMethod(methodTree, v);
+                    }
+                }.scan(copy.getCompilationUnit(), null);
+            }).commit();
+        } catch (IOException e) {
+            System.out.println("Error finding method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
+        }
+
+        return methodSource.toString(); // Return the method source code
+    }
+
+    public void openFileInEditor(FileObject fileObject) {
+        try {
+            // Get the DataObject associated with the FileObject
+            DataObject dataObject = DataObject.find(fileObject);
+
+            // Lookup for the EditorCookie from the DataObject
             EditorCookie editorCookie = dataObject.getLookup().lookup(EditorCookie.class);
-            
+
             if (editorCookie != null) {
                 // Open the file in the editor
                 editorCookie.open();
@@ -509,28 +754,29 @@ public void openFileInEditor(FileObject fileObject) {
             } else {
                 StatusDisplayer.getDefault().setStatusText("Failed to find EditorCookie for file: " + fileObject.getNameExt());
             }
-    } catch (DataObjectNotFoundException e) {
-        e.printStackTrace();
-    }
-}
-private void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
-    try {
-        if (lengthToRemove > 0) {
-            document.remove(startPosition, lengthToRemove);
+        } catch (DataObjectNotFoundException e) {
+            e.printStackTrace();
         }
-        document.insertString(startPosition, content, null);
-        Reformat reformat = Reformat.get(document);
-        reformat.lock();
+    }
+
+    private void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
         try {
-            reformat.reformat(startPosition, startPosition + content.length());
-        } finally {
-            reformat.unlock();
+            if (lengthToRemove > 0) {
+                document.remove(startPosition, lengthToRemove);
+            }
+            document.insertString(startPosition, content, null);
+            Reformat reformat = Reformat.get(document);
+            reformat.lock();
+            try {
+                reformat.reformat(startPosition, startPosition + content.length());
+            } finally {
+                reformat.unlock();
+            }
+        } catch (BadLocationException ex) {
+            Exceptions.printStackTrace(ex);
         }
-    } catch (BadLocationException ex) {
-        Exceptions.printStackTrace(ex);
     }
-}
-    
+
     public int getAllEditorCount() {
         int count = 0;
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {

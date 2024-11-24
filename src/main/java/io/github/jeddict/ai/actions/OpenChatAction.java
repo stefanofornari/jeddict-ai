@@ -77,13 +77,18 @@ public class OpenChatAction implements ActionListener {
                     String currentSelectedText = currenteditor.getSelectedText();
                     final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
                     int currentSelectionStartPosition = currenteditor.getSelectionStart();
-                    FileObject currentfile = NbEditorUtilities.getDataObject(currentDocument).getPrimaryFile();
-                    if (currentfile != null) {
-                        if (currentSelectedText == null || currentSelectedText.isEmpty()) {
-                            insertAndReformat(currentDocument, content, currentSelectionStartPosition, 0);
-                        } else {
-                            insertAndReformat(currentDocument, content, currentSelectionStartPosition, currentSelectedText.length());
+                    DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
+                    if (currentDO != null) {
+                        FileObject currentfile = currentDO.getPrimaryFile();
+                        if (currentfile != null) {
+                            if (currentSelectedText == null || currentSelectedText.isEmpty()) {
+                                insertAndReformat(currentDocument, content, currentSelectionStartPosition, 0);
+                            } else {
+                                insertAndReformat(currentDocument, content, currentSelectionStartPosition, currentSelectedText.length());
+                            }
                         }
+                    } else {
+                        javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the original editor before updating.");
                     }
                 }
             });
