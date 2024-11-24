@@ -43,6 +43,7 @@ import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.util.NbBundle;
 
@@ -74,44 +75,56 @@ public class JavaDocFixImpl extends JavaFix {
 
     @Override
     protected void performRewrite(JavaFix.TransformationContext tc) throws Exception {
-        WorkingCopy wc = tc.getWorkingCopy();
-        if (wc.toPhase(JavaSource.Phase.RESOLVED).compareTo(JavaSource.Phase.RESOLVED) < 0) {
+        WorkingCopy copy = tc.getWorkingCopy();
+        if (copy.toPhase(JavaSource.Phase.RESOLVED).compareTo(JavaSource.Phase.RESOLVED) < 0) {
             return;
         }
 
         TreePath treePath = tc.getPath();
         Tree tree = treePath.getLeaf();
-        Element elm = wc.getTrees().getElement(treePath);
+        Element elm = copy.getTrees().getElement(treePath);
         if (elm == null) {
             return;
         }
 
-        Document document = wc.getDocument();
+        Document document = copy.getDocument();
 
         String javadocContent;
-        DocCommentTree oldDocCommentTree = wc.getDocTrees().getDocCommentTree(treePath);
+        DocCommentTree oldDocCommentTree = copy.getDocTrees().getDocCommentTree(treePath);
 
         switch (tree.getKind()) {
             case CLASS:
             case INTERFACE:
                 if (action == ENHANCE) {
-                    javadocContent = new JeddictChatModel().enhanceJavadocForClass(oldDocCommentTree.toString(), tree.toString());
+                    javadocContent = new JeddictChatModel().enhanceJavadocForClass(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                oldDocCommentTree.toString(), tree.toString());
                 } else {
-                    javadocContent = new JeddictChatModel().generateJavadocForClass(tree.toString());
+                    javadocContent = new JeddictChatModel().generateJavadocForClass(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                tree.toString());
                 }
                 break;
             case METHOD:
                 if (action == ENHANCE) {
-                    javadocContent = new JeddictChatModel().enhanceJavadocForMethod(oldDocCommentTree.toString(), ((MethodTree) tree).getName().toString());
+                    javadocContent = new JeddictChatModel().enhanceJavadocForMethod(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                oldDocCommentTree.toString(), ((MethodTree) tree).getName().toString());
                 } else {
-                    javadocContent = new JeddictChatModel().generateJavadocForMethod(((MethodTree) tree).getName().toString());
+                    javadocContent = new JeddictChatModel().generateJavadocForMethod(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                ((MethodTree) tree).getName().toString());
                 }
                 break;
             case VARIABLE:
                 if (action == ENHANCE) {
-                    javadocContent = new JeddictChatModel().enhanceJavadocForField(oldDocCommentTree.toString(), ((VariableTree) tree).getName().toString());
+                    javadocContent = new JeddictChatModel().enhanceJavadocForField(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                oldDocCommentTree.toString(), ((VariableTree) tree).getName().toString());
                 } else {
-                    javadocContent = new JeddictChatModel().generateJavadocForField(((VariableTree) tree).getName().toString());
+                    javadocContent = new JeddictChatModel().generateJavadocForField(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                ((VariableTree) tree).getName().toString());
                 }
                 break;
             default:
@@ -119,11 +132,11 @@ public class JavaDocFixImpl extends JavaFix {
         }
         javadocContent = removeCodeBlockMarkers(javadocContent);
 
-        int startOffset = (int) wc.getTrees().getSourcePositions()
-                .getStartPosition(wc.getCompilationUnit(), tree);
+        int startOffset = (int) copy.getTrees().getSourcePositions()
+                .getStartPosition(copy.getCompilationUnit(), tree);
 
         if (document != null) {
-            String lastLine = geIndentaion(wc, tree);
+            String lastLine = geIndentaion(copy, tree);
             if (lastLine.isBlank() && lastLine.length() <= 12) {
                 StringBuilder indentedContent = new StringBuilder();
 
@@ -144,8 +157,8 @@ public class JavaDocFixImpl extends JavaFix {
         }
 
         if (action == ENHANCE && oldDocCommentTree != null && document != null) {
-            DocTrees docTrees = wc.getDocTrees();
-            CompilationUnitTree cuTree = wc.getCompilationUnit();
+            DocTrees docTrees = copy.getDocTrees();
+            CompilationUnitTree cuTree = copy.getCompilationUnit();
 
             long start = docTrees.getSourcePositions().getStartPosition(cuTree, oldDocCommentTree, oldDocCommentTree);
             long end = docTrees.getSourcePositions().getEndPosition(cuTree, oldDocCommentTree, oldDocCommentTree);

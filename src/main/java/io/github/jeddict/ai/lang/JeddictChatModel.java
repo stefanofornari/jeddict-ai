@@ -40,6 +40,7 @@ import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import io.github.jeddict.ai.models.LMStudioChatModel;
+import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.CUSTOM_OPEN_AI;
 import static io.github.jeddict.ai.settings.GenAIProvider.DEEPINFRA;
@@ -68,6 +69,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.netbeans.api.project.Project;
 
 public class JeddictChatModel {
 
@@ -176,12 +178,15 @@ public class JeddictChatModel {
         }
     }
 
-    private String generate(String prompt) {
+    private String generate(Project project, String prompt) {
         if (model == null && handler == null) {
             JOptionPane.showMessageDialog(null,
                     "AI assistance model not intitalized.",
                     "Error in AI Assistance",
                     JOptionPane.ERROR_MESSAGE);
+        }
+        if(project != null) {
+           prompt = prompt + ProjectMetadataInfo.get(project);
         }
         try {
             if (streamModel != null) {
@@ -223,73 +228,73 @@ public class JeddictChatModel {
         return null;
     }
 
-    public String generateJavadocForClass(String classContent) {
+    public String generateJavadocForClass(Project project, String classContent) {
         String prompt
                 = "You are an API server that responds only with Javadoc comments for class not the member of class. "
                 + "Generate only the Javadoc wrapped with in /** ${javadoc} **/ for the following Java class not the member of class. Do not include any additional text or explanation.\n\n"
                 + classContent;
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String generateJavadocForMethod(String methodContent) {
+    public String generateJavadocForMethod(Project project, String methodContent) {
         String prompt
                 = "You are an API server that responds only with Javadoc comments for method. "
                 + "Generate only the Javadoc wrapped with in /** ${javadoc} **/ for the following Java method. Do not include any additional text or explanation.\n\n"
                 + methodContent;
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String generateJavadocForField(String fieldContent) {
+    public String generateJavadocForField(Project project, String fieldContent) {
         String prompt
                 = "You are an API server that responds only with Javadoc comments for field. "
                 + "Generate only the Javadoc wrapped with in /** ${javadoc} **/ for the following Java variable. Do not include any additional text or explanation.\n\n"
                 + fieldContent;
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String enhanceJavadocForClass(String existingJavadoc, String classContent) {
+    public String enhanceJavadocForClass(Project project, String existingJavadoc, String classContent) {
         String prompt
                 = "You are an API server that enhances existing Javadoc comments for a class. "
                 + "Given the existing Javadoc comment and the following Java class, enhance the Javadoc comment by adding more details if necessary. "
                 + "Do not include any additional text or explanation, just the enhanced Javadoc wrapped with /** ${javadoc} **/.\n\n"
                 + "Existing Javadoc:\n" + existingJavadoc + "\n\n"
                 + "Java Class Content:\n" + classContent;
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String enhanceJavadocForMethod(String existingJavadoc, String methodContent) {
+    public String enhanceJavadocForMethod(Project project, String existingJavadoc, String methodContent) {
         String prompt
                 = "You are an API server that enhances existing Javadoc comments for a method. "
                 + "Given the existing Javadoc comment and the following Java method, enhance the Javadoc comment by adding more details if necessary. "
                 + "Do not include any additional text or explanation, just the enhanced Javadoc wrapped with /** ${javadoc} **/.\n\n"
                 + "Existing Javadoc:\n" + existingJavadoc + "\n\n"
                 + "Java Method Content:\n" + methodContent;
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String enhanceJavadocForField(String existingJavadoc, String fieldContent) {
+    public String enhanceJavadocForField(Project project, String existingJavadoc, String fieldContent) {
         String prompt
                 = "You are an API server that enhances existing Javadoc comments for a field. "
                 + "Given the existing Javadoc comment and the following Java field, enhance the Javadoc comment by adding more details if necessary. "
                 + "Do not include any additional text or explanation, just the enhanced Javadoc wrapped with /** ${javadoc} **/.\n\n"
                 + "Existing Javadoc:\n" + existingJavadoc + "\n\n"
                 + "Java Field Content:\n" + fieldContent;
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String generateRestEndpointForClass(String classContent) {
+    public String generateRestEndpointForClass(Project project, String classContent) {
         // Define a prompt to generate unique JAX-RS resource methods with necessary imports
         String prompt = "You are an API server that generates JAX-RS REST endpoints based on the provided Java class definition. "
                 + "Analyze the context and functionality of the class to create meaningful and relevant REST endpoints. "
@@ -313,14 +318,14 @@ public class JeddictChatModel {
                 + classContent;
 
         // Generate the unique JAX-RS methods with imports
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
 
         // Print and return the generated JAX-RS methods with imports
         System.out.println(answer);
         return answer;
     }
 
-    public String updateMethodFromDevQuery(String javaClassContent, String methodContent, String developerRequest) {
+    public String updateMethodFromDevQuery(Project project, String javaClassContent, String methodContent, String developerRequest) {
         String prompt
                 = "You are an API server that enhances Java methods based on user requests. "
                 + "Given the following Java method and the developer's request, modify and enhance the method accordingly. "
@@ -334,12 +339,12 @@ public class JeddictChatModel {
                 + "Java Method Content:\n" + methodContent;
 
         // Generate the enhanced Java method
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String enhanceMethodFromMethodContent(String javaClassContent, String methodContent) {
+    public String enhanceMethodFromMethodContent(Project project, String javaClassContent, String methodContent) {
         String prompt
                 = "You are an API server that enhances or creates Java methods based on the method name, comments, and its content. "
                 + "Given the following Java class content and Java method content, modify and enhance the method accordingly. "
@@ -351,12 +356,12 @@ public class JeddictChatModel {
                 + "Java Method Content:\n" + methodContent;
 
         // Generate the enhanced or newly created Java method with necessary imports
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String fixMethodCompilationError(String javaClassContent, String methodContent, String errorMessage) {
+    public String fixMethodCompilationError(Project project, String javaClassContent, String methodContent, String errorMessage) {
         String prompt
                 = "You are an API server that fixes compilation errors in Java methods based on the provided error messages. "
                 + "Given the following Java method content, class content, and the error message, correct the method accordingly. "
@@ -370,12 +375,12 @@ public class JeddictChatModel {
                 + "Java Method Content:\n" + methodContent;
 
         // Generate the fixed Java method
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String fixVariableError(String javaClassContent, String errorMessage) {
+    public String fixVariableError(Project project, String javaClassContent, String errorMessage) {
         String prompt
                 = "You are an API server that fixes variable-related compilation errors in Java classes based on the provided error messages. "
                 + "Given the following Java class content and the error message, correct given variable-related issues based on error message at class level. "
@@ -388,7 +393,7 @@ public class JeddictChatModel {
                 + "Java Class Content:\n" + javaClassContent;
 
         // Generate the fixed Java class or method
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
@@ -403,7 +408,7 @@ public class JeddictChatModel {
                 + (classContent != null ? ("Java Class Content:\n" + classContent) : "");
 
         // Generate the new variable name
-        String answer = generate(prompt);
+        String answer = generate(null, prompt);
         System.out.println(answer);
         return answer;
     }
@@ -423,7 +428,7 @@ public class JeddictChatModel {
 //    }
 
         // Generate the list of suggested variable names
-        String answer = generate(prompt);
+        String answer = generate(null, prompt);
         System.out.println(answer);
 
         // Split the response into a list and return
@@ -457,7 +462,7 @@ public class JeddictChatModel {
         prompt = loadClassData(prompt, classDatas);
 
         // Generate the list of new variable names
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(null, prompt);
 
         // Parse the JSON response into a List
         List<String> variableNames = parseJsonToList(jsonResponse);
@@ -473,7 +478,7 @@ public class JeddictChatModel {
 
         prompt = loadClassData(prompt, classDatas);
         // Generate the list of new method names
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(null, prompt);
 
         // Parse the JSON response into a List
         List<String> methodNames = parseJsonToList(jsonResponse);
@@ -489,7 +494,7 @@ public class JeddictChatModel {
 
         prompt = loadClassData(prompt, classDatas);
         // Generate the list of new string literals
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(null, prompt);
 
         // Parse the JSON response into a List
         List<String> stringLiterals = parseJsonToListWithSplit(jsonResponse);
@@ -497,7 +502,7 @@ public class JeddictChatModel {
         return stringLiterals;
     }
 
-    public List<String> suggestMethodInvocations(String classDatas, String classContent, String lineText) {
+    public List<String> suggestMethodInvocations(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests multiple meaningful and appropriate method invocations for a specific context in a given Java class. "
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a list of improved method invocations represented by the placeholder ${SUGGEST_METHOD_INVOCATION} in Java Class. "
                 + "Do not include additional text; return only the suggestions as a JSON array.\n\n"
@@ -506,7 +511,7 @@ public class JeddictChatModel {
         prompt = loadClassData(prompt, classDatas);
 
         // Generate the list of new method invocations
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(project, prompt);
 
         // Parse the JSON response into a List
         List<String> methodInvocations = parseJsonToList(jsonResponse);
@@ -514,7 +519,7 @@ public class JeddictChatModel {
         return methodInvocations;
     }
 
-    public List<Snippet> suggestNextLineCode(String classDatas, String classContent, String lineText, TreePath path) {
+    public List<Snippet> suggestNextLineCode(Project project, String classDatas, String classContent, String lineText, TreePath path) {
         String prompt;
 
         if (path == null) {
@@ -583,20 +588,20 @@ public class JeddictChatModel {
         prompt = loadClassData(prompt, classDatas);
 
         // Generate the list of suggested next lines of code
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(project, prompt);
         System.out.println("jsonResponse " + jsonResponse);
         // Parse the JSON response into a List
         List<Snippet> nextLines = parseJsonToSnippets(jsonResponse);
         return nextLines;
     }
 
-    public List<String> suggestJavaComment(String classDatas, String classContent, String lineText) {
+    public List<String> suggestJavaComment(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests appropriate Java comments for a specific context in a given Java class at the placeholder location ${SUGGEST_JAVA_COMMENT}. "
                 + "Based on the provided Java class content and the line of comment: \"" + lineText + " ${SUGGEST_JAVA_COMMENT} \", suggest relevant Java comment as appropriate for the context represented by the placeholder ${SUGGEST_JAVA_COMMENT} in the Java Class. "
                 + "Return a JSON array where each element must be single line comment. \n\n"
                 + "Java Class Content:\n" + classContent;
         // Generate the list of suggested Javadoc or comments
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(project, prompt);
         System.out.println("jsonResponse " + jsonResponse);
         // Parse the JSON response into a List
         List<String> comments = parseJsonToList(jsonResponse);
@@ -604,7 +609,7 @@ public class JeddictChatModel {
         return comments;
     }
 
-    public List<String> suggestJavadocOrComment(String classDatas, String classContent, String lineText) {
+    public List<String> suggestJavadocOrComment(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests appropriate Javadoc or comments for a specific context in a given Java class at the placeholder location ${SUGGEST_JAVADOC}. "
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant Javadoc or a comment block as appropriate for the context represented by the placeholder ${SUGGEST_JAVADOC} in the Java Class. "
                 + "Return a JSON array where each element can either be a single-line comment, a multi-line comment block, or a Javadoc comment formatted as a single string using \\n for line breaks. "
@@ -612,7 +617,7 @@ public class JeddictChatModel {
                 //            + "Ensure that the suggestions are relevant to the context of com.sun.source.tree.Tree.Kind." + type + ". "
                 + "Java Class Content:\n" + classContent;
         // Generate the list of suggested Javadoc or comments
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(project, prompt);
         System.out.println("jsonResponse " + jsonResponse);
         // Parse the JSON response into a List
         List<String> comments = parseJsonToList(jsonResponse);
@@ -630,14 +635,14 @@ public class JeddictChatModel {
             + "'description' should be a very short explanation of what the snippet does and why it might be appropriate in this context, formatted with <b>, <\br> and optionally if required then include any imporant link with <a href=''> tags. "
             + "Make sure to escape any double quotes within the snippet and description using a backslash (\\) so that the JSON remains valid. \n\n";
 
-    public List<Snippet> suggestAnnotations(String classDatas, String classContent, String lineText) {
+    public List<Snippet> suggestAnnotations(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests Java annotations for a specific context in a given Java class at the placeholder location ${SUGGEST_ANNOTATION_LIST}. "
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant annotations that can be applied at the placeholder location represented by ${SUGGEST_ANNOTATION_LIST} in the Java Class. "
                 + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                 + "Ensure that the suggestions are appropriate for the given Java Class Content:\n\n" + classContent;
 
         // Generate the list of suggested annotations
-        String jsonResponse = generate(prompt);
+        String jsonResponse = generate(project, prompt);
         System.out.println("jsonResponse " + jsonResponse);
 
         // Parse the JSON response into a List
@@ -760,7 +765,7 @@ public class JeddictChatModel {
                 + "Text to Fix:\n" + text;
 
         // Generate the grammar-fixed text
-        String answer = generate(prompt);
+        String answer = generate(null, prompt);
         System.out.println(answer);
         return answer;
     }
@@ -774,12 +779,13 @@ public class JeddictChatModel {
                 + "Text to Enhance:\n" + text;
 
         // Generate the enhanced text
-        String enhancedText = generate(prompt);
+        String enhancedText = generate(null, prompt);
         System.out.println(enhancedText);
         return enhancedText;
     }
 
-    public String enhanceExpressionStatement(String classContent, String parentContent, String expressionStatementContent) {
+    public String enhanceExpressionStatement(
+            Project project, String classContent, String parentContent, String expressionStatementContent) {
         // Construct the prompt for enhancing the expression statement
         String prompt = "You are an API server that enhances Java code snippets. "
                 + "Given the following Java class content, the parent content of the EXPRESSION_STATEMENT, "
@@ -789,7 +795,7 @@ public class JeddictChatModel {
                 + "Parent Content of EXPRESSION_STATEMENT:\n" + parentContent + "\n\n"
                 + "EXPRESSION_STATEMENT Content:\n" + expressionStatementContent;
 
-        String enhanced = generate(prompt);
+        String enhanced = generate(project, prompt);
         System.out.println(enhanced);
         return enhanced;
     }
@@ -822,7 +828,7 @@ public class JeddictChatModel {
         }
 
         // Generate the commit message suggestions
-        String answer = generate(prompt.toString());
+        String answer = generate(null, prompt.toString());
         System.out.println(answer);
         answer = removeCodeBlockMarkers(answer);
         return answer;
@@ -887,12 +893,13 @@ public class JeddictChatModel {
                        - If the developer requests specific code snippets related to the database metadata, generate the appropriate code and include a clear description of its functionality and relevance.
                     """);
 
-        String response = generate(dbPrompt.toString());
+        String response = generate(null, dbPrompt.toString());
         System.out.println(response);
         return response;
     }
 
-    public String assistJavaClass(String classContent) {
+    public String assistJavaClass(
+            Project project, String classContent) {
         StringBuilder promptBuilder = new StringBuilder();
         promptBuilder.append("You are an API server that provides a description of the following class. ");
         String rules = preferencesManager.getCommonPromptRules();
@@ -905,12 +912,13 @@ public class JeddictChatModel {
                 .append(classContent);
 
         String prompt = promptBuilder.toString();
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String assistJavaMethod(String methodContent) {
+    public String assistJavaMethod(
+            Project project, String methodContent) {
         StringBuilder promptBuilder = new StringBuilder();
         promptBuilder.append("You are an API server that provides a description of the following Method. ");
         String rules = preferencesManager.getCommonPromptRules();
@@ -923,12 +931,13 @@ public class JeddictChatModel {
                 .append(methodContent);
 
         String prompt = promptBuilder.toString();
-        String answer = generate(prompt);
+        String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
     public String generateDescription(
+            Project project,
             String projectContent, String classContent, String methodContent,
             String previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
@@ -969,12 +978,13 @@ public class JeddictChatModel {
                 .append(userQuery);
 
         // Generate the answer
-        String answer = generate(prompt.toString());
+        String answer = generate(project, prompt.toString());
         System.out.println(answer);
         return answer;
     }
 
     public String generateTestCase(
+            Project project,
             String projectContent, String classContent, String methodContent,
             String previousChatResponse, String userQuery) {
 
@@ -1072,12 +1082,12 @@ public class JeddictChatModel {
         }
 
         // Generate the test cases
-        String answer = generate(promptBuilder.toString());
+        String answer = generate(project, promptBuilder.toString());
         System.out.println(answer);
         return answer;
     }
 
-    public List<Snippet> suggestNextLineCode(String fileContent, String currentLine, String mimeType) {
+    public List<Snippet> suggestNextLineCode(Project project, String fileContent, String currentLine, String mimeType) {
         StringBuilder description = new StringBuilder(MIME_TYPE_DESCRIPTIONS.getOrDefault(mimeType, "code snippets"));
         StringBuilder prompt = new StringBuilder("You are an API server that provides ").append(description).append(" suggestions based on the file content. ");
         if (currentLine == null || currentLine.isEmpty()) {
@@ -1095,7 +1105,7 @@ public class JeddictChatModel {
                   
                   File Content:
                   """).append(fileContent);
-        String jsonResponse = generate(prompt.toString());
+        String jsonResponse = generate(project, prompt.toString());
         List<Snippet> nextLines = parseJsonToSnippets(jsonResponse);
         return nextLines;
     }
@@ -1127,7 +1137,7 @@ public class JeddictChatModel {
 
         prompt.append("Database Metadata:\n").append(dbMetadata);
 
-        String jsonResponse = generate(prompt.toString());
+        String jsonResponse = generate(null, prompt.toString());
         List<Snippet> sqlQueries = parseJsonToSnippets(jsonResponse);
         return sqlQueries;
     }

@@ -35,6 +35,7 @@ import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.util.NbBundle;
 
@@ -74,7 +75,9 @@ public class RestEndpointFix extends JavaFix {
 
         if (leaf.getKind() == CLASS || leaf.getKind() == INTERFACE) {
 
-            String javadocContent = new JeddictChatModel().generateRestEndpointForClass(leaf.toString());
+            String javadocContent = new JeddictChatModel().generateRestEndpointForClass(
+                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                leaf.toString());
             JSONObject json = new JSONObject(removeCodeBlockMarkers(javadocContent));
             JSONArray imports = json.getJSONArray("imports");
             String methodContent = json.getString("methodContent");
