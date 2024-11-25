@@ -388,6 +388,7 @@ public class AssistantTopComponent extends TopComponent {
     }
 
     public int getParseCodeEditor(List<FileObject> fileObjects) {
+        Map<JEditorPane, Map<String, String>> editorMethodSignCache = new HashMap<>();
         Map<JEditorPane, Map<String, String>> editorMethodCache = new HashMap<>();
         for (FileObject fileObject : fileObjects) {
             try (InputStream stream = fileObject.getInputStream()) {
@@ -400,13 +401,18 @@ public class AssistantTopComponent extends TopComponent {
                                 .map(param -> param.getType().asString())
                                 .collect(Collectors.joining(",")) + ")")
                         .collect(Collectors.toSet());
+                Map<String, Long> fileMethods = methods.stream()
+                        .collect(Collectors.groupingBy(
+                                method -> method.getNameAsString(),
+                                Collectors.counting()
+                        ));
 
                 for (int i = 0; i < parentPanel.getComponentCount(); i++) {
                     if (parentPanel.getComponent(i) instanceof JEditorPane) {
                         JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
                         if (editorPane.getEditorKit().getContentType().equals("text/x-java")) {
 
-                            Map<String, String> cachedMethodSignatures = editorMethodCache.computeIfAbsent(editorPane, ep -> {
+                            Map<String, String> cachedMethodSignatures = editorMethodSignCache.computeIfAbsent(editorPane, ep -> {
                                 Map<String, String> methodSignatures = new HashMap<>();
                                 try {
                                     MethodDeclaration editorMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
@@ -435,12 +441,45 @@ public class AssistantTopComponent extends TopComponent {
                                 }
                                 return methodSignatures;
                             });
+                            
+                            Map<String, String> cachedMethods = editorMethodCache.computeIfAbsent(editorPane, ep -> {
+                                Map<String, String> methodSignatures = new HashMap<>();
+                                try {
+                                    MethodDeclaration editorMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
+                                    String signature = editorMethod.getNameAsString();
+                                    methodSignatures.put(signature, editorPane.getText());
+                                } catch (Exception e) {
+                                    try {
+                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
+                                        List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
+                                        for (MethodDeclaration edMethod : edMethods) {
+                                            String signature = edMethod.getNameAsString();
+                                            methodSignatures.put(signature, edMethod.toString());
+                                        }
+                                    } catch (Exception e1) {
+                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
+                                        if (edCu.getTypes().isNonEmpty()) {
+                                            methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
+                                        }
+                                    }
+                                }
+                                return methodSignatures;
+                            });
 
                             try {
                                 int menuCreationCount = 0;
                                 for (String signature : fileMethodSignatures) {
                                     if (createEditorPaneMenus(fileObject, signature, editorPane, cachedMethodSignatures)) {
                                         menuCreationCount++;
+                                    }
+                                }
+                                if (menuCreationCount == 0) {
+                                    for (String method : fileMethods.keySet()) {
+                                        if (fileMethods.get(method) == 1) {
+                                            if (createEditorPaneMenus(fileObject, method, editorPane, cachedMethods)) {
+                                                menuCreationCount++;
+                                            }
+                                        }
                                     }
                                 }
                                 if (menuCreationCount == 0) {
@@ -736,6 +775,29 @@ public class AssistantTopComponent extends TopComponent {
             System.out.println("Error finding method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
         }
 
+        if (methodSource.isEmpty()) {
+            try {
+                javaSource.runModificationTask(copy -> {
+                    copy.toPhase(JavaSource.Phase.RESOLVED);
+                    new TreePathScanner<Void, Void>() {
+                        @Override
+                        public Void visitMethod(MethodTree methodTree, Void v) {
+                            Name name = methodTree.getName();
+                            String targetMethodSignature = name.toString();
+
+                            // Check if the signatures match
+                            if (targetMethodSignature.equals(sourceMethodSignature)) {
+                                // Construct the method source code
+                                methodSource.append(methodTree.toString());
+                            }
+                            return super.visitMethod(methodTree, v);
+                        }
+                    }.scan(copy.getCompilationUnit(), null);
+                }).commit();
+            } catch (IOException e) {
+                System.out.println("Error finding method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
+            }
+        }
         return methodSource.toString(); // Return the method source code
     }
 
