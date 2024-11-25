@@ -46,7 +46,7 @@ public class JeddictUpdateManager {
     }
 
     private static String getCurrentJeddictVersion() {
-        return "1.9";
+        return "2.0";
     }
 
     private File saveFile;
