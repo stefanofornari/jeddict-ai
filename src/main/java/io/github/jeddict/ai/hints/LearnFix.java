@@ -405,7 +405,7 @@ public class LearnFix extends JavaFix {
             topComponent.requestActive();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 if (topComponent != null) {
-                    topComponent.close();
+                    SwingUtilities.invokeLater(() -> topComponent.close());
                 }
             }));
             questionPane.setText(query);
