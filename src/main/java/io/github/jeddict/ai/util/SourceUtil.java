@@ -18,6 +18,8 @@
  */
 package io.github.jeddict.ai.util;
 
+import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.StaticJavaParser;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ImportTree;
@@ -26,11 +28,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import javax.swing.text.BadLocationException;
 import org.json.JSONArray;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreeMaker;
@@ -44,8 +42,8 @@ import org.openide.util.Exceptions;
  */
 public class SourceUtil {
 
-    public static void fixImports(FileObject fileObject) {
-        // TODO
+    static {
+        StaticJavaParser.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
     }
 
     public static void printSource(FileObject fileObject) {

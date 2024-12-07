@@ -18,6 +18,8 @@
  */
 package io.github.jeddict.ai.components;
 
+import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.ParserConfiguration.LanguageLevel;
 import com.github.javaparser.ast.CompilationUnit;
 import static io.github.jeddict.ai.util.EditorUtil.getExtension;
 import static io.github.jeddict.ai.util.EditorUtil.isSuitableForWebAppDirectory;
@@ -64,10 +66,8 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.Name;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
@@ -86,7 +86,6 @@ import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.windows.TopComponent;
-import javax.swing.filechooser.FileSystemView;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.StyledDocument;
 import org.netbeans.api.editor.EditorRegistry;
@@ -388,6 +387,7 @@ public class AssistantTopComponent extends TopComponent {
     }
 
     public int getParseCodeEditor(List<FileObject> fileObjects) {
+        StaticJavaParser.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
         Map<JEditorPane, Map<String, String>> editorMethodSignCache = new HashMap<>();
         Map<JEditorPane, Map<String, String>> editorMethodCache = new HashMap<>();
         for (FileObject fileObject : fileObjects) {
