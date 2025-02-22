@@ -134,8 +134,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         stream = new javax.swing.JCheckBox();
         logRequests = new javax.swing.JCheckBox();
         logResponses = new javax.swing.JCheckBox();
-        parallelToolCalls = new javax.swing.JCheckBox();
-        strictTools = new javax.swing.JCheckBox();
         includeCodeExecutionOutput = new javax.swing.JCheckBox();
         allowCodeExecution = new javax.swing.JCheckBox();
         askAIPane = new javax.swing.JLayeredPane();
@@ -499,14 +497,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         org.openide.awt.Mnemonics.setLocalizedText(logResponses, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.logResponses.text")); // NOI18N
         logResponses.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.logResponses.toolTipText")); // NOI18N
         providerSettingsParentPane3.add(logResponses);
-
-        org.openide.awt.Mnemonics.setLocalizedText(parallelToolCalls, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.parallelToolCalls.text")); // NOI18N
-        parallelToolCalls.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.parallelToolCalls.toolTipText")); // NOI18N
-        providerSettingsParentPane3.add(parallelToolCalls);
-
-        org.openide.awt.Mnemonics.setLocalizedText(strictTools, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.strictTools.text")); // NOI18N
-        strictTools.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.strictTools.toolTipText")); // NOI18N
-        providerSettingsParentPane3.add(strictTools);
 
         org.openide.awt.Mnemonics.setLocalizedText(includeCodeExecutionOutput, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.includeCodeExecutionOutput.text")); // NOI18N
         includeCodeExecutionOutput.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.includeCodeExecutionOutput.toolTipText")); // NOI18N
@@ -933,8 +923,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         seedPane.setVisible(false);
         allowCodeExecution.setVisible(false);
         includeCodeExecutionOutput.setVisible(false);
-        strictTools.setVisible(false);
-        parallelToolCalls.setVisible(false);
         maxRetriesPane.setVisible(false);
         if (selectedProvider == GenAIProvider.GOOGLE) {
             topKPane.setVisible(true);
@@ -950,13 +938,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             presencePenaltyPane.setVisible(true);
             frequencyPenaltyPane.setVisible(true);
             seedPane.setVisible(true);
-            strictTools.setVisible(true);
-            parallelToolCalls.setVisible(true);
         }
         if (selectedProvider == GenAIProvider.OLLAMA) {
             repeatPenaltyPane.setVisible(true);
             topKPane.setVisible(true);
-            repeatPenaltyPane.setVisible(true);
             seedPane.setVisible(true);
         }
     }
@@ -1064,8 +1049,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         allowCodeExecution.setSelected(preferencesManager.isAllowCodeExecution());
         includeCodeExecutionOutput.setSelected(preferencesManager.isIncludeCodeExecutionOutput());
-        strictTools.setSelected(preferencesManager.isStrictTools());
-        parallelToolCalls.setSelected(preferencesManager.isParallelToolCalls());
 
         if (preferencesManager.getTimeout() != Integer.MIN_VALUE) {
             timeout.setText(String.valueOf(preferencesManager.getTimeout()));
@@ -1165,8 +1148,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
         preferencesManager.setAllowCodeExecution(allowCodeExecution.isSelected());
         preferencesManager.setIncludeCodeExecutionOutput(includeCodeExecutionOutput.isSelected());
-        preferencesManager.setStrictTools(strictTools.isSelected());
-        preferencesManager.setParallelToolCalls(parallelToolCalls.isSelected());
         preferencesManager.setLogRequestsEnabled(logRequests.isSelected());
         preferencesManager.setLogResponsesEnabled(logResponses.isSelected());
         preferencesManager.setStreamEnabled(stream.isSelected());
@@ -1333,7 +1314,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JTextField organizationId;
     private javax.swing.JLabel organizationIdLabel;
     private javax.swing.JLayeredPane organizationIdPane;
-    private javax.swing.JCheckBox parallelToolCalls;
     private javax.swing.JTextField presencePenalty;
     private javax.swing.JLabel presencePenaltyLabel;
     private javax.swing.JLayeredPane presencePenaltyPane;
@@ -1357,7 +1337,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JCheckBox showDescriptionCheckBox;
     private javax.swing.JLayeredPane snippetPane;
     private javax.swing.JCheckBox stream;
-    private javax.swing.JCheckBox strictTools;
     private javax.swing.JTextField temperature;
     private javax.swing.JLabel temperatureLabel;
     private javax.swing.JLayeredPane temperaturePane;

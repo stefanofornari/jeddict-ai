@@ -112,8 +112,6 @@ public class JeddictChatModel {
         String organizationId = preferencesManager.getOrganizationId();
         boolean logRequests = preferencesManager.isLogRequestsEnabled();
         boolean logResponse = preferencesManager.isLogResponsesEnabled();
-        boolean parallelToolCalls = preferencesManager.isParallelToolCalls();
-        boolean strictTools = preferencesManager.isStrictTools();
         boolean includeCodeExecutionOutput = preferencesManager.isIncludeCodeExecutionOutput();
         boolean allowCodeExecution = preferencesManager.isAllowCodeExecution();
 
@@ -183,9 +181,7 @@ public class JeddictChatModel {
                         }
 
                         builder.logRequests(logRequests)
-                                .logResponses(logResponse)
-                                .parallelToolCalls(parallelToolCalls)
-                                .strictTools(strictTools);
+                                .logResponses(logResponse);
 
                         streamModel = builder.build();
                     }
@@ -223,9 +219,7 @@ public class JeddictChatModel {
                             builder.organizationId(organizationId);
                         }
                         builder.logRequests(logRequests)
-                                .logResponses(logResponse)
-                                .parallelToolCalls(parallelToolCalls)
-                                .strictTools(strictTools);
+                                .logResponses(logResponse);
                         streamModel = builder.build();
                     }
                     case MISTRAL -> {
@@ -287,6 +281,9 @@ public class JeddictChatModel {
                         }
                         if (seed != null && seed != Integer.MIN_VALUE) {
                             builder.seed(seed);
+                        }
+                        if (repeatPenalty != null && repeatPenalty != Double.MIN_VALUE) {
+                            builder.repeatPenalty(repeatPenalty);
                         }
 
                         builder.logRequests(logRequests)
@@ -406,9 +403,7 @@ public class JeddictChatModel {
                         }
 
                         builder.logRequests(logRequests)
-                                .logResponses(logResponse)
-                                .parallelToolCalls(parallelToolCalls)
-                                .strictTools(strictTools);
+                                .logResponses(logResponse);
 
                         model = builder.build();
                     }
@@ -446,9 +441,7 @@ public class JeddictChatModel {
                             builder.organizationId(organizationId);
                         }
                         builder.logRequests(logRequests)
-                                .logResponses(logResponse)
-                                .parallelToolCalls(parallelToolCalls)
-                                .strictTools(strictTools);
+                                .logResponses(logResponse);
                         model = builder.build();
                     }
                     case MISTRAL -> {

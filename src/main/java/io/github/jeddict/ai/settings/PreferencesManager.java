@@ -60,8 +60,6 @@ public class PreferencesManager {
     private static final String SEED_PREFERENCE = "seed";
     private static final String ALLOW_CODE_EXECUTION_PREFERENCE = "allowCodeExecution";
     private static final String INCLUDE_CODE_EXECUTION_OUTPUT_PREFERENCE = "includeCodeExecutionOutput";
-    private static final String STRICT_TOOLS_PREFERENCE = "strictTools";
-    private static final String PARALLEL_TOOL_CALLS_PREFERENCE = "parallelToolCalls";
     private static final String MAX_RETRIES_PREFERENCE = "maxRetries";
 
     private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
@@ -560,22 +558,6 @@ public class PreferencesManager {
 
     public void setIncludeCodeExecutionOutput(boolean includeCodeExecutionOutput) {
         preferences.putBoolean(INCLUDE_CODE_EXECUTION_OUTPUT_PREFERENCE, includeCodeExecutionOutput);
-    }
-
-    public boolean isStrictTools() {
-        return preferences.getBoolean(STRICT_TOOLS_PREFERENCE, false);
-    }
-
-    public void setStrictTools(boolean strictTools) {
-        preferences.putBoolean(STRICT_TOOLS_PREFERENCE, strictTools);
-    }
-
-    public boolean isParallelToolCalls() {
-        return preferences.getBoolean(PARALLEL_TOOL_CALLS_PREFERENCE, false);
-    }
-
-    public void setParallelToolCalls(boolean parallelToolCalls) {
-        preferences.putBoolean(PARALLEL_TOOL_CALLS_PREFERENCE, parallelToolCalls);
     }
 
     public Integer getMaxRetries() {
