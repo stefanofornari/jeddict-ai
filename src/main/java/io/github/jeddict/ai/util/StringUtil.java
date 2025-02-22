@@ -36,6 +36,9 @@ public class StringUtil {
             return null;
         }
         input = input.trim();
+        if (input.startsWith("<think>")){
+           input = input.replaceAll("(?s)<think>.*?</think>", "").trim();
+        }
         if (input.startsWith("```java") && input.endsWith("```")) {
             String content = input.substring(7);  // Remove ```java\n (7 characters)
             content = content.substring(0, content.length() - 3);  // Remove ```
