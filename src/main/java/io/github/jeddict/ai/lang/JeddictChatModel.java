@@ -25,32 +25,21 @@ package io.github.jeddict.ai.lang;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import dev.langchain4j.model.StreamingResponseHandler;
-import dev.langchain4j.model.anthropic.AnthropicChatModel;
-import dev.langchain4j.model.anthropic.AnthropicChatModel.AnthropicChatModelBuilder;
-import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
-import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel.AnthropicStreamingChatModelBuilder;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
-import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
-import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel.GoogleAiGeminiStreamingChatModelBuilder;
-import dev.langchain4j.model.localai.LocalAiChatModel;
-import dev.langchain4j.model.localai.LocalAiChatModel.LocalAiChatModelBuilder;
-import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
-import dev.langchain4j.model.localai.LocalAiStreamingChatModel.LocalAiStreamingChatModelBuilder;
-import dev.langchain4j.model.mistralai.MistralAiChatModel;
-import dev.langchain4j.model.mistralai.MistralAiChatModel.MistralAiChatModelBuilder;
-import dev.langchain4j.model.mistralai.MistralAiStreamingChatModel;
-import dev.langchain4j.model.mistralai.MistralAiStreamingChatModel.MistralAiStreamingChatModelBuilder;
-import dev.langchain4j.model.ollama.OllamaChatModel;
-import dev.langchain4j.model.ollama.OllamaChatModel.OllamaChatModelBuilder;
-import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
-import dev.langchain4j.model.ollama.OllamaStreamingChatModel.OllamaStreamingChatModelBuilder;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiChatModel.OpenAiChatModelBuilder;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder;
-import io.github.jeddict.ai.models.LMStudioChatModel;
+import io.github.jeddict.ai.lang.impl.AnthropicBuilder;
+import io.github.jeddict.ai.lang.impl.AnthropicStreamingBuilder;
+import io.github.jeddict.ai.lang.impl.GoogleBuilder;
+import io.github.jeddict.ai.lang.impl.GoogleStreamingBuilder;
+import io.github.jeddict.ai.lang.impl.LMStudioBuilder;
+import io.github.jeddict.ai.lang.impl.LocalAiBuilder;
+import io.github.jeddict.ai.lang.impl.LocalAiStreamingBuilder;
+import io.github.jeddict.ai.lang.impl.MistralBuilder;
+import io.github.jeddict.ai.lang.impl.MistralStreamingBuilder;
+import io.github.jeddict.ai.lang.impl.OllamaBuilder;
+import io.github.jeddict.ai.lang.impl.OllamaStreamingBuilder;
+import io.github.jeddict.ai.lang.impl.OpenAiBuilder;
+import io.github.jeddict.ai.lang.impl.OpenAiStreamingBuilder;
 import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.CUSTOM_OPEN_AI;
@@ -74,6 +63,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
@@ -98,488 +89,101 @@ public class JeddictChatModel {
 
     public JeddictChatModel(StreamingResponseHandler handler) {
         this.handler = handler;
-        Double temperature = preferencesManager.getTemperature();
-        Integer timeout = preferencesManager.getTimeout();
-        Double topP = preferencesManager.getTopP();
-        Integer maxRetries = preferencesManager.getMaxRetries();
-        Integer maxOutputTokens = preferencesManager.getMaxOutputTokens();
-        Double repeatPenalty = preferencesManager.getRepeatPenalty();
-        Integer seed = preferencesManager.getSeed();
-        Integer maxTokens = preferencesManager.getMaxTokens();
-        Integer maxCompletionTokens = preferencesManager.getMaxCompletionTokens();
-        Integer topK = preferencesManager.getTopK();
-        Double presencePenalty = preferencesManager.getPresencePenalty();
-        Double frequencyPenalty = preferencesManager.getFrequencyPenalty();
-        String organizationId = preferencesManager.getOrganizationId();
-        boolean logRequests = preferencesManager.isLogRequestsEnabled();
-        boolean logResponse = preferencesManager.isLogResponsesEnabled();
-        boolean includeCodeExecutionOutput = preferencesManager.isIncludeCodeExecutionOutput();
-        boolean allowCodeExecution = preferencesManager.isAllowCodeExecution();
-        Map<String, String> customHeaders = preferencesManager.getCustomHeaders();
 
         if (null != preferencesManager.getModel()) {
             if (preferencesManager.isStreamEnabled() && handler != null) {
                 switch (preferencesManager.getProvider()) {
                     case GOOGLE -> {
-                        GoogleAiGeminiStreamingChatModelBuilder builder = GoogleAiGeminiStreamingChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (maxOutputTokens != null && maxOutputTokens != Integer.MIN_VALUE) {
-                            builder.maxOutputTokens(maxOutputTokens);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxRetries != null && maxRetries != Integer.MIN_VALUE) {
-                            builder.maxRetries(maxRetries);
-                        }
-                        if (topK != null && topK != Integer.MIN_VALUE) {
-                            builder.topK(topK);
-                        }
-                        builder.logRequestsAndResponses(logRequests || logResponse)
-                                .includeCodeExecutionOutput(includeCodeExecutionOutput)
-                                .allowCodeExecution(allowCodeExecution);
-                        
-                        streamModel = builder.build();
+                        streamModel = buildModel(new GoogleStreamingBuilder());
                     }
-                    case OPEN_AI -> {
-                        OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (seed != null && seed != Integer.MIN_VALUE) {
-                            builder.seed(seed);
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
-                            builder.maxCompletionTokens(maxCompletionTokens);
-                        }
-                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
-                            builder.presencePenalty(presencePenalty);
-                        }
-                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
-                            builder.frequencyPenalty(frequencyPenalty);
-                        }
-                        if (organizationId != null && !organizationId.isEmpty()) {
-                            builder.organizationId(organizationId);
-                        }
-                        if (customHeaders != null && !customHeaders.isEmpty()) {
-                            builder.customHeaders(customHeaders);
-                        }
-                        
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        streamModel = builder.build();
-                    }
-                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
-                        OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (seed != null && seed != Integer.MIN_VALUE) {
-                            builder.seed(seed);
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
-                            builder.maxCompletionTokens(maxCompletionTokens);
-                        }
-                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
-                            builder.presencePenalty(presencePenalty);
-                        }
-                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
-                            builder.frequencyPenalty(frequencyPenalty);
-                        }
-                        if (organizationId != null && !organizationId.isEmpty()) {
-                            builder.organizationId(organizationId);
-                        }
-                        if (customHeaders != null && !customHeaders.isEmpty()) {
-                            builder.customHeaders(customHeaders);
-                        }
-                        
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-                        streamModel = builder.build();
+                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
+                        streamModel = buildModel(new OpenAiStreamingBuilder());
                     }
                     case MISTRAL -> {
-                        MistralAiStreamingChatModelBuilder builder = MistralAiStreamingChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-                        streamModel = builder.build();
+                        streamModel = buildModel(new MistralStreamingBuilder());
                     }
                     case ANTHROPIC -> {
-                        AnthropicStreamingChatModelBuilder builder = AnthropicStreamingChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        streamModel = builder.build();
+                        streamModel = buildModel(new AnthropicStreamingBuilder());
                     }
                     case OLLAMA -> {
-                        OllamaStreamingChatModelBuilder builder = OllamaStreamingChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (seed != null && seed != Integer.MIN_VALUE) {
-                            builder.seed(seed);
-                        }
-                        if (repeatPenalty != null && repeatPenalty != Double.MIN_VALUE) {
-                            builder.repeatPenalty(repeatPenalty);
-                        }
-                        if (customHeaders != null && !customHeaders.isEmpty()) {
-                            builder.customHeaders(customHeaders);
-                        }
-
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        streamModel = builder.build();
+                        streamModel = buildModel(new OllamaStreamingBuilder());
                     }
                     case LM_STUDIO -> {
-                        LMStudioChatModel.Builder builder = LMStudioChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        model = builder.build();
+                        model = buildModel(new LMStudioBuilder());
                     }
                     case GPT4ALL -> {
-                        LocalAiStreamingChatModelBuilder builder = LocalAiStreamingChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        streamModel = builder.build();
+                        streamModel = buildModel(new LocalAiStreamingBuilder());
                     }
                 }
             } else {
                 switch (preferencesManager.getProvider()) {
                     case GOOGLE -> {
-                        GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder builder = GoogleAiGeminiChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (maxOutputTokens != null && maxOutputTokens != Integer.MIN_VALUE) {
-                            builder.maxOutputTokens(maxOutputTokens);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxRetries != null && maxRetries != Integer.MIN_VALUE) {
-                            builder.maxRetries(maxRetries);
-                        }
-                        if (topK != null && topK != Integer.MIN_VALUE) {
-                            builder.topK(topK);
-                        }
-                        builder.logRequestsAndResponses(logRequests || logResponse)
-                                .includeCodeExecutionOutput(includeCodeExecutionOutput)
-                                .allowCodeExecution(allowCodeExecution);
-
-                        model = builder.build();
+                        model = buildModel(new GoogleBuilder());
                     }
-                    case OPEN_AI -> {
-                        OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (seed != null && seed != Integer.MIN_VALUE) {
-                            builder.seed(seed);
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
-                            builder.maxCompletionTokens(maxCompletionTokens);
-                        }
-                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
-                            builder.presencePenalty(presencePenalty);
-                        }
-                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
-                            builder.frequencyPenalty(frequencyPenalty);
-                        }
-                        if (organizationId != null && !organizationId.isEmpty()) {
-                            builder.organizationId(organizationId);
-                        }
-                        if (customHeaders != null && !customHeaders.isEmpty()) {
-                            builder.customHeaders(customHeaders);
-                        }
-
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        model = builder.build();
-                    }
-                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
-                        OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (seed != null && seed != Integer.MIN_VALUE) {
-                            builder.seed(seed);
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
-                            builder.maxCompletionTokens(maxCompletionTokens);
-                        }
-                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
-                            builder.presencePenalty(presencePenalty);
-                        }
-                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
-                            builder.frequencyPenalty(frequencyPenalty);
-                        }
-                        if (organizationId != null && !organizationId.isEmpty()) {
-                            builder.organizationId(organizationId);
-                        }
-                        if (customHeaders != null && !customHeaders.isEmpty()) {
-                            builder.customHeaders(customHeaders);
-                        }
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-                        model = builder.build();
+                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
+                        model = buildModel(new OpenAiBuilder());
                     }
                     case MISTRAL -> {
-                        MistralAiChatModelBuilder builder = MistralAiChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-                        model = builder.build();
+                        model = buildModel(new MistralBuilder());
                     }
                     case ANTHROPIC -> {
-                        AnthropicChatModelBuilder builder = AnthropicChatModel.builder()
-                                .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        model = builder.build();
+                        model = buildModel(new AnthropicBuilder());
                     }
                     case OLLAMA -> {
-                        OllamaChatModelBuilder builder = OllamaChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (seed != null && seed != Integer.MIN_VALUE) {
-                            builder.seed(seed);
-                        }
-                        if (customHeaders != null && !customHeaders.isEmpty()) {
-                            builder.customHeaders(customHeaders);
-                        }
-
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        model = builder.build();
+                        model = buildModel(new OllamaBuilder());
                     }
                     case LM_STUDIO -> {
-                        LMStudioChatModel.Builder builder = LMStudioChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        model = builder.build();
+                        model = buildModel(new LMStudioBuilder());
                     }
                     case GPT4ALL -> {
-                        LocalAiChatModelBuilder builder = LocalAiChatModel.builder()
-                                .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName());
-
-                        if (temperature != null && temperature != Double.MIN_VALUE) {
-                            builder.temperature(temperature);
-                        }
-                        if (topP != null && topP != Double.MIN_VALUE) {
-                            builder.topP(topP);
-                        }
-                        if (timeout != null && timeout != Integer.MIN_VALUE) {
-                            builder.timeout(Duration.ofSeconds(timeout));
-                        }
-                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
-                            builder.maxTokens(maxTokens);
-                        }
-
-                        builder.logRequests(logRequests)
-                                .logResponses(logResponse);
-
-                        model = builder.build();
+                        model = buildModel(new LocalAiBuilder());
                     }
                 }
             }
         }
+    }
+
+    private <T> void setIfValid(final Consumer<T> setter, final T value, final T invalidValue) {
+        if (value != null && !value.equals(invalidValue)) {
+            setter.accept(value);
+        }
+    }
+
+    private <T> void setIfPredicate(final Consumer<T> setter, final T value, final Predicate<T> predicate) {
+        if (value != null && !predicate.test(value)) {
+            setter.accept(value);
+        }
+    }
+
+    private <T> ChatModelBaseBuilder<T> builderModel(final ChatModelBaseBuilder<T> builder) {
+        setIfPredicate(builder::baseUrl, preferencesManager.getProviderLocation(), String::isEmpty);
+        setIfPredicate(builder::customHeaders, preferencesManager.getCustomHeaders(), Map::isEmpty);
+        builder
+                .apiKey(preferencesManager.getApiKey())
+                .modelName(preferencesManager.getModelName());
+
+        setIfValid(builder::temperature, preferencesManager.getTemperature(), Double.MIN_VALUE);
+        setIfValid(value -> builder.timeout(Duration.ofSeconds(value)), preferencesManager.getTimeout(), Integer.MIN_VALUE);
+        setIfValid(builder::maxRetries, preferencesManager.getMaxRetries(), Integer.MIN_VALUE);
+        setIfValid(builder::maxOutputTokens, preferencesManager.getMaxOutputTokens(), Integer.MIN_VALUE);
+        setIfValid(builder::repeatPenalty, preferencesManager.getRepeatPenalty(), Double.MIN_VALUE);
+        setIfValid(builder::seed, preferencesManager.getSeed(), Integer.MIN_VALUE);
+        setIfValid(builder::maxTokens, preferencesManager.getMaxTokens(), Integer.MIN_VALUE);
+        setIfValid(builder::maxCompletionTokens, preferencesManager.getMaxCompletionTokens(), Integer.MIN_VALUE);
+        setIfValid(builder::topK, preferencesManager.getTopK(), Integer.MIN_VALUE);
+        setIfValid(builder::presencePenalty, preferencesManager.getPresencePenalty(), Double.MIN_VALUE);
+        setIfValid(builder::frequencyPenalty, preferencesManager.getFrequencyPenalty(), Double.MIN_VALUE);
+        setIfPredicate(builder::organizationId, preferencesManager.getOrganizationId(), String::isEmpty);
+
+        builder.logRequestsResponses(preferencesManager.isLogRequestsEnabled(), preferencesManager.isLogResponsesEnabled())
+                .includeCodeExecutionOutput(preferencesManager.isIncludeCodeExecutionOutput())
+                .allowCodeExecution(preferencesManager.isAllowCodeExecution());
+
+        return builder;
+    }
+
+    private <T> T buildModel(final ChatModelBaseBuilder<T> builder) {
+        return builderModel(builder).build();
     }
 
     private String generate(Project project, String prompt) {

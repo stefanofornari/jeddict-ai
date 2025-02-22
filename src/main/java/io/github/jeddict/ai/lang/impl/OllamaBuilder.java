@@ -1,0 +1,146 @@
+package io.github.jeddict.ai.lang.impl;
+
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
+import io.github.jeddict.ai.lang.ChatModelBuilder;
+import java.time.Duration;
+import java.util.Map;
+
+/**
+ *
+ * @author Francois Steyn
+ */
+public class OllamaBuilder implements ChatModelBuilder {
+
+    private final OllamaChatModel.OllamaChatModelBuilder builder;
+
+    public OllamaBuilder() {
+        builder = OllamaChatModel.builder();
+    }
+
+    @Override
+    public ChatModelBuilder baseUrl(final String baseUrl) {
+        builder.baseUrl(baseUrl);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder customHeaders(final Map<String, String> customHeaders) {
+        builder.customHeaders(customHeaders);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder apiKey(final String apiKey) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder modelName(final String modelName) {
+        builder.modelName(modelName);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder temperature(final Double temperature) {
+        builder.temperature(temperature);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder timeout(final Duration timeout) {
+        builder.timeout(timeout);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder topP(final Double topP) {
+        builder.topP(topP);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder maxRetries(final Integer maxRetries) {
+        builder.maxRetries(maxRetries);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder maxOutputTokens(final Integer maxOutputTokens) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder repeatPenalty(final Double repeatPenalty) {
+        builder.repeatPenalty(repeatPenalty);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder seed(final Integer seed) {
+        builder.seed(seed);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder maxTokens(final Integer maxTokens) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder maxCompletionTokens(final Integer maxCompletionTokens) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder topK(final Integer topK) {
+        builder.topK(topK);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder presencePenalty(final Double presencePenalty) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder frequencyPenalty(final Double frequencyPenalty) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder organizationId(final String organizationId) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder logRequestsResponses(final boolean logRequests, final boolean logResponses) {
+        builder.logRequests(logRequests)
+                .logResponses(logResponses);
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder includeCodeExecutionOutput(final boolean includeCodeExecutionOutput) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatModelBuilder allowCodeExecution(final boolean allowCodeExecution) {
+        //NOOP
+        return this;
+    }
+
+    @Override
+    public ChatLanguageModel build() {
+        return builder.build();
+    }
+}
