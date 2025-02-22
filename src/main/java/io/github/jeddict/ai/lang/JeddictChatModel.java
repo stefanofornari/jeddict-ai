@@ -73,9 +73,13 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.project.Project;
+import org.openide.util.NbBundle;
 
 public class JeddictChatModel {
+
+    private static final String HANDLE = NbBundle.getMessage(JeddictChatModel.class, "ProgressHandle");
 
     private ChatLanguageModel model;
     private StreamingChatLanguageModel streamModel;
@@ -186,7 +190,14 @@ public class JeddictChatModel {
         return builderModel(builder).build();
     }
 
-    private String generate(Project project, String prompt) {
+    private String generate(final Project project, final String prompt) {
+        try ( final ProgressHandle handle = ProgressHandle.createHandle(HANDLE) ) {
+            handle.start();
+            return generateInternal(project, prompt);
+        }
+    }
+
+    private String generateInternal(Project project, String prompt) {
         if (model == null && handler == null) {
             JOptionPane.showMessageDialog(null,
                     "AI assistance model not intitalized.",
