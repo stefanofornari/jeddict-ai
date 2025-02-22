@@ -72,6 +72,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -114,6 +115,7 @@ public class JeddictChatModel {
         boolean logResponse = preferencesManager.isLogResponsesEnabled();
         boolean includeCodeExecutionOutput = preferencesManager.isIncludeCodeExecutionOutput();
         boolean allowCodeExecution = preferencesManager.isAllowCodeExecution();
+        Map<String, String> customHeaders = preferencesManager.getCustomHeaders();
 
         if (null != preferencesManager.getModel()) {
             if (preferencesManager.isStreamEnabled() && handler != null) {
@@ -144,7 +146,7 @@ public class JeddictChatModel {
                         builder.logRequestsAndResponses(logRequests || logResponse)
                                 .includeCodeExecutionOutput(includeCodeExecutionOutput)
                                 .allowCodeExecution(allowCodeExecution);
-
+                        
                         streamModel = builder.build();
                     }
                     case OPEN_AI -> {
@@ -179,7 +181,10 @@ public class JeddictChatModel {
                         if (organizationId != null && !organizationId.isEmpty()) {
                             builder.organizationId(organizationId);
                         }
-
+                        if (customHeaders != null && !customHeaders.isEmpty()) {
+                            builder.customHeaders(customHeaders);
+                        }
+                        
                         builder.logRequests(logRequests)
                                 .logResponses(logResponse);
 
@@ -218,6 +223,10 @@ public class JeddictChatModel {
                         if (organizationId != null && !organizationId.isEmpty()) {
                             builder.organizationId(organizationId);
                         }
+                        if (customHeaders != null && !customHeaders.isEmpty()) {
+                            builder.customHeaders(customHeaders);
+                        }
+                        
                         builder.logRequests(logRequests)
                                 .logResponses(logResponse);
                         streamModel = builder.build();
@@ -284,6 +293,9 @@ public class JeddictChatModel {
                         }
                         if (repeatPenalty != null && repeatPenalty != Double.MIN_VALUE) {
                             builder.repeatPenalty(repeatPenalty);
+                        }
+                        if (customHeaders != null && !customHeaders.isEmpty()) {
+                            builder.customHeaders(customHeaders);
                         }
 
                         builder.logRequests(logRequests)
@@ -401,6 +413,9 @@ public class JeddictChatModel {
                         if (organizationId != null && !organizationId.isEmpty()) {
                             builder.organizationId(organizationId);
                         }
+                        if (customHeaders != null && !customHeaders.isEmpty()) {
+                            builder.customHeaders(customHeaders);
+                        }
 
                         builder.logRequests(logRequests)
                                 .logResponses(logResponse);
@@ -439,6 +454,9 @@ public class JeddictChatModel {
                         }
                         if (organizationId != null && !organizationId.isEmpty()) {
                             builder.organizationId(organizationId);
+                        }
+                        if (customHeaders != null && !customHeaders.isEmpty()) {
+                            builder.customHeaders(customHeaders);
                         }
                         builder.logRequests(logRequests)
                                 .logResponses(logResponse);
@@ -503,6 +521,9 @@ public class JeddictChatModel {
                         }
                         if (seed != null && seed != Integer.MIN_VALUE) {
                             builder.seed(seed);
+                        }
+                        if (customHeaders != null && !customHeaders.isEmpty()) {
+                            builder.customHeaders(customHeaders);
                         }
 
                         builder.logRequests(logRequests)

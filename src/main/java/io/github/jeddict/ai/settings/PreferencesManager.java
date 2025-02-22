@@ -25,9 +25,12 @@ package io.github.jeddict.ai.settings;
 import static io.github.jeddict.ai.settings.GenAIModel.DEFAULT_MODEL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.openide.util.NbPreferences;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 
@@ -402,6 +405,28 @@ public class PreferencesManager {
             excludeDir = Arrays.asList(getExcludeDirs().split("\\s*,\\s*", -1));
         }
         return excludeDir;
+    }
+
+    private Map<String, String> headerKeyValueMap = new HashMap<>();
+
+    public Map<String, String> getCustomHeaders() {
+        if (headerKeyValueMap.isEmpty()) {
+            String headers = preferences.get("customHeaders", "");
+            if (!headers.isEmpty()) {
+                headerKeyValueMap = Arrays.stream(headers.split("\\s*;\\s*"))
+                        .map(entry -> entry.split("\\s*=\\s*", 2))
+                        .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+            }
+        }
+        return headerKeyValueMap;
+    }
+
+    public void setCustomHeaders(Map<String, String> map) {
+        String headers = map.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining("; "));
+        preferences.put("customHeaders", headers);
+        headerKeyValueMap = map;
     }
 
     public String getTestCasePrompt() {
