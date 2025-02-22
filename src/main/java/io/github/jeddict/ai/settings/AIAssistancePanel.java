@@ -971,7 +971,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             includeCodeExecutionOutput.setVisible(true);
             maxRetriesPane.setVisible(true);
         }
-        if (selectedProvider == GenAIProvider.OPEN_AI) {
+        if (selectedProvider == GenAIProvider.OPEN_AI || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
             organizationIdPane.setVisible(true);
             maxTokensPane.setVisible(true);
             maxCompletionTokensPane.setVisible(true);
