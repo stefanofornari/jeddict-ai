@@ -29,6 +29,7 @@ import java.util.List;
 import org.openide.util.NbPreferences;
 import java.util.prefs.Preferences;
 import javax.swing.JOptionPane;
+import org.netbeans.api.editor.mimelookup.MimeLookup;
 
 public class PreferencesManager {
 
@@ -42,7 +43,26 @@ public class PreferencesManager {
     private static final String PROVIDER_PREFERENCE = "provider";
     private static final String MODEL_PREFERENCE = "model";
     private static final String COMMON_PROMPT_RULES_PREFERENCE = "commonPromptRules";
-    private static final String ENABLE_STREAM_PREFERENCE = "enableStream";
+    private static final String TEMPERATURE_PREFERENCE = "temperature";
+    private static final String TOP_P_PREFERENCE = "topP";
+    private static final String STREAM_PREFERENCE = "stream";
+    private static final String TIMEOUT_PREFERENCE = "timeout";
+    private static final String LOG_REQUESTS_PREFERENCE = "logRequests";
+    private static final String LOG_RESPONSES_PREFERENCE = "logResponses";
+    private static final String REPEAT_PENALTY_PREFERENCE = "repeatPenalty";
+    private static final String ORGANIZATION_ID_PREFERENCE = "organizationId";
+    private static final String TOP_K_PREFERENCE = "topK";
+    private static final String MAX_TOKENS_PREFERENCE = "maxTokens";
+    private static final String MAX_COMPLETION_TOKENS_PREFERENCE = "maxCompletionTokens";
+    private static final String MAX_OUTPUT_TOKENS_PREFERENCE = "maxOutputTokens";
+    private static final String PRESENCE_PENALTY_PREFERENCE = "presencePenalty";
+    private static final String FREQUENCY_PENALTY_PREFERENCE = "frequencyPenalty";
+    private static final String SEED_PREFERENCE = "seed";
+    private static final String ALLOW_CODE_EXECUTION_PREFERENCE = "allowCodeExecution";
+    private static final String INCLUDE_CODE_EXECUTION_OUTPUT_PREFERENCE = "includeCodeExecutionOutput";
+    private static final String STRICT_TOOLS_PREFERENCE = "strictTools";
+    private static final String PARALLEL_TOOL_CALLS_PREFERENCE = "parallelToolCalls";
+    private static final String MAX_RETRIES_PREFERENCE = "maxRetries";
 
     private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
             // Test Resources
@@ -214,6 +234,22 @@ public class PreferencesManager {
         preferences.putBoolean("aiAssistantActivated", activated);
     }
 
+    public AIClassContext getClassContextInlineHint() {
+        String classContext = preferences.get("classContextInlineHint", null);
+        if (classContext != null) {
+            try {
+                return AIClassContext.valueOf(classContext);
+            } catch (IllegalArgumentException iae) {
+                // .. skip
+            }
+        }
+        return AIClassContext.REFERENCED_CLASSES;
+    }
+
+    public void setClassContextInlineHint(AIClassContext context) {
+        preferences.put("classContextInlineHint", context != null ? context.name() : null);
+    }
+
     public AIClassContext getClassContext() {
         String classContext = preferences.get("classContext", null);
         if (classContext != null) {
@@ -270,6 +306,27 @@ public class PreferencesManager {
             }
         }
         return GenAIProvider.OPEN_AI;
+    }
+
+    public boolean isInlineHintEnabled() {
+        return preferences.getBoolean("enableInlineHint", false);
+    }
+
+    public void setInlineHintEnabled(boolean enabled) {
+        preferences.putBoolean("enableInlineHint", enabled);
+        setInlineHintsEnabled(enabled);
+    }
+
+    private static final String JAVA_INLINE_HINTS_KEY = "enable.inline.hints";
+
+    public static boolean isInlineHintsEnabled() {
+        return MimeLookup.getLookup("").lookup(Preferences.class)
+                .getBoolean(JAVA_INLINE_HINTS_KEY, false);
+    }
+
+    public static void setInlineHintsEnabled(boolean enabled) {
+        MimeLookup.getLookup("").lookup(Preferences.class)
+                .putBoolean(JAVA_INLINE_HINTS_KEY, enabled);
     }
 
     public boolean isHintsEnabled() {
@@ -370,11 +427,162 @@ public class PreferencesManager {
     }
 
     public boolean isStreamEnabled() {
-        return preferences.getBoolean(ENABLE_STREAM_PREFERENCE, true);
+        return preferences.getBoolean(STREAM_PREFERENCE, true); // Default value
     }
 
     public void setStreamEnabled(boolean enabled) {
-        preferences.putBoolean(ENABLE_STREAM_PREFERENCE, enabled);
+        preferences.putBoolean(STREAM_PREFERENCE, enabled);
     }
 
+    public Double getTemperature() {
+        return preferences.getDouble(TEMPERATURE_PREFERENCE, Double.MIN_VALUE);
+    }
+
+    public void setTemperature(Double temperature) {
+        preferences.putDouble(TEMPERATURE_PREFERENCE, temperature);
+    }
+
+    public Double getTopP() {
+        return preferences.getDouble(TOP_P_PREFERENCE, Double.MIN_VALUE);
+    }
+
+    public void setTopP(Double topP) {
+        preferences.putDouble(TOP_P_PREFERENCE, topP);
+    }
+
+    public Integer getTimeout() {
+        return preferences.getInt(TIMEOUT_PREFERENCE, Integer.MIN_VALUE);
+    }
+
+    public void setTimeout(Integer timeout) {
+        preferences.putInt(TIMEOUT_PREFERENCE, timeout);
+    }
+
+    public boolean isLogRequestsEnabled() {
+        return preferences.getBoolean(LOG_REQUESTS_PREFERENCE, false);
+    }
+
+    public void setLogRequestsEnabled(boolean enabled) {
+        preferences.putBoolean(LOG_REQUESTS_PREFERENCE, enabled);
+    }
+
+    public boolean isLogResponsesEnabled() {
+        return preferences.getBoolean(LOG_RESPONSES_PREFERENCE, false);
+    }
+
+    public void setLogResponsesEnabled(boolean enabled) {
+        preferences.putBoolean(LOG_RESPONSES_PREFERENCE, enabled);
+    }
+
+    public Double getRepeatPenalty() {
+        return preferences.getDouble(REPEAT_PENALTY_PREFERENCE, Double.MIN_VALUE);
+    }
+
+    public void setRepeatPenalty(Double repeatPenalty) {
+        preferences.putDouble(REPEAT_PENALTY_PREFERENCE, repeatPenalty);
+    }
+
+    public String getOrganizationId() {
+        return preferences.get(ORGANIZATION_ID_PREFERENCE, null);
+    }
+
+    public void setOrganizationId(String organizationId) {
+        preferences.put(ORGANIZATION_ID_PREFERENCE, organizationId);
+    }
+
+    public Integer getTopK() {
+        return preferences.getInt(TOP_K_PREFERENCE, Integer.MIN_VALUE);
+    }
+
+    public void setTopK(Integer topK) {
+        preferences.putInt(TOP_K_PREFERENCE, topK);
+    }
+
+    public Integer getMaxTokens() {
+        return preferences.getInt(MAX_TOKENS_PREFERENCE, Integer.MIN_VALUE);
+    }
+
+    public void setMaxTokens(Integer maxTokens) {
+        preferences.putInt(MAX_TOKENS_PREFERENCE, maxTokens);
+    }
+
+    public Integer getMaxCompletionTokens() {
+        return preferences.getInt(MAX_COMPLETION_TOKENS_PREFERENCE, Integer.MIN_VALUE);
+    }
+
+    public void setMaxCompletionTokens(Integer maxCompletionTokens) {
+        preferences.putInt(MAX_COMPLETION_TOKENS_PREFERENCE, maxCompletionTokens);
+    }
+
+    public Integer getMaxOutputTokens() {
+        return preferences.getInt(MAX_OUTPUT_TOKENS_PREFERENCE, Integer.MIN_VALUE);
+    }
+
+    public void setMaxOutputTokens(Integer maxOutputTokens) {
+        preferences.putInt(MAX_OUTPUT_TOKENS_PREFERENCE, maxOutputTokens);
+    }
+
+    public Double getPresencePenalty() {
+        return preferences.getDouble(PRESENCE_PENALTY_PREFERENCE, Double.MIN_VALUE);
+    }
+
+    public void setPresencePenalty(Double presencePenalty) {
+        preferences.putDouble(PRESENCE_PENALTY_PREFERENCE, presencePenalty);
+    }
+
+    public Double getFrequencyPenalty() {
+        return preferences.getDouble(FREQUENCY_PENALTY_PREFERENCE, Double.MIN_VALUE);
+    }
+
+    public void setFrequencyPenalty(Double frequencyPenalty) {
+        preferences.putDouble(FREQUENCY_PENALTY_PREFERENCE, frequencyPenalty);
+    }
+
+    public Integer getSeed() {
+        return preferences.getInt(SEED_PREFERENCE, Integer.MIN_VALUE);
+    }
+
+    public void setSeed(Integer seed) {
+        preferences.putInt(SEED_PREFERENCE, seed);
+    }
+
+    public boolean isAllowCodeExecution() {
+        return preferences.getBoolean(ALLOW_CODE_EXECUTION_PREFERENCE, false);
+    }
+
+    public void setAllowCodeExecution(boolean allowCodeExecution) {
+        preferences.putBoolean(ALLOW_CODE_EXECUTION_PREFERENCE, allowCodeExecution);
+    }
+
+    public boolean isIncludeCodeExecutionOutput() {
+        return preferences.getBoolean(INCLUDE_CODE_EXECUTION_OUTPUT_PREFERENCE, false);
+    }
+
+    public void setIncludeCodeExecutionOutput(boolean includeCodeExecutionOutput) {
+        preferences.putBoolean(INCLUDE_CODE_EXECUTION_OUTPUT_PREFERENCE, includeCodeExecutionOutput);
+    }
+
+    public boolean isStrictTools() {
+        return preferences.getBoolean(STRICT_TOOLS_PREFERENCE, false);
+    }
+
+    public void setStrictTools(boolean strictTools) {
+        preferences.putBoolean(STRICT_TOOLS_PREFERENCE, strictTools);
+    }
+
+    public boolean isParallelToolCalls() {
+        return preferences.getBoolean(PARALLEL_TOOL_CALLS_PREFERENCE, false);
+    }
+
+    public void setParallelToolCalls(boolean parallelToolCalls) {
+        preferences.putBoolean(PARALLEL_TOOL_CALLS_PREFERENCE, parallelToolCalls);
+    }
+
+    public Integer getMaxRetries() {
+        return preferences.getInt(MAX_RETRIES_PREFERENCE, Integer.MIN_VALUE);
+    }
+
+    public void setMaxRetries(Integer maxRetries) {
+        preferences.putInt(MAX_RETRIES_PREFERENCE, maxRetries);
+    }
 }

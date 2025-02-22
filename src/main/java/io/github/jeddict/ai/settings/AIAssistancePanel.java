@@ -84,8 +84,60 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         activationParentPane = new javax.swing.JLayeredPane();
         activationPane = new javax.swing.JLayeredPane();
         aiAssistantActivationCheckBox = new javax.swing.JCheckBox();
-        enableHintCheckBox = new javax.swing.JCheckBox();
         enableSmartCodeCheckBox = new javax.swing.JCheckBox();
+        enableInlineHintCheckBox = new javax.swing.JCheckBox();
+        enableHintsCheckBox = new javax.swing.JCheckBox();
+        providerSettingsPane = new javax.swing.JLayeredPane();
+        providerSettingsParentPane1 = new javax.swing.JLayeredPane();
+        temperaturePane = new javax.swing.JLayeredPane();
+        temperatureLabel = new javax.swing.JLabel();
+        temperature = new javax.swing.JTextField();
+        timeoutPane = new javax.swing.JLayeredPane();
+        timeoutLabel = new javax.swing.JLabel();
+        timeout = new javax.swing.JTextField();
+        topPPane = new javax.swing.JLayeredPane();
+        topPLabel = new javax.swing.JLabel();
+        topP = new javax.swing.JTextField();
+        commonSettingsParentPane1 = new javax.swing.JLayeredPane();
+        maxRetriesPane = new javax.swing.JLayeredPane();
+        maxRetriesLabel = new javax.swing.JLabel();
+        maxRetries = new javax.swing.JTextField();
+        maxOutputTokensPane = new javax.swing.JLayeredPane();
+        maxOutputTokensLabel = new javax.swing.JLabel();
+        maxOutputTokens = new javax.swing.JTextField();
+        repeatPenaltyPane = new javax.swing.JLayeredPane();
+        repeatPenaltyLabel = new javax.swing.JLabel();
+        repeatPenalty = new javax.swing.JTextField();
+        seedPane = new javax.swing.JLayeredPane();
+        seedLabel = new javax.swing.JLabel();
+        seed = new javax.swing.JTextField();
+        maxTokensPane = new javax.swing.JLayeredPane();
+        maxTokensLabel = new javax.swing.JLabel();
+        maxTokens = new javax.swing.JTextField();
+        maxCompletionTokensPane = new javax.swing.JLayeredPane();
+        maxCompletionTokensLabel = new javax.swing.JLabel();
+        maxCompletionTokens = new javax.swing.JTextField();
+        topKPane = new javax.swing.JLayeredPane();
+        topKLabel = new javax.swing.JLabel();
+        topK = new javax.swing.JTextField();
+        openAISettingsParentPane1 = new javax.swing.JLayeredPane();
+        presencePenaltyPane = new javax.swing.JLayeredPane();
+        presencePenaltyLabel = new javax.swing.JLabel();
+        presencePenalty = new javax.swing.JTextField();
+        frequencyPenaltyPane = new javax.swing.JLayeredPane();
+        frequencyPenaltyLabel = new javax.swing.JLabel();
+        frequencyPenalty = new javax.swing.JTextField();
+        organizationIdPane = new javax.swing.JLayeredPane();
+        organizationIdLabel = new javax.swing.JLabel();
+        organizationId = new javax.swing.JTextField();
+        providerSettingsParentPane3 = new javax.swing.JLayeredPane();
+        stream = new javax.swing.JCheckBox();
+        logRequests = new javax.swing.JCheckBox();
+        logResponses = new javax.swing.JCheckBox();
+        parallelToolCalls = new javax.swing.JCheckBox();
+        strictTools = new javax.swing.JCheckBox();
+        includeCodeExecutionOutput = new javax.swing.JCheckBox();
+        allowCodeExecution = new javax.swing.JCheckBox();
         askAIPane = new javax.swing.JLayeredPane();
         fileFilterationPane = new javax.swing.JLayeredPane();
         fileExtLabel = new javax.swing.JLabel();
@@ -96,7 +148,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         jScrollPane2 = new javax.swing.JScrollPane();
         excludeDirTable = new javax.swing.JTable();
         jLayeredPane1 = new javax.swing.JLayeredPane();
-        enableStreamCheckbox = new javax.swing.JCheckBox();
         excludeJavadocCommentsCheckBox = new javax.swing.JCheckBox();
         inlineCompletionPane = new javax.swing.JLayeredPane();
         classContextPane = new javax.swing.JLayeredPane();
@@ -113,6 +164,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         showDescriptionCheckBox = new javax.swing.JCheckBox();
         cachePane = new javax.swing.JLayeredPane();
         cleanDataButton = new javax.swing.JButton();
+        inlineHintPane = new javax.swing.JLayeredPane();
+        classContextInlineHintPane = new javax.swing.JLayeredPane();
+        classContextInlineHintLabelPane = new javax.swing.JLayeredPane();
+        classContextLabel1 = new javax.swing.JLabel();
+        classContextHelp1 = new javax.swing.JLabel();
+        classContextInlineHintComboBox = new javax.swing.JComboBox<>();
         hintPane = new javax.swing.JLayeredPane();
         testPromptPane = new javax.swing.JLayeredPane();
         testPromptLabel = new javax.swing.JLabel();
@@ -141,9 +198,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         providerLocationPane.setLayout(new java.awt.GridLayout(0, 1));
 
         org.openide.awt.Mnemonics.setLocalizedText(providerLocationLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationLabel.text")); // NOI18N
+        providerLocationLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationLabel.toolTipText")); // NOI18N
         providerLocationPane.add(providerLocationLabel);
 
         providerLocationField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationField.text")); // NOI18N
+        providerLocationField.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerLocationField.toolTipText")); // NOI18N
         providerLocationPane.add(providerLocationField);
 
         providerParentPane.add(providerLocationPane);
@@ -153,6 +212,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         apiKeyLabelPane.setLayout(new java.awt.GridLayout(1, 0));
 
         org.openide.awt.Mnemonics.setLocalizedText(apiKeyLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyLabel.text")); // NOI18N
+        apiKeyLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyLabel.toolTipText")); // NOI18N
         apiKeyLabelPane.add(apiKeyLabel);
 
         apiKeyInfo.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -162,6 +222,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         apiKeyPane.add(apiKeyLabelPane);
 
         apiKeyField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyField.text")); // NOI18N
+        apiKeyField.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.apiKeyField.toolTipText")); // NOI18N
         apiKeyField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusLost(java.awt.event.FocusEvent evt) {
                 apiKeyFieldFocusLost(evt);
@@ -178,6 +239,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         modelLabelPane.setLayout(new javax.swing.BoxLayout(modelLabelPane, javax.swing.BoxLayout.LINE_AXIS));
 
         org.openide.awt.Mnemonics.setLocalizedText(gptModelLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.gptModelLabel.text")); // NOI18N
+        gptModelLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.gptModelLabel.toolTipText")); // NOI18N
         modelLabelPane.add(gptModelLabel);
 
         gptModelHelp.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
@@ -221,24 +283,247 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         });
         activationPane.add(aiAssistantActivationCheckBox);
 
-        org.openide.awt.Mnemonics.setLocalizedText(enableHintCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintCheckBox.text")); // NOI18N
-        enableHintCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintCheckBox.toolTipText")); // NOI18N
-        enableHintCheckBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                enableHintCheckBoxActionPerformed(evt);
-            }
-        });
-        activationPane.add(enableHintCheckBox);
-
         org.openide.awt.Mnemonics.setLocalizedText(enableSmartCodeCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.text")); // NOI18N
         enableSmartCodeCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.toolTipText")); // NOI18N
         activationPane.add(enableSmartCodeCheckBox);
+
+        org.openide.awt.Mnemonics.setLocalizedText(enableInlineHintCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableInlineHintCheckBox.text")); // NOI18N
+        enableInlineHintCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableInlineHintCheckBox.toolTipText")); // NOI18N
+        enableInlineHintCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                enableInlineHintCheckBoxActionPerformed(evt);
+            }
+        });
+        activationPane.add(enableInlineHintCheckBox);
+
+        org.openide.awt.Mnemonics.setLocalizedText(enableHintsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintsCheckBox.text")); // NOI18N
+        enableHintsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintsCheckBox.toolTipText")); // NOI18N
+        enableHintsCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                enableHintsCheckBoxActionPerformed(evt);
+            }
+        });
+        activationPane.add(enableHintsCheckBox);
 
         activationParentPane.add(activationPane);
 
         providersPane.add(activationParentPane);
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providersPane.TabConstraints.tabTitle"), providersPane); // NOI18N
+
+        providerSettingsPane.setLayout(new java.awt.GridLayout(4, 1));
+
+        providerSettingsParentPane1.setLayout(new javax.swing.BoxLayout(providerSettingsParentPane1, javax.swing.BoxLayout.LINE_AXIS));
+
+        temperaturePane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(temperatureLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.temperatureLabel.text")); // NOI18N
+        temperatureLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.temperatureLabel.toolTipText")); // NOI18N
+        temperaturePane.add(temperatureLabel);
+
+        temperature.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.temperature.text")); // NOI18N
+        temperature.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.temperature.toolTipText")); // NOI18N
+        temperaturePane.add(temperature);
+
+        providerSettingsParentPane1.add(temperaturePane);
+
+        timeoutPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(timeoutLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.timeoutLabel.text")); // NOI18N
+        timeoutLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.timeoutLabel.toolTipText")); // NOI18N
+        timeoutPane.add(timeoutLabel);
+
+        timeout.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.timeout.text")); // NOI18N
+        timeout.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.timeout.toolTipText")); // NOI18N
+        timeout.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                timeoutActionPerformed(evt);
+            }
+        });
+        timeoutPane.add(timeout);
+
+        providerSettingsParentPane1.add(timeoutPane);
+
+        topPPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(topPLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topPLabel.text")); // NOI18N
+        topPLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topPLabel.toolTipText")); // NOI18N
+        topPPane.add(topPLabel);
+
+        topP.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topP.text")); // NOI18N
+        topP.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topP.toolTipText")); // NOI18N
+        topPPane.add(topP);
+
+        providerSettingsParentPane1.add(topPPane);
+
+        providerSettingsPane.add(providerSettingsParentPane1);
+
+        commonSettingsParentPane1.setLayout(new javax.swing.BoxLayout(commonSettingsParentPane1, javax.swing.BoxLayout.LINE_AXIS));
+
+        maxRetriesPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(maxRetriesLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxRetriesLabel.text")); // NOI18N
+        maxRetriesLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxRetriesLabel.toolTipText")); // NOI18N
+        maxRetriesPane.add(maxRetriesLabel);
+
+        maxRetries.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxRetries.text")); // NOI18N
+        maxRetries.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxRetries.toolTipText")); // NOI18N
+        maxRetriesPane.add(maxRetries);
+
+        commonSettingsParentPane1.add(maxRetriesPane);
+
+        maxOutputTokensPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(maxOutputTokensLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxOutputTokensLabel.text")); // NOI18N
+        maxOutputTokensLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxOutputTokensLabel.toolTipText")); // NOI18N
+        maxOutputTokensPane.add(maxOutputTokensLabel);
+
+        maxOutputTokens.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxOutputTokens.text")); // NOI18N
+        maxOutputTokens.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxOutputTokens.toolTipText")); // NOI18N
+        maxOutputTokensPane.add(maxOutputTokens);
+
+        commonSettingsParentPane1.add(maxOutputTokensPane);
+
+        repeatPenaltyPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(repeatPenaltyLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.repeatPenaltyLabel.text")); // NOI18N
+        repeatPenaltyLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.repeatPenaltyLabel.toolTipText")); // NOI18N
+        repeatPenaltyPane.add(repeatPenaltyLabel);
+
+        repeatPenalty.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.repeatPenalty.text")); // NOI18N
+        repeatPenalty.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.repeatPenalty.toolTipText")); // NOI18N
+        repeatPenaltyPane.add(repeatPenalty);
+
+        commonSettingsParentPane1.add(repeatPenaltyPane);
+
+        seedPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(seedLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.seedLabel.text")); // NOI18N
+        seedLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.seedLabel.toolTipText")); // NOI18N
+        seedPane.add(seedLabel);
+
+        seed.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.seed.text")); // NOI18N
+        seed.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.seed.toolTipText")); // NOI18N
+        seedPane.add(seed);
+
+        commonSettingsParentPane1.add(seedPane);
+
+        maxTokensPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(maxTokensLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxTokensLabel.text")); // NOI18N
+        maxTokensLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxTokensLabel.toolTipText")); // NOI18N
+        maxTokensPane.add(maxTokensLabel);
+
+        maxTokens.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxTokens.text")); // NOI18N
+        maxTokens.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxTokens.toolTipText")); // NOI18N
+        maxTokensPane.add(maxTokens);
+
+        commonSettingsParentPane1.add(maxTokensPane);
+
+        maxCompletionTokensPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(maxCompletionTokensLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxCompletionTokensLabel.text")); // NOI18N
+        maxCompletionTokensLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxCompletionTokensLabel.toolTipText")); // NOI18N
+        maxCompletionTokensPane.add(maxCompletionTokensLabel);
+
+        maxCompletionTokens.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxCompletionTokens.text")); // NOI18N
+        maxCompletionTokens.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.maxCompletionTokens.toolTipText")); // NOI18N
+        maxCompletionTokensPane.add(maxCompletionTokens);
+
+        commonSettingsParentPane1.add(maxCompletionTokensPane);
+
+        topKPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(topKLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topKLabel.text")); // NOI18N
+        topKLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topKLabel.toolTipText")); // NOI18N
+        topKPane.add(topKLabel);
+
+        topK.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topK.text")); // NOI18N
+        topK.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.topK.toolTipText")); // NOI18N
+        topKPane.add(topK);
+
+        commonSettingsParentPane1.add(topKPane);
+
+        providerSettingsPane.add(commonSettingsParentPane1);
+
+        openAISettingsParentPane1.setLayout(new javax.swing.BoxLayout(openAISettingsParentPane1, javax.swing.BoxLayout.LINE_AXIS));
+
+        presencePenaltyPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(presencePenaltyLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.presencePenaltyLabel.text")); // NOI18N
+        presencePenaltyLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.presencePenaltyLabel.toolTipText")); // NOI18N
+        presencePenaltyPane.add(presencePenaltyLabel);
+
+        presencePenalty.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.presencePenalty.text")); // NOI18N
+        presencePenalty.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.presencePenalty.toolTipText")); // NOI18N
+        presencePenaltyPane.add(presencePenalty);
+
+        openAISettingsParentPane1.add(presencePenaltyPane);
+
+        frequencyPenaltyPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(frequencyPenaltyLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.frequencyPenaltyLabel.text")); // NOI18N
+        frequencyPenaltyLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.frequencyPenaltyLabel.toolTipText")); // NOI18N
+        frequencyPenaltyPane.add(frequencyPenaltyLabel);
+
+        frequencyPenalty.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.frequencyPenalty.text")); // NOI18N
+        frequencyPenalty.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.frequencyPenalty.toolTipText")); // NOI18N
+        frequencyPenaltyPane.add(frequencyPenalty);
+
+        openAISettingsParentPane1.add(frequencyPenaltyPane);
+
+        organizationIdPane.setLayout(new java.awt.GridLayout(0, 1));
+
+        org.openide.awt.Mnemonics.setLocalizedText(organizationIdLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.organizationIdLabel.text")); // NOI18N
+        organizationIdLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.organizationIdLabel.toolTipText")); // NOI18N
+        organizationIdPane.add(organizationIdLabel);
+
+        organizationId.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.organizationId.text")); // NOI18N
+        organizationId.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.organizationId.toolTipText")); // NOI18N
+        organizationIdPane.add(organizationId);
+
+        openAISettingsParentPane1.add(organizationIdPane);
+
+        providerSettingsPane.add(openAISettingsParentPane1);
+
+        providerSettingsParentPane3.setLayout(new java.awt.FlowLayout());
+
+        stream.setSelected(true);
+        org.openide.awt.Mnemonics.setLocalizedText(stream, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.stream.text")); // NOI18N
+        providerSettingsParentPane3.add(stream);
+
+        org.openide.awt.Mnemonics.setLocalizedText(logRequests, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.logRequests.text")); // NOI18N
+        logRequests.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.logRequests.toolTipText")); // NOI18N
+        providerSettingsParentPane3.add(logRequests);
+
+        org.openide.awt.Mnemonics.setLocalizedText(logResponses, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.logResponses.text")); // NOI18N
+        logResponses.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.logResponses.toolTipText")); // NOI18N
+        providerSettingsParentPane3.add(logResponses);
+
+        org.openide.awt.Mnemonics.setLocalizedText(parallelToolCalls, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.parallelToolCalls.text")); // NOI18N
+        parallelToolCalls.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.parallelToolCalls.toolTipText")); // NOI18N
+        providerSettingsParentPane3.add(parallelToolCalls);
+
+        org.openide.awt.Mnemonics.setLocalizedText(strictTools, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.strictTools.text")); // NOI18N
+        strictTools.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.strictTools.toolTipText")); // NOI18N
+        providerSettingsParentPane3.add(strictTools);
+
+        org.openide.awt.Mnemonics.setLocalizedText(includeCodeExecutionOutput, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.includeCodeExecutionOutput.text")); // NOI18N
+        includeCodeExecutionOutput.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.includeCodeExecutionOutput.toolTipText")); // NOI18N
+        providerSettingsParentPane3.add(includeCodeExecutionOutput);
+
+        org.openide.awt.Mnemonics.setLocalizedText(allowCodeExecution, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.allowCodeExecution.text")); // NOI18N
+        allowCodeExecution.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.allowCodeExecution.toolTipText")); // NOI18N
+        allowCodeExecution.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                allowCodeExecutionActionPerformed(evt);
+            }
+        });
+        providerSettingsParentPane3.add(allowCodeExecution);
+
+        providerSettingsPane.add(providerSettingsParentPane3);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerSettingsPane.TabConstraints.tabTitle"), providerSettingsPane); // NOI18N
 
         askAIPane.setLayout(new javax.swing.BoxLayout(askAIPane, javax.swing.BoxLayout.Y_AXIS));
 
@@ -298,10 +583,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         askAIPane.add(jLayeredPane2);
 
         jLayeredPane1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 15, 5));
-
-        org.openide.awt.Mnemonics.setLocalizedText(enableStreamCheckbox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableStreamCheckbox.text")); // NOI18N
-        enableStreamCheckbox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableStreamCheckbox.toolTipText")); // NOI18N
-        jLayeredPane1.add(enableStreamCheckbox);
 
         org.openide.awt.Mnemonics.setLocalizedText(excludeJavadocCommentsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.text")); // NOI18N
         excludeJavadocCommentsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.toolTipText")); // NOI18N
@@ -405,6 +686,40 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineCompletionPane.TabConstraints.tabTitle"), inlineCompletionPane); // NOI18N
 
+        inlineHintPane.setLayout(new java.awt.GridLayout(4, 1, 0, 5));
+
+        classContextInlineHintPane.setPreferredSize(new java.awt.Dimension(125, 75));
+        classContextInlineHintPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
+
+        classContextInlineHintLabelPane.setPreferredSize(new java.awt.Dimension(125, 40));
+        classContextInlineHintLabelPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 5));
+
+        classContextLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        org.openide.awt.Mnemonics.setLocalizedText(classContextLabel1, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextLabel1.text")); // NOI18N
+        classContextInlineHintLabelPane.add(classContextLabel1);
+
+        classContextHelp1.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        classContextHelp1.setForeground(new java.awt.Color(100, 100, 100));
+        classContextHelp1.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        org.openide.awt.Mnemonics.setLocalizedText(classContextHelp1, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextHelp1.text")); // NOI18N
+        classContextInlineHintLabelPane.add(classContextHelp1);
+
+        classContextInlineHintPane.add(classContextInlineHintLabelPane);
+
+        classContextInlineHintComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(AIClassContext.values()));
+        classContextInlineHintComboBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.classContextInlineHintComboBox.toolTipText")); // NOI18N
+        classContextInlineHintComboBox.setPreferredSize(new java.awt.Dimension(72, 35));
+        classContextInlineHintComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                classContextInlineHintComboBoxActionPerformed(evt);
+            }
+        });
+        classContextInlineHintPane.add(classContextInlineHintComboBox);
+
+        inlineHintPane.add(classContextInlineHintPane);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineHintPane.TabConstraints.tabTitle"), inlineHintPane); // NOI18N
+
         hintPane.setLayout(new java.awt.GridLayout(4, 1));
 
         testPromptPane.setPreferredSize(new java.awt.Dimension(125, 75));
@@ -462,17 +777,17 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_excludeJavadocCommentsCheckBoxActionPerformed
 
-    private void enableHintCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enableHintCheckBoxActionPerformed
+    private void enableHintsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enableHintsCheckBoxActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_enableHintCheckBoxActionPerformed
+    }//GEN-LAST:event_enableHintsCheckBoxActionPerformed
 
     private void aiAssistantActivationCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aiAssistantActivationCheckBoxActionPerformed
         // if unchecked then disable the hint and smart checkbox
         if (!aiAssistantActivationCheckBox.isSelected()) {
-            enableHintCheckBox.setEnabled(false);
+            enableHintsCheckBox.setEnabled(false);
             enableSmartCodeCheckBox.setEnabled(false);
         } else {
-            enableHintCheckBox.setEnabled(true);
+            enableHintsCheckBox.setEnabled(true);
             enableSmartCodeCheckBox.setEnabled(true);
         }
     }//GEN-LAST:event_aiAssistantActivationCheckBoxActionPerformed
@@ -496,9 +811,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private void providerComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_providerComboBoxActionPerformed
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.DEEPINFRA
-            || selectedProvider == GenAIProvider.DEEPSEEK
-            || selectedProvider == GenAIProvider.GROQ
-            || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
+                || selectedProvider == GenAIProvider.DEEPSEEK
+                || selectedProvider == GenAIProvider.GROQ
+                || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
             apiKeyLabel.setVisible(true);
             apiKeyField.setVisible(true);
             apiKeyPane.setVisible(true);
@@ -515,9 +830,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             providerLocationField.setVisible(true);
             providerLocationPane.setVisible(true);
         } else if (selectedProvider == GenAIProvider.GOOGLE
-            || selectedProvider == GenAIProvider.OPEN_AI
-            || selectedProvider == GenAIProvider.MISTRAL
-            || selectedProvider == GenAIProvider.ANTHROPIC) {
+                || selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.MISTRAL
+                || selectedProvider == GenAIProvider.ANTHROPIC) {
             apiKeyLabel.setVisible(true);
             apiKeyField.setVisible(true);
             apiKeyPane.setVisible(true);
@@ -536,18 +851,18 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             if (null != selectedProvider) {
                 switch (selectedProvider) {
                     case OLLAMA ->
-                    providerLocationField.setText(new OllamaModelFetcher().getAPIUrl());
+                        providerLocationField.setText(new OllamaModelFetcher().getAPIUrl());
                     case LM_STUDIO ->
-                    providerLocationField.setText(new LMStudioModelFetcher().getAPIUrl());
+                        providerLocationField.setText(new LMStudioModelFetcher().getAPIUrl());
                     case GPT4ALL ->
-                    providerLocationField.setText(new GPT4AllModelFetcher().getAPIUrl());
+                        providerLocationField.setText(new GPT4AllModelFetcher().getAPIUrl());
                 }
             }
         }
         apiKeyField.setText(preferencesManager.getApiKey((GenAIProvider) providerComboBox.getSelectedItem()));
         if (apiKeyLabel.isVisible()
-            && selectedProvider != null
-            && !selectedProvider.getApiKeyUrl().isEmpty()) {
+                && selectedProvider != null
+                && !selectedProvider.getApiKeyUrl().isEmpty()) {
             String apiKeyUrl = selectedProvider.getApiKeyUrl();
             apiKeyInfo.setText("<html><a href=''>" + apiKeyUrl + "</a></html>");
             apiKeyInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -573,7 +888,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             });
         }
         if (selectedProvider != null
-            && !selectedProvider.getModelInfoUrl().isEmpty()) {
+                && !selectedProvider.getModelInfoUrl().isEmpty()) {
             String modelInfoUrl = selectedProvider.getModelInfoUrl();
             modelsInfo.setText("<html><a href=''>" + modelInfoUrl + "</a></html>");
             modelsInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -601,7 +916,65 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         if (selectedProvider != null) {
             updateModelComboBox(selectedProvider);
         }
+        providerSettings();
     }//GEN-LAST:event_providerComboBoxActionPerformed
+
+    private void providerSettings() {
+        GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
+        repeatPenaltyPane.setVisible(false);
+        organizationIdPane.setVisible(false);
+        topKPane.setVisible(false);
+        maxTokensPane.setVisible(false);
+        maxCompletionTokensPane.setVisible(false);
+        maxOutputTokensPane.setVisible(false);
+        presencePenaltyPane.setVisible(false);
+        frequencyPenaltyPane.setVisible(false);
+        repeatPenaltyPane.setVisible(false);
+        seedPane.setVisible(false);
+        allowCodeExecution.setVisible(false);
+        includeCodeExecutionOutput.setVisible(false);
+        strictTools.setVisible(false);
+        parallelToolCalls.setVisible(false);
+        maxRetriesPane.setVisible(false);
+        if (selectedProvider == GenAIProvider.GOOGLE) {
+            topKPane.setVisible(true);
+            maxOutputTokensPane.setVisible(true);
+            allowCodeExecution.setVisible(true);
+            includeCodeExecutionOutput.setVisible(true);
+            maxRetriesPane.setVisible(true);
+        }
+        if (selectedProvider == GenAIProvider.OPEN_AI) {
+            organizationIdPane.setVisible(true);
+            maxTokensPane.setVisible(true);
+            maxCompletionTokensPane.setVisible(true);
+            presencePenaltyPane.setVisible(true);
+            frequencyPenaltyPane.setVisible(true);
+            seedPane.setVisible(true);
+            strictTools.setVisible(true);
+            parallelToolCalls.setVisible(true);
+        }
+        if (selectedProvider == GenAIProvider.OLLAMA) {
+            repeatPenaltyPane.setVisible(true);
+            topKPane.setVisible(true);
+            repeatPenaltyPane.setVisible(true);
+            seedPane.setVisible(true);
+        }
+    }
+    private void classContextInlineHintComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_classContextInlineHintComboBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_classContextInlineHintComboBoxActionPerformed
+
+    private void enableInlineHintCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enableInlineHintCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_enableInlineHintCheckBoxActionPerformed
+
+    private void timeoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeoutActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_timeoutActionPerformed
+
+    private void allowCodeExecutionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_allowCodeExecutionActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_allowCodeExecutionActionPerformed
 
     private void updateModelComboBox(GenAIProvider selectedProvider) {
         modelComboBox.removeAllItems();
@@ -647,14 +1020,67 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         aiAssistantActivationCheckBox.setSelected(preferencesManager.isAiAssistantActivated());
         classContextComboBox.setSelectedItem(preferencesManager.getClassContext());
         varContextComboBox.setSelectedItem(preferencesManager.getVarContext());
-        enableHintCheckBox.setSelected(preferencesManager.isHintsEnabled());
+        classContextInlineHintComboBox.setSelectedItem(preferencesManager.getClassContextInlineHint());
+        enableInlineHintCheckBox.setSelected(preferencesManager.isInlineHintEnabled());
+        enableHintsCheckBox.setSelected(preferencesManager.isHintsEnabled());
         enableSmartCodeCheckBox.setSelected(preferencesManager.isSmartCodeEnabled());
 
+        if (preferencesManager.getTemperature() != Double.MIN_VALUE) {
+            temperature.setText(String.valueOf(preferencesManager.getTemperature()));
+        }
+        if (preferencesManager.getMaxTokens() != Integer.MIN_VALUE) {
+            maxTokens.setText(String.valueOf(preferencesManager.getMaxTokens()));
+        }
+        if (preferencesManager.getTopP() != Double.MIN_VALUE) {
+            topP.setText(String.valueOf(preferencesManager.getTopP()));
+        }
+        if (preferencesManager.getPresencePenalty() != Double.MIN_VALUE) {
+            presencePenalty.setText(String.valueOf(preferencesManager.getPresencePenalty()));
+        }
+        if (preferencesManager.getFrequencyPenalty() != Double.MIN_VALUE) {
+            frequencyPenalty.setText(String.valueOf(preferencesManager.getFrequencyPenalty()));
+        }
+        if (preferencesManager.getRepeatPenalty() != Double.MIN_VALUE) {
+            repeatPenalty.setText(String.valueOf(preferencesManager.getRepeatPenalty()));
+        }
+        if (preferencesManager.getSeed() != Integer.MIN_VALUE) {
+            seed.setText(String.valueOf(preferencesManager.getSeed()));
+        }
+        if (preferencesManager.getTopK() != Integer.MIN_VALUE) {
+            topK.setText(String.valueOf(preferencesManager.getTopK()));
+        }
+        if (preferencesManager.getMaxCompletionTokens() != Integer.MIN_VALUE) {
+            maxCompletionTokens.setText(String.valueOf(preferencesManager.getMaxCompletionTokens()));
+        }
+        if (preferencesManager.getMaxOutputTokens() != Integer.MIN_VALUE) {
+            maxOutputTokens.setText(String.valueOf(preferencesManager.getMaxOutputTokens()));
+        }
+        if (preferencesManager.getMaxRetries() != Integer.MIN_VALUE) {
+            maxRetries.setText(String.valueOf(preferencesManager.getMaxRetries()));
+        }
+        if (preferencesManager.getOrganizationId() != null) {
+            organizationId.setText(String.valueOf(preferencesManager.getOrganizationId()));
+        }
+
+        allowCodeExecution.setSelected(preferencesManager.isAllowCodeExecution());
+        includeCodeExecutionOutput.setSelected(preferencesManager.isIncludeCodeExecutionOutput());
+        strictTools.setSelected(preferencesManager.isStrictTools());
+        parallelToolCalls.setSelected(preferencesManager.isParallelToolCalls());
+
+        if (preferencesManager.getTimeout() != Integer.MIN_VALUE) {
+            timeout.setText(String.valueOf(preferencesManager.getTimeout()));
+        }
+        logRequests.setSelected(preferencesManager.isLogRequestsEnabled());
+        logResponses.setSelected(preferencesManager.isLogResponsesEnabled());
+        stream.setSelected(preferencesManager.isStreamEnabled());
+
         if (!aiAssistantActivationCheckBox.isSelected()) {
-            enableHintCheckBox.setEnabled(false);
+            enableInlineHintCheckBox.setEnabled(false);
+            enableHintsCheckBox.setEnabled(false);
             enableSmartCodeCheckBox.setEnabled(false);
         } else {
-            enableHintCheckBox.setEnabled(true);
+            enableInlineHintCheckBox.setEnabled(true);
+            enableHintsCheckBox.setEnabled(true);
             enableSmartCodeCheckBox.setEnabled(true);
         }
 
@@ -662,7 +1088,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         modelComboBox.setSelectedItem(preferencesManager.getModel());
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
-        enableStreamCheckbox.setSelected(preferencesManager.isStreamEnabled());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
         testPromptField.setText(preferencesManager.getTestCasePrompt());
 
@@ -683,22 +1108,68 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 || selectedProvider == GenAIProvider.GPT4ALL) {
             providerLocationField.setText(preferencesManager.getProviderLocation());
         }
+        providerSettings();
     }
 
     void store() {
         preferencesManager.setAiAssistantActivated(aiAssistantActivationCheckBox.isSelected());
         preferencesManager.setClassContext((AIClassContext) classContextComboBox.getSelectedItem());
         preferencesManager.setVarContext((AIClassContext) varContextComboBox.getSelectedItem());
+        preferencesManager.setClassContextInlineHint((AIClassContext) classContextInlineHintComboBox.getSelectedItem());
         preferencesManager.setProvider((GenAIProvider) providerComboBox.getSelectedItem());
         preferencesManager.setModel((String) modelComboBox.getSelectedItem());
-        preferencesManager.setHintsEnabled(enableHintCheckBox.isSelected());
+        preferencesManager.setInlineHintEnabled(enableInlineHintCheckBox.isSelected());
+        preferencesManager.setHintsEnabled(enableHintsCheckBox.isSelected());
         preferencesManager.setSmartCodeEnabled(enableSmartCodeCheckBox.isSelected());
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
         preferencesManager.setFileExtensionToInclude(fileExtField.getText());
         preferencesManager.setExcludeDirs(getCommaSeparatedValues(excludeTableModel));
-        preferencesManager.setStreamEnabled(enableStreamCheckbox.isSelected());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
         preferencesManager.setTestCasePrompt(testPromptField.getText());
+
+        if (!temperature.getText().isEmpty()) {
+            preferencesManager.setTemperature(Double.parseDouble(temperature.getText()));
+        }
+        if (!maxTokens.getText().isEmpty()) {
+            preferencesManager.setMaxTokens(Integer.parseInt(maxTokens.getText()));
+        }
+        if (!topP.getText().isEmpty()) {
+            preferencesManager.setTopP(Double.parseDouble(topP.getText()));
+        }
+        if (!presencePenalty.getText().isEmpty()) {
+            preferencesManager.setPresencePenalty(Double.parseDouble(presencePenalty.getText()));
+        }
+        if (!frequencyPenalty.getText().isEmpty()) {
+            preferencesManager.setFrequencyPenalty(Double.parseDouble(frequencyPenalty.getText()));
+        }
+        if (!repeatPenalty.getText().isEmpty()) {
+            preferencesManager.setRepeatPenalty(Double.parseDouble(repeatPenalty.getText()));
+        }
+        if (!seed.getText().isEmpty()) {
+            preferencesManager.setSeed(Integer.parseInt(seed.getText()));
+        }
+        if (!topK.getText().isEmpty()) {
+            preferencesManager.setTopK(Integer.parseInt(topK.getText()));
+        }
+        if (!maxCompletionTokens.getText().isEmpty()) {
+            preferencesManager.setMaxCompletionTokens(Integer.parseInt(maxCompletionTokens.getText()));
+        }
+        if (!maxOutputTokens.getText().isEmpty()) {
+            preferencesManager.setMaxOutputTokens(Integer.parseInt(maxOutputTokens.getText()));
+        }
+        if (!maxRetries.getText().isEmpty()) {
+            preferencesManager.setMaxRetries(Integer.parseInt(maxRetries.getText()));
+        }
+        if (!organizationId.getText().isEmpty()) {
+            preferencesManager.setOrganizationId(organizationId.getText());
+        }
+        preferencesManager.setAllowCodeExecution(allowCodeExecution.isSelected());
+        preferencesManager.setIncludeCodeExecutionOutput(includeCodeExecutionOutput.isSelected());
+        preferencesManager.setStrictTools(strictTools.isSelected());
+        preferencesManager.setParallelToolCalls(parallelToolCalls.isSelected());
+        preferencesManager.setLogRequestsEnabled(logRequests.isSelected());
+        preferencesManager.setLogResponsesEnabled(logResponses.isSelected());
+        preferencesManager.setStreamEnabled(stream.isSelected());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
@@ -795,6 +1266,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane activationPane;
     private javax.swing.JLayeredPane activationParentPane;
     private javax.swing.JCheckBox aiAssistantActivationCheckBox;
+    private javax.swing.JCheckBox allowCodeExecution;
     private javax.swing.JPasswordField apiKeyField;
     private javax.swing.JLabel apiKeyInfo;
     private javax.swing.JLabel apiKeyLabel;
@@ -804,34 +1276,67 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane cachePane;
     private javax.swing.JComboBox<AIClassContext> classContextComboBox;
     private javax.swing.JLabel classContextHelp;
+    private javax.swing.JLabel classContextHelp1;
+    private javax.swing.JComboBox<AIClassContext> classContextInlineHintComboBox;
+    private javax.swing.JLayeredPane classContextInlineHintLabelPane;
+    private javax.swing.JLayeredPane classContextInlineHintPane;
     private javax.swing.JLabel classContextLabel;
+    private javax.swing.JLabel classContextLabel1;
     private javax.swing.JLayeredPane classContextLabelPane;
     private javax.swing.JLayeredPane classContextLabelPane1;
     private javax.swing.JLayeredPane classContextPane;
     private javax.swing.JButton cleanDataButton;
-    private javax.swing.JCheckBox enableHintCheckBox;
+    private javax.swing.JLayeredPane commonSettingsParentPane1;
+    private javax.swing.JCheckBox enableHintsCheckBox;
+    private javax.swing.JCheckBox enableInlineHintCheckBox;
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
-    private javax.swing.JCheckBox enableStreamCheckbox;
     private javax.swing.JTable excludeDirTable;
     private javax.swing.JCheckBox excludeJavadocCommentsCheckBox;
     private javax.swing.JTextArea fileExtField;
     private javax.swing.JLabel fileExtLabel;
     private javax.swing.JLayeredPane fileFilterationPane;
+    private javax.swing.JTextField frequencyPenalty;
+    private javax.swing.JLabel frequencyPenaltyLabel;
+    private javax.swing.JLayeredPane frequencyPenaltyPane;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
     private javax.swing.JLayeredPane hintPane;
+    private javax.swing.JCheckBox includeCodeExecutionOutput;
     private javax.swing.JLayeredPane inlineCompletionPane;
+    private javax.swing.JLayeredPane inlineHintPane;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JLayeredPane jLayeredPane2;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JCheckBox logRequests;
+    private javax.swing.JCheckBox logResponses;
+    private javax.swing.JTextField maxCompletionTokens;
+    private javax.swing.JLabel maxCompletionTokensLabel;
+    private javax.swing.JLayeredPane maxCompletionTokensPane;
+    private javax.swing.JTextField maxOutputTokens;
+    private javax.swing.JLabel maxOutputTokensLabel;
+    private javax.swing.JLayeredPane maxOutputTokensPane;
+    private javax.swing.JTextField maxRetries;
+    private javax.swing.JLabel maxRetriesLabel;
+    private javax.swing.JLayeredPane maxRetriesPane;
+    private javax.swing.JTextField maxTokens;
+    private javax.swing.JLabel maxTokensLabel;
+    private javax.swing.JLayeredPane maxTokensPane;
     private javax.swing.JLayeredPane modelChildPane;
     private javax.swing.JComboBox<String> modelComboBox;
     private javax.swing.JLayeredPane modelLabelPane;
     private javax.swing.JLayeredPane modelParentPane;
     private javax.swing.JLabel modelsInfo;
+    private javax.swing.JLayeredPane openAISettingsParentPane1;
+    private javax.swing.JTextField organizationId;
+    private javax.swing.JLabel organizationIdLabel;
+    private javax.swing.JLayeredPane organizationIdPane;
+    private javax.swing.JCheckBox parallelToolCalls;
+    private javax.swing.JTextField presencePenalty;
+    private javax.swing.JLabel presencePenaltyLabel;
+    private javax.swing.JLayeredPane presencePenaltyPane;
     private javax.swing.JComboBox<io.github.jeddict.ai.settings.GenAIProvider> providerComboBox;
     private javax.swing.JLabel providerLabel;
     private javax.swing.JTextField providerLocationField;
@@ -839,12 +1344,35 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane providerLocationPane;
     private javax.swing.JLayeredPane providerPane;
     private javax.swing.JLayeredPane providerParentPane;
+    private javax.swing.JLayeredPane providerSettingsPane;
+    private javax.swing.JLayeredPane providerSettingsParentPane1;
+    private javax.swing.JLayeredPane providerSettingsParentPane3;
     private javax.swing.JLayeredPane providersPane;
+    private javax.swing.JTextField repeatPenalty;
+    private javax.swing.JLabel repeatPenaltyLabel;
+    private javax.swing.JLayeredPane repeatPenaltyPane;
+    private javax.swing.JTextField seed;
+    private javax.swing.JLabel seedLabel;
+    private javax.swing.JLayeredPane seedPane;
     private javax.swing.JCheckBox showDescriptionCheckBox;
     private javax.swing.JLayeredPane snippetPane;
+    private javax.swing.JCheckBox stream;
+    private javax.swing.JCheckBox strictTools;
+    private javax.swing.JTextField temperature;
+    private javax.swing.JLabel temperatureLabel;
+    private javax.swing.JLayeredPane temperaturePane;
     private javax.swing.JTextField testPromptField;
     private javax.swing.JLabel testPromptLabel;
     private javax.swing.JLayeredPane testPromptPane;
+    private javax.swing.JTextField timeout;
+    private javax.swing.JLabel timeoutLabel;
+    private javax.swing.JLayeredPane timeoutPane;
+    private javax.swing.JTextField topK;
+    private javax.swing.JLabel topKLabel;
+    private javax.swing.JLayeredPane topKPane;
+    private javax.swing.JTextField topP;
+    private javax.swing.JLabel topPLabel;
+    private javax.swing.JLayeredPane topPPane;
     private javax.swing.JComboBox<AIClassContext> varContextComboBox;
     private javax.swing.JLabel varContextHelp;
     private javax.swing.JLabel varContextLabel;

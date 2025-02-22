@@ -26,19 +26,30 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.anthropic.AnthropicChatModel.AnthropicChatModelBuilder;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
+import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel.AnthropicStreamingChatModelBuilder;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel.GoogleAiGeminiStreamingChatModelBuilder;
 import dev.langchain4j.model.localai.LocalAiChatModel;
+import dev.langchain4j.model.localai.LocalAiChatModel.LocalAiChatModelBuilder;
 import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
+import dev.langchain4j.model.localai.LocalAiStreamingChatModel.LocalAiStreamingChatModelBuilder;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
+import dev.langchain4j.model.mistralai.MistralAiChatModel.MistralAiChatModelBuilder;
 import dev.langchain4j.model.mistralai.MistralAiStreamingChatModel;
+import dev.langchain4j.model.mistralai.MistralAiStreamingChatModel.MistralAiStreamingChatModelBuilder;
 import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.model.ollama.OllamaChatModel.OllamaChatModelBuilder;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel.OllamaStreamingChatModelBuilder;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel.OpenAiChatModelBuilder;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder;
 import io.github.jeddict.ai.models.LMStudioChatModel;
 import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
@@ -55,6 +66,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,101 +90,479 @@ public class JeddictChatModel {
     private int cachedClassDatasLength = -1; // Cache the length of classDatas
     private PreferencesManager preferencesManager = PreferencesManager.getInstance();
     private StreamingResponseHandler handler;
-    
+
     public JeddictChatModel() {
         this(null);
     }
 
     public JeddictChatModel(StreamingResponseHandler handler) {
         this.handler = handler;
+        Double temperature = preferencesManager.getTemperature();
+        Integer timeout = preferencesManager.getTimeout();
+        Double topP = preferencesManager.getTopP();
+        Integer maxRetries = preferencesManager.getMaxRetries();
+        Integer maxOutputTokens = preferencesManager.getMaxOutputTokens();
+        Double repeatPenalty = preferencesManager.getRepeatPenalty();
+        Integer seed = preferencesManager.getSeed();
+        Integer maxTokens = preferencesManager.getMaxTokens();
+        Integer maxCompletionTokens = preferencesManager.getMaxCompletionTokens();
+        Integer topK = preferencesManager.getTopK();
+        Double presencePenalty = preferencesManager.getPresencePenalty();
+        Double frequencyPenalty = preferencesManager.getFrequencyPenalty();
+        String organizationId = preferencesManager.getOrganizationId();
+        boolean logRequests = preferencesManager.isLogRequestsEnabled();
+        boolean logResponse = preferencesManager.isLogResponsesEnabled();
+        boolean parallelToolCalls = preferencesManager.isParallelToolCalls();
+        boolean strictTools = preferencesManager.isStrictTools();
+        boolean includeCodeExecutionOutput = preferencesManager.isIncludeCodeExecutionOutput();
+        boolean allowCodeExecution = preferencesManager.isAllowCodeExecution();
+
         if (null != preferencesManager.getModel()) {
             if (preferencesManager.isStreamEnabled() && handler != null) {
                 switch (preferencesManager.getProvider()) {
-                    case GOOGLE ->
-                        streamModel = GoogleAiGeminiStreamingChatModel.builder()
+                    case GOOGLE -> {
+                        GoogleAiGeminiStreamingChatModelBuilder builder = GoogleAiGeminiStreamingChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case OPEN_AI ->
-                        streamModel = OpenAiStreamingChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (maxOutputTokens != null && maxOutputTokens != Integer.MIN_VALUE) {
+                            builder.maxOutputTokens(maxOutputTokens);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxRetries != null && maxRetries != Integer.MIN_VALUE) {
+                            builder.maxRetries(maxRetries);
+                        }
+                        if (topK != null && topK != Integer.MIN_VALUE) {
+                            builder.topK(topK);
+                        }
+                        builder.logRequestsAndResponses(logRequests || logResponse)
+                                .includeCodeExecutionOutput(includeCodeExecutionOutput)
+                                .allowCodeExecution(allowCodeExecution);
+
+                        streamModel = builder.build();
+                    }
+                    case OPEN_AI -> {
+                        OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI ->
-                        streamModel = OpenAiStreamingChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (seed != null && seed != Integer.MIN_VALUE) {
+                            builder.seed(seed);
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
+                            builder.maxCompletionTokens(maxCompletionTokens);
+                        }
+                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
+                            builder.presencePenalty(presencePenalty);
+                        }
+                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
+                            builder.frequencyPenalty(frequencyPenalty);
+                        }
+                        if (organizationId != null && !organizationId.isEmpty()) {
+                            builder.organizationId(organizationId);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse)
+                                .parallelToolCalls(parallelToolCalls)
+                                .strictTools(strictTools);
+
+                        streamModel = builder.build();
+                    }
+                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
+                        OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case MISTRAL ->
-                        streamModel = MistralAiStreamingChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (seed != null && seed != Integer.MIN_VALUE) {
+                            builder.seed(seed);
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
+                            builder.maxCompletionTokens(maxCompletionTokens);
+                        }
+                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
+                            builder.presencePenalty(presencePenalty);
+                        }
+                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
+                            builder.frequencyPenalty(frequencyPenalty);
+                        }
+                        if (organizationId != null && !organizationId.isEmpty()) {
+                            builder.organizationId(organizationId);
+                        }
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse)
+                                .parallelToolCalls(parallelToolCalls)
+                                .strictTools(strictTools);
+                        streamModel = builder.build();
+                    }
+                    case MISTRAL -> {
+                        MistralAiStreamingChatModelBuilder builder = MistralAiStreamingChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case ANTHROPIC ->
-                        streamModel = AnthropicStreamingChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+                        streamModel = builder.build();
+                    }
+                    case ANTHROPIC -> {
+                        AnthropicStreamingChatModelBuilder builder = AnthropicStreamingChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case OLLAMA ->
-                        streamModel = OllamaStreamingChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        streamModel = builder.build();
+                    }
+                    case OLLAMA -> {
+                        OllamaStreamingChatModelBuilder builder = OllamaStreamingChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case LM_STUDIO ->
-                        model = LMStudioChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (seed != null && seed != Integer.MIN_VALUE) {
+                            builder.seed(seed);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        streamModel = builder.build();
+                    }
+                    case LM_STUDIO -> {
+                        LMStudioChatModel.Builder builder = LMStudioChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case GPT4ALL ->
-                        streamModel = LocalAiStreamingChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        model = builder.build();
+                    }
+                    case GPT4ALL -> {
+                        LocalAiStreamingChatModelBuilder builder = LocalAiStreamingChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        streamModel = builder.build();
+                    }
                 }
             } else {
                 switch (preferencesManager.getProvider()) {
-                    case GOOGLE ->
-                        model = GoogleAiGeminiChatModel.builder()
+                    case GOOGLE -> {
+                        GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder builder = GoogleAiGeminiChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case OPEN_AI ->
-                        model = OpenAiChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (maxOutputTokens != null && maxOutputTokens != Integer.MIN_VALUE) {
+                            builder.maxOutputTokens(maxOutputTokens);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxRetries != null && maxRetries != Integer.MIN_VALUE) {
+                            builder.maxRetries(maxRetries);
+                        }
+                        if (topK != null && topK != Integer.MIN_VALUE) {
+                            builder.topK(topK);
+                        }
+                        builder.logRequestsAndResponses(logRequests || logResponse)
+                                .includeCodeExecutionOutput(includeCodeExecutionOutput)
+                                .allowCodeExecution(allowCodeExecution);
+
+                        model = builder.build();
+                    }
+                    case OPEN_AI -> {
+                        OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI ->
-                        model = OpenAiChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (seed != null && seed != Integer.MIN_VALUE) {
+                            builder.seed(seed);
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
+                            builder.maxCompletionTokens(maxCompletionTokens);
+                        }
+                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
+                            builder.presencePenalty(presencePenalty);
+                        }
+                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
+                            builder.frequencyPenalty(frequencyPenalty);
+                        }
+                        if (organizationId != null && !organizationId.isEmpty()) {
+                            builder.organizationId(organizationId);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse)
+                                .parallelToolCalls(parallelToolCalls)
+                                .strictTools(strictTools);
+
+                        model = builder.build();
+                    }
+                    case DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
+                        OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case MISTRAL ->
-                        model = MistralAiChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (seed != null && seed != Integer.MIN_VALUE) {
+                            builder.seed(seed);
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        if (maxCompletionTokens != null && maxCompletionTokens != Integer.MIN_VALUE) {
+                            builder.maxCompletionTokens(maxCompletionTokens);
+                        }
+                        if (presencePenalty != null && presencePenalty != Double.MIN_VALUE) {
+                            builder.presencePenalty(presencePenalty);
+                        }
+                        if (frequencyPenalty != null && frequencyPenalty != Double.MIN_VALUE) {
+                            builder.frequencyPenalty(frequencyPenalty);
+                        }
+                        if (organizationId != null && !organizationId.isEmpty()) {
+                            builder.organizationId(organizationId);
+                        }
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse)
+                                .parallelToolCalls(parallelToolCalls)
+                                .strictTools(strictTools);
+                        model = builder.build();
+                    }
+                    case MISTRAL -> {
+                        MistralAiChatModelBuilder builder = MistralAiChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case ANTHROPIC ->
-                        model = AnthropicChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+                        model = builder.build();
+                    }
+                    case ANTHROPIC -> {
+                        AnthropicChatModelBuilder builder = AnthropicChatModel.builder()
                                 .apiKey(preferencesManager.getApiKey())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case OLLAMA ->
-                        model = OllamaChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        model = builder.build();
+                    }
+                    case OLLAMA -> {
+                        OllamaChatModelBuilder builder = OllamaChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case LM_STUDIO ->
-                        model = LMStudioChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (seed != null && seed != Integer.MIN_VALUE) {
+                            builder.seed(seed);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        model = builder.build();
+                    }
+                    case LM_STUDIO -> {
+                        LMStudioChatModel.Builder builder = LMStudioChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
-                    case GPT4ALL ->
-                        model = LocalAiChatModel.builder()
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        model = builder.build();
+                    }
+                    case GPT4ALL -> {
+                        LocalAiChatModelBuilder builder = LocalAiChatModel.builder()
                                 .baseUrl(preferencesManager.getProviderLocation())
-                                .modelName(preferencesManager.getModelName())
-                                .build();
+                                .modelName(preferencesManager.getModelName());
+
+                        if (temperature != null && temperature != Double.MIN_VALUE) {
+                            builder.temperature(temperature);
+                        }
+                        if (topP != null && topP != Double.MIN_VALUE) {
+                            builder.topP(topP);
+                        }
+                        if (timeout != null && timeout != Integer.MIN_VALUE) {
+                            builder.timeout(Duration.ofSeconds(timeout));
+                        }
+                        if (maxTokens != null && maxTokens != Integer.MIN_VALUE) {
+                            builder.maxTokens(maxTokens);
+                        }
+
+                        builder.logRequests(logRequests)
+                                .logResponses(logResponse);
+
+                        model = builder.build();
+                    }
                 }
             }
         }
@@ -185,8 +575,8 @@ public class JeddictChatModel {
                     "Error in AI Assistance",
                     JOptionPane.ERROR_MESSAGE);
         }
-        if(project != null) {
-           prompt = prompt + ProjectMetadataInfo.get(project);
+        if (project != null) {
+            prompt = prompt + ProjectMetadataInfo.get(project);
         }
         try {
             if (streamModel != null) {
@@ -519,7 +909,7 @@ public class JeddictChatModel {
         return methodInvocations;
     }
 
-    public List<Snippet> suggestNextLineCode(Project project, String classDatas, String classContent, String lineText, TreePath path) {
+    public List<Snippet> suggestNextLineCode(Project project, String classDatas, String classContent, String lineText, TreePath path, boolean singleCodeSnippet) {
         String prompt;
 
         if (path == null) {
@@ -527,14 +917,14 @@ public class JeddictChatModel {
                     + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE_LIST}. "
                     + "Suggest additional classes, interfaces, enums, or other top-level constructs. "
                     + "Ensure that the suggestions fit the context of the entire file. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java Source File Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.COMPILATION_UNIT) {
             prompt = "You are an API server that suggests Java code for the outermost context of a Java source file, outside of any existing class. "
                     + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE_LIST}. "
                     + "Suggest package declarations, import statements, comments, or annotations for public class. "
                     + "Ensure that the suggestions fit the context of the entire file. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java Source File Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
                 && path.getParentPath() != null
@@ -542,7 +932,7 @@ public class JeddictChatModel {
             prompt = "You are an API server that suggests Java code modifications for a class. "
                     + "At the placeholder location ${SUGGEST_CODE_LIST}, suggest either a class-level modifier such as 'public', 'protected', 'private', 'abstract', 'final', or a relevant class-level annotation. "
                     + "Ensure that the suggestions are appropriate for the class context provided. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java Class Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
                 && path.getParentPath() != null
@@ -551,7 +941,7 @@ public class JeddictChatModel {
                     + "At the placeholder location ${SUGGEST_CODE_LIST}, suggest method-level modifiers such as 'public', 'protected', 'private', 'abstract', 'static', 'final', 'synchronized', or relevant method-level annotations. "
                     + "Additionally, you may suggest method-specific annotations like '@Override', '@Deprecated', '@Transactional', etc. "
                     + "Ensure that the suggestions are appropriate for the method context provided. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java Method Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
                 && path.getParentPath() != null
@@ -559,7 +949,7 @@ public class JeddictChatModel {
             prompt = "You are an API server that suggests Java code for an inner class at the placeholder location ${SUGGEST_CODE_LIST}. "
                     + "Based on the provided Java class content, suggest either relevant inner class modifiers such as 'public', 'private', 'protected', 'static', 'abstract', 'final', or a full inner class definition. "
                     + "Additionally, you may suggest class-level annotations for the inner class. Ensure that the suggestions are contextually appropriate for an inner class. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java Class Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
                 && path.getParentPath() != null
@@ -567,7 +957,7 @@ public class JeddictChatModel {
             prompt = "You are an API server that suggests Java code for an class at the placeholder location ${SUGGEST_CODE_LIST}. "
                     + "Based on the provided Java class content, suggest either relevant class level members, attributes, constants, methods or blocks. "
                     + "Ensure that the suggestions are contextually appropriate for an class. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java Class Content:\n" + classContent;
         } else if (path.getLeaf().getKind() == Tree.Kind.PARENTHESIZED
                 && path.getParentPath() != null
@@ -575,13 +965,13 @@ public class JeddictChatModel {
             prompt = "You are an API server that suggests Java code to enhance an if-statement. "
                     + "At the placeholder location ${SUGGEST_IF_CONDITIONS}, suggest additional conditional checks or actions within the if-statement. "
                     + "Ensure that the suggestions are contextually appropriate for the condition. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java If Statement Content:\n" + classContent;
         } else {
             prompt = "You are an API server that suggests Java code for a specific context in a given Java class at the placeholder location ${SUGGEST_CODE_LIST}. "
                     + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a relevant single line of code or a multi-line code block as appropriate for the context represented by the placeholder ${SUGGEST_CODE_LIST} in the Java class. "
                     + "Ensure that the suggestions are relevant to the context. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (singleCodeSnippet ? singleJsonRequest : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest))
                     + "Java Class Content:\n" + classContent;
         }
 
@@ -635,6 +1025,12 @@ public class JeddictChatModel {
             + "'description' should be a very short explanation of what the snippet does and why it might be appropriate in this context, formatted with <b>, <\br> and optionally if required then include any imporant link with <a href=''> tags. "
             + "Make sure to escape any double quotes within the snippet and description using a backslash (\\) so that the JSON remains valid. \n\n";
 
+    String singleJsonRequest = "Return a JSON object with a single best suggestion without any additional text or explanation. The object should contain three fields: 'imports', 'snippet', and 'description'. "
+            + "'imports' should be an array of required Java import statements (if no imports are required, return an empty array). "
+            + "'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. "
+            + "'description' should be a very short explanation of what the snippet does and why it might be appropriate in this context, formatted with <b>, <br> and optionally including any important links using <a href=''> tags. "
+            + "Make sure to escape any double quotes within the snippet and description using a backslash (\\) so that the JSON remains valid. \n\n";
+
     public List<Snippet> suggestAnnotations(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests Java annotations for a specific context in a given Java class at the placeholder location ${SUGGEST_ANNOTATION_LIST}. "
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant annotations that can be applied at the placeholder location represented by ${SUGGEST_ANNOTATION_LIST} in the Java Class. "
@@ -657,11 +1053,18 @@ public class JeddictChatModel {
         List<Snippet> snippets = new ArrayList<>();
 
         JSONArray jsonArray;
+
+        if (jsonResponse.contains("```json")) {
+            int index = jsonResponse.indexOf("```json") + 7;
+            jsonResponse = jsonResponse.substring(index, jsonResponse.indexOf("```", index)).trim();
+        } else {
+            jsonResponse = removeCodeBlockMarkers(jsonResponse);
+        }
         try {
             // Parse the JSON response
-            jsonArray = new JSONArray(removeCodeBlockMarkers(jsonResponse));
+            jsonArray = new JSONArray(jsonResponse);
         } catch (org.json.JSONException jsone) {
-            JSONObject jsonObject = new JSONObject(removeCodeBlockMarkers(jsonResponse));
+            JSONObject jsonObject = new JSONObject(jsonResponse);
             jsonArray = new JSONArray();
             jsonArray.put(jsonObject);
         }
