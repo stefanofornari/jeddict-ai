@@ -36,6 +36,8 @@ import java.awt.Desktop;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JTable;
@@ -46,6 +48,8 @@ import org.openide.util.NbBundle;
 final class AIAssistancePanel extends javax.swing.JPanel {
 
     private final AIAssistanceOptionsPanelController controller;
+    private DefaultTableModel excludeTableModel;
+    private DefaultTableModel customHeadersTableModel;
 
     AIAssistancePanel(AIAssistanceOptionsPanelController controller) {
         this.controller = controller;
@@ -88,6 +92,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         enableInlineHintCheckBox = new javax.swing.JCheckBox();
         enableHintsCheckBox = new javax.swing.JCheckBox();
         providerSettingsPane = new javax.swing.JLayeredPane();
+        providerSettingsChildPane = new javax.swing.JLayeredPane();
         providerSettingsParentPane1 = new javax.swing.JLayeredPane();
         temperaturePane = new javax.swing.JLayeredPane();
         temperatureLabel = new javax.swing.JLabel();
@@ -136,6 +141,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         logResponses = new javax.swing.JCheckBox();
         includeCodeExecutionOutput = new javax.swing.JCheckBox();
         allowCodeExecution = new javax.swing.JCheckBox();
+        customHeadersPane = new javax.swing.JLayeredPane();
+        customHeadersScrollPane = new javax.swing.JScrollPane();
+        customHeadersTable = new javax.swing.JTable();
         askAIPane = new javax.swing.JLayeredPane();
         fileFilterationPane = new javax.swing.JLayeredPane();
         fileExtLabel = new javax.swing.JLabel();
@@ -173,7 +181,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         testPromptLabel = new javax.swing.JLabel();
         testPromptField = new javax.swing.JTextField();
 
-        providersPane.setLayout(new java.awt.GridLayout(4, 1));
+        providersPane.setLayout(new java.awt.GridLayout(6, 1));
 
         providerParentPane.setLayout(new javax.swing.BoxLayout(providerParentPane, javax.swing.BoxLayout.LINE_AXIS));
 
@@ -309,7 +317,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providersPane.TabConstraints.tabTitle"), providersPane); // NOI18N
 
-        providerSettingsPane.setLayout(new java.awt.GridLayout(4, 1));
+        providerSettingsPane.setLayout(new java.awt.GridLayout(2, 1));
+
+        providerSettingsChildPane.setLayout(new java.awt.GridLayout(4, 1));
 
         providerSettingsParentPane1.setLayout(new javax.swing.BoxLayout(providerSettingsParentPane1, javax.swing.BoxLayout.LINE_AXIS));
 
@@ -354,7 +364,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         providerSettingsParentPane1.add(topPPane);
 
-        providerSettingsPane.add(providerSettingsParentPane1);
+        providerSettingsChildPane.add(providerSettingsParentPane1);
 
         commonSettingsParentPane1.setLayout(new javax.swing.BoxLayout(commonSettingsParentPane1, javax.swing.BoxLayout.LINE_AXIS));
 
@@ -442,7 +452,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         commonSettingsParentPane1.add(topKPane);
 
-        providerSettingsPane.add(commonSettingsParentPane1);
+        providerSettingsChildPane.add(commonSettingsParentPane1);
 
         openAISettingsParentPane1.setLayout(new javax.swing.BoxLayout(openAISettingsParentPane1, javax.swing.BoxLayout.LINE_AXIS));
 
@@ -482,7 +492,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         openAISettingsParentPane1.add(organizationIdPane);
 
-        providerSettingsPane.add(openAISettingsParentPane1);
+        providerSettingsChildPane.add(openAISettingsParentPane1);
 
         providerSettingsParentPane3.setLayout(new java.awt.FlowLayout());
 
@@ -511,7 +521,37 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         });
         providerSettingsParentPane3.add(allowCodeExecution);
 
-        providerSettingsPane.add(providerSettingsParentPane3);
+        providerSettingsChildPane.add(providerSettingsParentPane3);
+
+        providerSettingsPane.add(providerSettingsChildPane);
+
+        customHeadersTable.setModel(getHeaderKeyValueTableModel());
+        customHeadersTable.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.customHeadersTable.toolTipText")); // NOI18N
+        customHeadersScrollPane.setViewportView(customHeadersTable);
+
+        customHeadersPane.setLayer(customHeadersScrollPane, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        javax.swing.GroupLayout customHeadersPaneLayout = new javax.swing.GroupLayout(customHeadersPane);
+        customHeadersPane.setLayout(customHeadersPaneLayout);
+        customHeadersPaneLayout.setHorizontalGroup(
+            customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 558, Short.MAX_VALUE)
+            .addGroup(customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(customHeadersPaneLayout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 546, Short.MAX_VALUE)
+                    .addContainerGap()))
+        );
+        customHeadersPaneLayout.setVerticalGroup(
+            customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 199, Short.MAX_VALUE)
+            .addGroup(customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, customHeadersPaneLayout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 193, Short.MAX_VALUE)))
+        );
+
+        providerSettingsPane.add(customHeadersPane);
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.providerSettingsPane.TabConstraints.tabTitle"), providerSettingsPane); // NOI18N
 
@@ -542,7 +582,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         fileFilterationPane.setLayout(fileFilterationPaneLayout);
         fileFilterationPaneLayout.setHorizontalGroup(
             fileFilterationPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 558, Short.MAX_VALUE)
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING)
             .addGroup(fileFilterationPaneLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(fileExtLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -587,7 +627,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.askAIPane.TabConstraints.tabTitle"), askAIPane); // NOI18N
 
-        inlineCompletionPane.setLayout(new java.awt.GridLayout(4, 1));
+        inlineCompletionPane.setLayout(new java.awt.GridLayout(5, 1));
 
         classContextPane.setPreferredSize(new java.awt.Dimension(125, 75));
         classContextPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
@@ -676,7 +716,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineCompletionPane.TabConstraints.tabTitle"), inlineCompletionPane); // NOI18N
 
-        inlineHintPane.setLayout(new java.awt.GridLayout(4, 1, 0, 5));
+        inlineHintPane.setLayout(new java.awt.GridLayout(5, 1, 0, 5));
 
         classContextInlineHintPane.setPreferredSize(new java.awt.Dimension(125, 75));
         classContextInlineHintPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
@@ -710,7 +750,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineHintPane.TabConstraints.tabTitle"), inlineHintPane); // NOI18N
 
-        hintPane.setLayout(new java.awt.GridLayout(4, 1));
+        hintPane.setLayout(new java.awt.GridLayout(5, 1));
 
         testPromptPane.setPreferredSize(new java.awt.Dimension(125, 75));
         testPromptPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
@@ -735,8 +775,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 329, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 95, Short.MAX_VALUE))
+                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 434, Short.MAX_VALUE)
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -1107,6 +1147,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
         preferencesManager.setFileExtensionToInclude(fileExtField.getText());
         preferencesManager.setExcludeDirs(getCommaSeparatedValues(excludeTableModel));
+        preferencesManager.setCustomHeaders(getHeaderTableModelValues());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
         preferencesManager.setTestCasePrompt(testPromptField.getText());
 
@@ -1171,8 +1212,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
     }
 
-    private DefaultTableModel excludeTableModel;
-
     private DefaultTableModel getExcludeTableModel() {
         excludeDirTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         List<String> excludeDirList = preferencesManager.getExcludeDirList();
@@ -1201,6 +1240,60 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             }
         };
         return excludeTableModel;
+    }
+
+    private DefaultTableModel getHeaderKeyValueTableModel() {
+        customHeadersTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+
+        Map<String, String> headerKeyValueMap = preferencesManager.getCustomHeaders();
+        Object[][] headerKeyValueArray = new Object[headerKeyValueMap.size() + 1][2]; // +1 for adding an empty row
+
+        int index = 0;
+        for (Map.Entry<String, String> entry : headerKeyValueMap.entrySet()) {
+            headerKeyValueArray[index][0] = entry.getKey();
+            headerKeyValueArray[index][1] = entry.getValue();
+            index++;
+        }
+        headerKeyValueArray[index][0] = "";
+        headerKeyValueArray[index][1] = "";
+
+        customHeadersTableModel = new DefaultTableModel(
+                headerKeyValueArray,
+                new String[]{
+                    NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.headerKey.text"),
+                    NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.headerValue.text")
+                }
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return true;
+            }
+
+            @Override
+            public void setValueAt(Object aValue, int row, int column) {
+                super.setValueAt(aValue, row, column);
+
+                // Automatically add a new row if editing the last row
+                if (row == getRowCount() - 1 && !getValueAt(row, 0).toString().isEmpty() && !getValueAt(row, 1).toString().isEmpty()) {
+                    addRow(new Object[]{"", ""});
+                }
+            }
+        };
+
+        return customHeadersTableModel;
+    }
+
+    private Map<String, String> getHeaderTableModelValues() {
+        Map<String, String> map = new HashMap<>();
+        for (int row = 0; row < customHeadersTableModel.getRowCount(); row++) {
+            Object key = customHeadersTableModel.getValueAt(row, 0);
+            Object value = customHeadersTableModel.getValueAt(row, 1);
+
+            if (key != null && value != null && !key.toString().isEmpty()) {
+                map.put(key.toString(), value.toString());
+            }
+        }
+        return map;
     }
 
     private String getCommaSeparatedValues(DefaultTableModel model) {
@@ -1268,6 +1361,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane classContextPane;
     private javax.swing.JButton cleanDataButton;
     private javax.swing.JLayeredPane commonSettingsParentPane1;
+    private javax.swing.JLayeredPane customHeadersPane;
+    private javax.swing.JScrollPane customHeadersScrollPane;
+    private javax.swing.JTable customHeadersTable;
     private javax.swing.JCheckBox enableHintsCheckBox;
     private javax.swing.JCheckBox enableInlineHintCheckBox;
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
@@ -1324,6 +1420,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane providerLocationPane;
     private javax.swing.JLayeredPane providerPane;
     private javax.swing.JLayeredPane providerParentPane;
+    private javax.swing.JLayeredPane providerSettingsChildPane;
     private javax.swing.JLayeredPane providerSettingsPane;
     private javax.swing.JLayeredPane providerSettingsParentPane1;
     private javax.swing.JLayeredPane providerSettingsParentPane3;
