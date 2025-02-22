@@ -24,7 +24,7 @@ import org.netbeans.spi.editor.highlighting.HighlightsLayer;
 import org.netbeans.api.editor.mimelookup.MimeRegistration;
 import org.netbeans.spi.editor.highlighting.ZOrder;
 
-@MimeRegistration(mimeType = "text/x-java", service = HighlightsLayerFactory.class)
+@MimeRegistration(mimeType = "", service = HighlightsLayerFactory.class)
 public class HighlightsLayerFactoryImpl implements HighlightsLayerFactory {
 
     @Override

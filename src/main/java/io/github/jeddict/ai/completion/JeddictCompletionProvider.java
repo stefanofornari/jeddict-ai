@@ -122,7 +122,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
             component.addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
-                    if (e.getKeyCode() == KeyEvent.VK_ENTER 
+                    if (e.getKeyCode() == KeyEvent.VK_ENTER
                             && PreferencesManager.getInstance().isInlineHintEnabled()) {
                         try {
                             String text = (String) doc.getProperty(HIGHLIGHTED_TEXT_KEY);
@@ -172,9 +172,9 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
     @Override
     public int getAutoQueryTypes(JTextComponent component, String typedText) {
-        if (typedText.length() == 1 
+        if (typedText.length() == 1
                 && typedText.charAt(0) == '\n'
-                && PreferencesManager.getInstance().isInlineHintEnabled()){
+                && PreferencesManager.getInstance().isInlineHintEnabled()) {
             if (currentTask != null && !currentTask.isDone()) {
                 currentTask.cancel(true);
             }
@@ -655,8 +655,13 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             } else if (varName.startsWith("* ")) {
                                 varName = varName.substring(2);
                             }
-                            JeddictItem var = new JeddictItem(null, null, varName, "", Collections.emptyList(), newcaretOffset, true, false, -1);
-                            resultSet.addItem(var);
+                            if (resultSet == null) {
+                                highlightMultiline(component, caretOffset, varName);
+                                break;
+                            } else {
+                                JeddictItem var = new JeddictItem(null, null, varName, "", Collections.emptyList(), newcaretOffset, true, false, -1);
+                                resultSet.addItem(var);
+                            }
                         }
                     }
                 } else {
@@ -670,14 +675,26 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_SQL_QUERY_LIST}");
                             List<Snippet> sugs = getJeddictChatModel(fileObject).suggestSQLQuery(sqlCompletion.getMetaData(), updateddoc);
                             for (Snippet varName : sugs) {
-                                resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                                if (resultSet == null) {
+                                    highlightMultiline(component, caretOffset, varName.getSnippet());
+                                    break;
+                                } else {
+                                    JeddictItem var = createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc);
+                                    resultSet.addItem(var);
+                                }
                             }
                         } else {
                             String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
                             List<Snippet> sugs = getJeddictChatModel(fileObject)
                                     .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), updateddoc, line, mimeType);
                             for (Snippet varName : sugs) {
-                                resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                                if (resultSet == null) {
+                                    highlightMultiline(component, caretOffset, varName.getSnippet());
+                                    break;
+                                } else {
+                                    JeddictItem var = createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc);
+                                    resultSet.addItem(var);
+                                }
                             }
                         }
                     } else {
@@ -685,7 +702,13 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         List<Snippet> sugs = getJeddictChatModel(null)
                                 .suggestNextLineCode(null, updateddoc, line, mimeType);
                         for (Snippet varName : sugs) {
-                            resultSet.addItem(createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc));
+                            if (resultSet == null) {
+                                highlightMultiline(component, caretOffset, varName.getSnippet());
+                                break;
+                            } else {
+                                JeddictItem var = createItem(varName, line, lineTextBeforeCaret, javaToken, null, doc);
+                                resultSet.addItem(var);
+                            }
                         }
                     }
                 }
