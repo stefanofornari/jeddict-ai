@@ -449,7 +449,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
                     Tree.Kind kind = path == null ? null : path.getLeaf().getKind();
                     Tree.Kind parentKind = path == null ? null : path.getParentPath().getLeaf().getKind();
-                    AIClassContext activeClassContext = prefsManager.getClassContext();
+                    AIClassContext activeClassContext = -1 == queryType ? prefsManager.getClassContextInlineHint() : prefsManager.getClassContext();
                     if (kind == Tree.Kind.VARIABLE || kind == Tree.Kind.METHOD || kind == Tree.Kind.STRING_LITERAL) {
                         activeClassContext = prefsManager.getVarContext();
                     }
@@ -459,15 +459,6 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             .map(cd -> cd.toString())
                             .collect(Collectors.joining("\n------------\n"));
 
-//                    if (path != null) {
-//                        System.out.println("path.getLeaf().getKind() " + path.getLeaf().getKind());
-//                        if (path.getParentPath() != null) {
-//                            System.out.println("path.getParentPath().getLeaf().getKind() " + path.getParentPath().getLeaf().getKind());
-//                            if (path.getParentPath().getParentPath() != null) {
-//                                System.out.println("path.getParentPath().getParentPath().getLeaf().getKind() " + path.getParentPath().getParentPath().getLeaf().getKind());
-//                            }
-//                        }
-//                    }
                     if (path == null || kind == Tree.Kind.ERRONEOUS) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE_LIST}");
                         List<Snippet> sugs = getJeddictChatModel(fileObject)
