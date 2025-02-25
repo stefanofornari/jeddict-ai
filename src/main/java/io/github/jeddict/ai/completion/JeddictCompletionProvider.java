@@ -161,7 +161,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
         if (!prefsManager.isSmartCodeEnabled()) {
             return null;
         }
-        if (type == COMPLETION_QUERY_TYPE) {
+        if ((prefsManager.isCompletionAllQueryType() && type == COMPLETION_ALL_QUERY_TYPE)
+                || (!prefsManager.isCompletionAllQueryType() && type == COMPLETION_QUERY_TYPE)) {
             return new AsyncCompletionTask(new JeddictCompletionQuery(type, component.getSelectionStart()), component);
         }
         return null;

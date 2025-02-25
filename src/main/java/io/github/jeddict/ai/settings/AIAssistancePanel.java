@@ -64,6 +64,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        aiInlineCompletionShortcutGroup = new javax.swing.ButtonGroup();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         providersPane = new javax.swing.JLayeredPane();
         providerParentPane = new javax.swing.JLayeredPane();
@@ -166,6 +167,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         varContextLabel = new javax.swing.JLabel();
         varContextHelp = new javax.swing.JLabel();
         varContextComboBox = new javax.swing.JComboBox<>();
+        snippetPane1 = new javax.swing.JLayeredPane();
+        aiInlineCompletionShortcutLabel = new javax.swing.JLabel();
+        ctrlSpaceRadioButton = new javax.swing.JRadioButton();
+        ctrlAltSpaceRadioButton = new javax.swing.JRadioButton();
         snippetPane = new javax.swing.JLayeredPane();
         showDescriptionCheckBox = new javax.swing.JCheckBox();
         cachePane = new javax.swing.JLayeredPane();
@@ -689,6 +694,25 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         inlineCompletionPane.add(varContextPane);
 
+        snippetPane1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+
+        org.openide.awt.Mnemonics.setLocalizedText(aiInlineCompletionShortcutLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiInlineCompletionShortcutLabel.text")); // NOI18N
+        aiInlineCompletionShortcutLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiInlineCompletionShortcut.toolTipText")); // NOI18N
+        snippetPane1.add(aiInlineCompletionShortcutLabel);
+
+        aiInlineCompletionShortcutGroup.add(ctrlSpaceRadioButton);
+        org.openide.awt.Mnemonics.setLocalizedText(ctrlSpaceRadioButton, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.ctrlSpaceRadioButton.text")); // NOI18N
+        ctrlSpaceRadioButton.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiInlineCompletionShortcut.toolTipText")); // NOI18N
+        snippetPane1.add(ctrlSpaceRadioButton);
+
+        aiInlineCompletionShortcutGroup.add(ctrlAltSpaceRadioButton);
+        ctrlAltSpaceRadioButton.setSelected(true);
+        org.openide.awt.Mnemonics.setLocalizedText(ctrlAltSpaceRadioButton, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.ctrlAltSpaceRadioButton.text")); // NOI18N
+        ctrlAltSpaceRadioButton.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.aiInlineCompletionShortcut.toolTipText")); // NOI18N
+        snippetPane1.add(ctrlAltSpaceRadioButton);
+
+        inlineCompletionPane.add(snippetPane1);
+
         snippetPane.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         org.openide.awt.Mnemonics.setLocalizedText(showDescriptionCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.showDescriptionCheckBox.text")); // NOI18N
@@ -1109,6 +1133,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         providerComboBox.setSelectedItem(preferencesManager.getProvider());
         modelComboBox.setSelectedItem(preferencesManager.getModel());
+        ctrlSpaceRadioButton.setSelected(!preferencesManager.isCompletionAllQueryType());
+        ctrlAltSpaceRadioButton.setSelected(preferencesManager.isCompletionAllQueryType());
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
@@ -1144,6 +1170,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setInlineHintEnabled(enableInlineHintCheckBox.isSelected());
         preferencesManager.setHintsEnabled(enableHintsCheckBox.isSelected());
         preferencesManager.setSmartCodeEnabled(enableSmartCodeCheckBox.isSelected());
+        preferencesManager.setCompletionAllQueryType(ctrlAltSpaceRadioButton.isSelected());
         preferencesManager.setDescriptionEnabled(showDescriptionCheckBox.isSelected());
         preferencesManager.setFileExtensionToInclude(fileExtField.getText());
         preferencesManager.setExcludeDirs(getCommaSeparatedValues(excludeTableModel));
@@ -1340,6 +1367,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane activationPane;
     private javax.swing.JLayeredPane activationParentPane;
     private javax.swing.JCheckBox aiAssistantActivationCheckBox;
+    private javax.swing.ButtonGroup aiInlineCompletionShortcutGroup;
+    private javax.swing.JLabel aiInlineCompletionShortcutLabel;
     private javax.swing.JCheckBox allowCodeExecution;
     private javax.swing.JPasswordField apiKeyField;
     private javax.swing.JLabel apiKeyInfo;
@@ -1361,6 +1390,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane classContextPane;
     private javax.swing.JButton cleanDataButton;
     private javax.swing.JLayeredPane commonSettingsParentPane1;
+    private javax.swing.JRadioButton ctrlAltSpaceRadioButton;
+    private javax.swing.JRadioButton ctrlSpaceRadioButton;
     private javax.swing.JLayeredPane customHeadersPane;
     private javax.swing.JScrollPane customHeadersScrollPane;
     private javax.swing.JTable customHeadersTable;
@@ -1433,6 +1464,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane seedPane;
     private javax.swing.JCheckBox showDescriptionCheckBox;
     private javax.swing.JLayeredPane snippetPane;
+    private javax.swing.JLayeredPane snippetPane1;
     private javax.swing.JCheckBox stream;
     private javax.swing.JTextField temperature;
     private javax.swing.JLabel temperatureLabel;
