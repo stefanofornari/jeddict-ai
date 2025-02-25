@@ -346,6 +346,14 @@ public class PreferencesManager {
         preferences.putBoolean("enableSmartCode", enabled);
     }
 
+     public boolean isCompletionAllQueryType() {
+        return preferences.getBoolean("enableCompletionAllQueryType", true);
+    }
+
+    public void setCompletionAllQueryType(boolean enabled) {
+        preferences.putBoolean("enableCompletionAllQueryType", enabled);
+    }
+
     public boolean isDescriptionEnabled() {
         return preferences.getBoolean("showDecription", true);
     }
