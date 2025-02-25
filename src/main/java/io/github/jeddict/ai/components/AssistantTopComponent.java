@@ -159,7 +159,7 @@ public class AssistantTopComponent extends TopComponent {
     public JEditorPane createPane() {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setEditable(false);
-        editorPane.setBackground(Color.WHITE);
+//        editorPane.setBackground(Color.YELLOW);
         parentPanel.add(editorPane);
         return editorPane;
     }
@@ -857,7 +857,7 @@ public class AssistantTopComponent extends TopComponent {
         StyleSheet styleSheet = htmlEditorKit.getStyleSheet();
         styleSheet.addRule("html { font-family: sans-serif; line-height: 1.15; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }");
         styleSheet.addRule("article, aside, figcaption, figure, footer, header, hgroup, main, nav, section { display: block; }");
-        styleSheet.addRule("body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; text-align: left; background-color: #fff; }");
+        styleSheet.addRule("body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; text-align: left;}");
         styleSheet.addRule("hr { box-sizing: content-box; height: 0; overflow: visible; }");
         styleSheet.addRule("h1, h2, h3, h4, h5, h6 { margin-top: 0; margin-bottom: 0.5rem; }");
         styleSheet.addRule("p { margin-top: 0; margin-bottom: 1rem; }");
