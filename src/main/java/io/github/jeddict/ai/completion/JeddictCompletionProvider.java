@@ -104,6 +104,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
     private static final PreferencesManager prefsManager = PreferencesManager.getInstance();
 
     private static final String HIGHLIGHTED_TEXT_KEY = "HIGHLIGHTED_TEXT_KEY";
+    private static final String HIGHLIGHTED_TEXT_LOC_KEY = "HIGHLIGHTED_TEXT_LOC_KEY";
     private static final Object KEY_PRE_TEXT = new Object();
 
     public static OffsetsBag getPreTextBag(Document doc, JTextComponent component) {
@@ -126,19 +127,23 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             && PreferencesManager.getInstance().isInlineHintEnabled()) {
                         try {
                             String text = (String) doc.getProperty(HIGHLIGHTED_TEXT_KEY);
-                            if (text != null) {
+                            Integer textLocation = (Integer) doc.getProperty(HIGHLIGHTED_TEXT_LOC_KEY);
+                            if (text != null && textLocation != null) {
                                 Document doc = component.getDocument();
                                 int caretPosition = component.getCaretPosition();
-                                doc.insertString(caretPosition, text, null);
+                                
+                                if (textLocation.equals(caretPosition)) {
+                                    doc.insertString(caretPosition, text, null);
 
-                                Reformat reformat = Reformat.get(component.getDocument());
-                                reformat.lock();
-                                try {
-                                    reformat.reformat(caretPosition, caretPosition + text.length());
-                                } finally {
-                                    reformat.unlock();
+                                    Reformat reformat = Reformat.get(component.getDocument());
+                                    reformat.lock();
+                                    try {
+                                        reformat.reformat(caretPosition, caretPosition + text.length());
+                                    } finally {
+                                        reformat.unlock();
+                                    }
+                                    e.consume();
                                 }
-                                e.consume(); // Prevent default Tab action
                             }
                         } catch (BadLocationException ex) {
                             Exceptions.printStackTrace(ex);
@@ -728,7 +733,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 preTextBag.addHighlight(startOffset, startOffset + 1,
                         AttributesUtilities.createImmutable("virtual-text-prepend", snippet));
                 doc.putProperty(HIGHLIGHTED_TEXT_KEY, snippet);
-
+                doc.putProperty(HIGHLIGHTED_TEXT_LOC_KEY, startOffset);
+                
                 // Set the updated highlights in the document
                 getPreTextBag(doc, component).clear();
                 getPreTextBag(doc, component).setHighlights(preTextBag);
