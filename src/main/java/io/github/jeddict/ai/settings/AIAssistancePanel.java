@@ -33,23 +33,32 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
+import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultCellEditor;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import org.openide.util.NbBundle;
 
 final class AIAssistancePanel extends javax.swing.JPanel {
 
     private final AIAssistanceOptionsPanelController controller;
     private DefaultTableModel excludeTableModel;
-    private DefaultTableModel customHeadersTableModel;
+    private DefaultTableModel promptModel;
+    private DefaultTableModel promptTableModel;
 
     AIAssistancePanel(AIAssistanceOptionsPanelController controller) {
         this.controller = controller;
@@ -90,8 +99,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         activationPane = new javax.swing.JLayeredPane();
         aiAssistantActivationCheckBox = new javax.swing.JCheckBox();
         enableSmartCodeCheckBox = new javax.swing.JCheckBox();
-        enableInlineHintCheckBox = new javax.swing.JCheckBox();
         enableHintsCheckBox = new javax.swing.JCheckBox();
+        enableInlineHintCheckBox = new javax.swing.JCheckBox();
+        enableInlinePromptHintCheckBox = new javax.swing.JCheckBox();
         providerSettingsPane = new javax.swing.JLayeredPane();
         providerSettingsChildPane = new javax.swing.JLayeredPane();
         providerSettingsParentPane1 = new javax.swing.JLayeredPane();
@@ -181,10 +191,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         classContextLabel1 = new javax.swing.JLabel();
         classContextHelp1 = new javax.swing.JLabel();
         classContextInlineHintComboBox = new javax.swing.JComboBox<>();
-        hintPane = new javax.swing.JLayeredPane();
-        testPromptPane = new javax.swing.JLayeredPane();
-        testPromptLabel = new javax.swing.JLabel();
-        testPromptField = new javax.swing.JTextField();
+        systemMessagePane = new javax.swing.JLayeredPane();
+        systemMessageScrollPane = new javax.swing.JScrollPane();
+        systemMessage = new javax.swing.JTextArea();
+        promptSettingsPane = new javax.swing.JLayeredPane();
+        promptScrollPane = new javax.swing.JScrollPane();
+        promptTable = new javax.swing.JTable();
 
         providersPane.setLayout(new java.awt.GridLayout(6, 1));
 
@@ -298,6 +310,15 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         enableSmartCodeCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableSmartCodeCheckBox.toolTipText")); // NOI18N
         activationPane.add(enableSmartCodeCheckBox);
 
+        org.openide.awt.Mnemonics.setLocalizedText(enableHintsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintsCheckBox.text")); // NOI18N
+        enableHintsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintsCheckBox.toolTipText")); // NOI18N
+        enableHintsCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                enableHintsCheckBoxActionPerformed(evt);
+            }
+        });
+        activationPane.add(enableHintsCheckBox);
+
         org.openide.awt.Mnemonics.setLocalizedText(enableInlineHintCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableInlineHintCheckBox.text")); // NOI18N
         enableInlineHintCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableInlineHintCheckBox.toolTipText")); // NOI18N
         enableInlineHintCheckBox.addActionListener(new java.awt.event.ActionListener() {
@@ -307,14 +328,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         });
         activationPane.add(enableInlineHintCheckBox);
 
-        org.openide.awt.Mnemonics.setLocalizedText(enableHintsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintsCheckBox.text")); // NOI18N
-        enableHintsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableHintsCheckBox.toolTipText")); // NOI18N
-        enableHintsCheckBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                enableHintsCheckBoxActionPerformed(evt);
-            }
-        });
-        activationPane.add(enableHintsCheckBox);
+        org.openide.awt.Mnemonics.setLocalizedText(enableInlinePromptHintCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableInlinePromptHintCheckBox.text")); // NOI18N
+        enableInlinePromptHintCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.enableInlinePromptHintCheckBox.toolTipText")); // NOI18N
+        activationPane.add(enableInlinePromptHintCheckBox);
 
         activationParentPane.add(activationPane);
 
@@ -549,11 +565,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         );
         customHeadersPaneLayout.setVerticalGroup(
             customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 199, Short.MAX_VALUE)
+            .addGap(0, 385, Short.MAX_VALUE)
             .addGroup(customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, customHeadersPaneLayout.createSequentialGroup()
                     .addContainerGap()
-                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 193, Short.MAX_VALUE)))
+                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 379, Short.MAX_VALUE)))
         );
 
         providerSettingsPane.add(customHeadersPane);
@@ -740,7 +756,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineCompletionPane.TabConstraints.tabTitle"), inlineCompletionPane); // NOI18N
 
-        inlineHintPane.setLayout(new java.awt.GridLayout(5, 1, 0, 5));
+        inlineHintPane.setLayout(new java.awt.GridLayout(6, 1, 0, 5));
 
         classContextInlineHintPane.setPreferredSize(new java.awt.Dimension(125, 75));
         classContextInlineHintPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
@@ -774,21 +790,25 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineHintPane.TabConstraints.tabTitle"), inlineHintPane); // NOI18N
 
-        hintPane.setLayout(new java.awt.GridLayout(5, 1));
+        systemMessagePane.setLayout(new java.awt.BorderLayout());
 
-        testPromptPane.setPreferredSize(new java.awt.Dimension(125, 75));
-        testPromptPane.setLayout(new java.awt.GridLayout(0, 1, 5, 0));
+        systemMessage.setColumns(20);
+        systemMessage.setRows(5);
+        systemMessageScrollPane.setViewportView(systemMessage);
 
-        testPromptLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        org.openide.awt.Mnemonics.setLocalizedText(testPromptLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.testPromptLabel.text")); // NOI18N
-        testPromptPane.add(testPromptLabel);
+        systemMessagePane.add(systemMessageScrollPane, java.awt.BorderLayout.CENTER);
 
-        testPromptField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.testPromptField.text")); // NOI18N
-        testPromptPane.add(testPromptField);
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.systemMessagePane.TabConstraints.tabTitle"), systemMessagePane); // NOI18N
 
-        hintPane.add(testPromptPane);
+        promptSettingsPane.setLayout(new java.awt.GridLayout(2, 1));
 
-        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.hintPane.TabConstraints.tabTitle"), hintPane); // NOI18N
+        promptTable.setModel(getPromptTableModel());
+        promptTable.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptTable.toolTipText")); // NOI18N
+        promptScrollPane.setViewportView(promptTable);
+
+        promptSettingsPane.add(promptScrollPane);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptSettingsPane.TabConstraints.tabTitle"), promptSettingsPane); // NOI18N
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -799,7 +819,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 434, Short.MAX_VALUE)
+                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 835, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -1071,6 +1091,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         varContextComboBox.setSelectedItem(preferencesManager.getVarContext());
         classContextInlineHintComboBox.setSelectedItem(preferencesManager.getClassContextInlineHint());
         enableInlineHintCheckBox.setSelected(preferencesManager.isInlineHintEnabled());
+        enableInlinePromptHintCheckBox.setSelected(preferencesManager.isInlinePromptHintEnabled());
         enableHintsCheckBox.setSelected(preferencesManager.isHintsEnabled());
         enableSmartCodeCheckBox.setSelected(preferencesManager.isSmartCodeEnabled());
 
@@ -1123,10 +1144,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         if (!aiAssistantActivationCheckBox.isSelected()) {
             enableInlineHintCheckBox.setEnabled(false);
+            enableInlinePromptHintCheckBox.setEnabled(false);
             enableHintsCheckBox.setEnabled(false);
             enableSmartCodeCheckBox.setEnabled(false);
         } else {
             enableInlineHintCheckBox.setEnabled(true);
+            enableInlinePromptHintCheckBox.setEnabled(true);
             enableHintsCheckBox.setEnabled(true);
             enableSmartCodeCheckBox.setEnabled(true);
         }
@@ -1138,7 +1161,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
-        testPromptField.setText(preferencesManager.getTestCasePrompt());
+        systemMessage.setText(preferencesManager.getSystemMessage());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
@@ -1168,6 +1191,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setProvider((GenAIProvider) providerComboBox.getSelectedItem());
         preferencesManager.setModel((String) modelComboBox.getSelectedItem());
         preferencesManager.setInlineHintEnabled(enableInlineHintCheckBox.isSelected());
+        preferencesManager.setInlinePromptHintEnabled(enableInlinePromptHintCheckBox.isSelected());
         preferencesManager.setHintsEnabled(enableHintsCheckBox.isSelected());
         preferencesManager.setSmartCodeEnabled(enableSmartCodeCheckBox.isSelected());
         preferencesManager.setCompletionAllQueryType(ctrlAltSpaceRadioButton.isSelected());
@@ -1175,8 +1199,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setFileExtensionToInclude(fileExtField.getText());
         preferencesManager.setExcludeDirs(getCommaSeparatedValues(excludeTableModel));
         preferencesManager.setCustomHeaders(getHeaderTableModelValues());
+        preferencesManager.setPrompts(getPromptModelValues());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
-        preferencesManager.setTestCasePrompt(testPromptField.getText());
+        preferencesManager.setSystemMessage(systemMessage.getText());
 
         if (!temperature.getText().isEmpty()) {
             preferencesManager.setTemperature(Double.parseDouble(temperature.getText()));
@@ -1284,7 +1309,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         headerKeyValueArray[index][0] = "";
         headerKeyValueArray[index][1] = "";
 
-        customHeadersTableModel = new DefaultTableModel(
+        promptModel = new DefaultTableModel(
                 headerKeyValueArray,
                 new String[]{
                     NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.headerKey.text"),
@@ -1307,14 +1332,14 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             }
         };
 
-        return customHeadersTableModel;
+        return promptModel;
     }
 
     private Map<String, String> getHeaderTableModelValues() {
         Map<String, String> map = new HashMap<>();
-        for (int row = 0; row < customHeadersTableModel.getRowCount(); row++) {
-            Object key = customHeadersTableModel.getValueAt(row, 0);
-            Object value = customHeadersTableModel.getValueAt(row, 1);
+        for (int row = 0; row < promptModel.getRowCount(); row++) {
+            Object key = promptModel.getValueAt(row, 0);
+            Object value = promptModel.getValueAt(row, 1);
 
             if (key != null && value != null && !key.toString().isEmpty()) {
                 map.put(key.toString(), value.toString());
@@ -1323,6 +1348,99 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         return map;
     }
 
+    private DefaultTableModel getPromptTableModel() {
+        promptTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+
+        Map<String, String> promptMap = preferencesManager.getPrompts();
+        Object[][] headerKeyValueArray = new Object[promptMap.size() + 1][2]; // +1 for adding an empty row
+
+        int index = 0;
+        for (Map.Entry<String, String> entry : promptMap.entrySet()) {
+            headerKeyValueArray[index][0] = entry.getKey();
+            headerKeyValueArray[index][1] = entry.getValue();
+            index++;
+        }
+        headerKeyValueArray[index][0] = "";
+        headerKeyValueArray[index][1] = "";
+
+        promptModel = new DefaultTableModel(
+                headerKeyValueArray,
+                new String[]{
+                    NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptName.text"),
+                    NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptValue.text")
+                }
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return true;
+            }
+
+            @Override
+            public void setValueAt(Object aValue, int row, int column) {
+                super.setValueAt(aValue, row, column);
+
+                // Automatically add a new row if editing the last row
+                if (row == getRowCount() - 1 && !getValueAt(row, 0).toString().isEmpty() && !getValueAt(row, 1).toString().isEmpty()) {
+                    addRow(new Object[]{"", ""});
+                }
+            }
+        };
+
+        SwingUtilities.invokeLater(() -> {
+            TableColumnModel columnModel = promptTable.getColumnModel();
+            int totalWidth = promptTable.getWidth();
+            columnModel.getColumn(0).setPreferredWidth((int) (totalWidth * 0.2));
+            columnModel.getColumn(1).setPreferredWidth((int) (totalWidth * 0.8));
+        });
+        
+  
+        // Add double-click listener to open popup for second column
+        promptTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = promptTable.rowAtPoint(e.getPoint());
+                int column = promptTable.columnAtPoint(e.getPoint());
+
+                if (column == 1 && row >= 0) { // If second column is clicked
+                    openTextEditorPopup(row, column);
+                }
+            }
+        });
+
+        return promptModel;
+    }
+
+    private void openTextEditorPopup(int row, int column) {
+        String currentValue = (String) promptTable.getValueAt(row, column);
+
+        JTextArea textArea = new JTextArea(currentValue, 10, 30);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        int option = JOptionPane.showConfirmDialog(
+                null, scrollPane, "Edit Prompt Value",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (option == JOptionPane.OK_OPTION) {
+            promptTable.setValueAt(textArea.getText(), row, column);
+        }
+    }
+
+    
+    private Map<String, String> getPromptModelValues() {
+        Map<String, String> map = new HashMap<>();
+        for (int row = 0; row < promptModel.getRowCount(); row++) {
+            Object key = promptModel.getValueAt(row, 0);
+            Object value = promptModel.getValueAt(row, 1);
+
+            if (key != null && value != null && !key.toString().isEmpty()) {
+                map.put(key.toString(), value.toString());
+            }
+        }
+        return map;
+    }
+    
     private String getCommaSeparatedValues(DefaultTableModel model) {
         StringBuilder sb = new StringBuilder();
         int rowCount = model.getRowCount();
@@ -1397,6 +1515,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JTable customHeadersTable;
     private javax.swing.JCheckBox enableHintsCheckBox;
     private javax.swing.JCheckBox enableInlineHintCheckBox;
+    private javax.swing.JCheckBox enableInlinePromptHintCheckBox;
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
     private javax.swing.JTable excludeDirTable;
     private javax.swing.JCheckBox excludeJavadocCommentsCheckBox;
@@ -1408,7 +1527,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane frequencyPenaltyPane;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
-    private javax.swing.JLayeredPane hintPane;
     private javax.swing.JCheckBox includeCodeExecutionOutput;
     private javax.swing.JLayeredPane inlineCompletionPane;
     private javax.swing.JLayeredPane inlineHintPane;
@@ -1444,6 +1562,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JTextField presencePenalty;
     private javax.swing.JLabel presencePenaltyLabel;
     private javax.swing.JLayeredPane presencePenaltyPane;
+    private javax.swing.JScrollPane promptScrollPane;
+    private javax.swing.JLayeredPane promptSettingsPane;
+    private javax.swing.JTable promptTable;
     private javax.swing.JComboBox<io.github.jeddict.ai.settings.GenAIProvider> providerComboBox;
     private javax.swing.JLabel providerLabel;
     private javax.swing.JTextField providerLocationField;
@@ -1466,12 +1587,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane snippetPane;
     private javax.swing.JLayeredPane snippetPane1;
     private javax.swing.JCheckBox stream;
+    private javax.swing.JTextArea systemMessage;
+    private javax.swing.JLayeredPane systemMessagePane;
+    private javax.swing.JScrollPane systemMessageScrollPane;
     private javax.swing.JTextField temperature;
     private javax.swing.JLabel temperatureLabel;
     private javax.swing.JLayeredPane temperaturePane;
-    private javax.swing.JTextField testPromptField;
-    private javax.swing.JLabel testPromptLabel;
-    private javax.swing.JLayeredPane testPromptPane;
     private javax.swing.JTextField timeout;
     private javax.swing.JLabel timeoutLabel;
     private javax.swing.JLayeredPane timeoutPane;

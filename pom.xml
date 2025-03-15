@@ -467,6 +467,26 @@
             <artifactId>org-netbeans-modules-maven-embedder</artifactId>
             <version>RELEASE250</version>
         </dependency>
+        <dependency>
+    <groupId>org.netbeans.api</groupId>
+    <artifactId>org-netbeans-api-progress</artifactId>
+    <version>RELEASE250</version>
+</dependency>
+<dependency>
+    <groupId>org.netbeans.api</groupId>
+    <artifactId>org-netbeans-modules-java-project</artifactId>
+    <version>RELEASE250</version>
+</dependency>
+<dependency>
+    <groupId>org.netbeans.api</groupId>
+    <artifactId>org-netbeans-modules-projectuiapi</artifactId>
+    <version>RELEASE250</version>
+</dependency>
+<dependency>
+    <groupId>org.netbeans.api</groupId>
+    <artifactId>org-netbeans-modules-java-project-ui</artifactId>
+    <version>RELEASE250</version>
+</dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
