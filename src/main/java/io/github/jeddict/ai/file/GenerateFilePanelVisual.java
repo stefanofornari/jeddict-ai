@@ -95,7 +95,8 @@ public class GenerateFilePanelVisual extends javax.swing.JPanel implements Docum
         setName(org.openide.util.NbBundle.getMessage(GenerateFilePanelVisual.class, "DocWizardDescriptor_displayName")); // NOI18N
 
         java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("io/github/jeddict/ai/file/Bundle"); // NOI18N
-        headerLabel.setText(bundle.getString("DocWizardDescriptor_displayName")); // NOI18N
+        headerLabel.setText(bundle.getString("GenerateFileWizardDescriptor_displayDescription")); // NOI18N
+        headerLabel.setToolTipText(org.openide.util.NbBundle.getMessage(GenerateFilePanelVisual.class, "GenerateFileWizardDescriptor_displayDescription")); // NOI18N
 
         projectLabel.setLabelFor(projectTextField);
         projectLabel.setText(org.openide.util.NbBundle.getMessage(GenerateFilePanelVisual.class, "LBL_Project")); // NOI18N

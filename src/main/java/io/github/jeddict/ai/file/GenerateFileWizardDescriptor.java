@@ -54,12 +54,11 @@ import static org.openide.util.NbBundle.getMessage;
 import org.openide.util.RequestProcessor;
 
 @TemplateRegistration(
-        folder = "Persistence",
-        position = 2,
+        folder = "Other",
+        position = 10,
         displayName = "#DocWizardDescriptor_displayName",
-        iconBase = "io/github/jeddict/ai/file/DOC_ICON.png",
-        description = "DOC_RE_DESC.html",
-        category = "persistence")
+        iconBase = "io/github/jeddict/ai/file/GEN_AI_ICON.png",
+        description = "GEN_AI_DESC.html")
 public final class GenerateFileWizardDescriptor extends BaseWizardDescriptor {
 
     private WizardDescriptor wizard;

@@ -797,13 +797,13 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.systemMessagePane.TabConstraints.tabTitle"), systemMessagePane); // NOI18N
 
-        promptSettingsPane.setLayout(new java.awt.GridLayout(2, 1));
+        promptSettingsPane.setLayout(new java.awt.BorderLayout());
 
         promptTable.setModel(getPromptTableModel());
         promptTable.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptTable.toolTipText")); // NOI18N
         promptScrollPane.setViewportView(promptTable);
 
-        promptSettingsPane.add(promptScrollPane);
+        promptSettingsPane.add(promptScrollPane, java.awt.BorderLayout.CENTER);
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptSettingsPane.TabConstraints.tabTitle"), promptSettingsPane); // NOI18N
 
@@ -1369,7 +1369,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return true;
+                return column == 0; // Only the first column is editable
             }
 
             @Override
@@ -1399,7 +1399,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 int column = promptTable.columnAtPoint(e.getPoint());
 
                 if (column == 1 && row >= 0) { // If second column is clicked
-                    openTextEditorPopup(row, column);
+                    Object promptNameObj = promptTable.getModel().getValueAt(row, 0);
+                    String promptName = (promptNameObj != null) ? promptNameObj.toString() : "";
+                    openTextEditorPopup(promptName, row, column);
                 }
             }
         });
@@ -1407,16 +1409,16 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         return promptModel;
     }
 
-    private void openTextEditorPopup(int row, int column) {
+    private void openTextEditorPopup(String promptName, int row, int column) {
         String currentValue = (String) promptTable.getValueAt(row, column);
 
-        JTextArea textArea = new JTextArea(currentValue, 10, 30);
+        JTextArea textArea = new JTextArea(currentValue, 30, 90);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
 
         JScrollPane scrollPane = new JScrollPane(textArea);
         int option = JOptionPane.showConfirmDialog(
-                null, scrollPane, "Edit Prompt Value",
+                null, scrollPane, "Edit " + promptName + " Prompt Value",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (option == JOptionPane.OK_OPTION) {
