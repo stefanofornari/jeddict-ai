@@ -315,7 +315,16 @@ public class PreferencesManager {
 
     public void setInlineHintEnabled(boolean enabled) {
         preferences.putBoolean("enableInlineHint", enabled);
-        setInlineHintsEnabled(enabled);
+        setInlineHintsEnabled(isInlineHintEnabled() || isInlinePromptHintEnabled());
+    }
+    
+    public boolean isInlinePromptHintEnabled() {
+        return preferences.getBoolean("enableInlinePromptHint", false);
+    }
+
+    public void setInlinePromptHintEnabled(boolean enabled) {
+        preferences.putBoolean("enableInlinePromptHint", enabled);
+        setInlineHintsEnabled(isInlineHintEnabled() || isInlinePromptHintEnabled());
     }
 
     private static final String JAVA_INLINE_HINTS_KEY = "enable.inline.hints";
@@ -346,7 +355,7 @@ public class PreferencesManager {
         preferences.putBoolean("enableSmartCode", enabled);
     }
 
-     public boolean isCompletionAllQueryType() {
+    public boolean isCompletionAllQueryType() {
         return preferences.getBoolean("enableCompletionAllQueryType", true);
     }
 
@@ -437,13 +446,38 @@ public class PreferencesManager {
         headerKeyValueMap = map;
     }
 
-    public String getTestCasePrompt() {
-        return preferences.get("testCasePrompt", "Generate JUnit Test");
+    private Map<String, String> promptMap = new HashMap<>();
+
+    public Map<String, String> getPrompts() {
+        if (promptMap.isEmpty()) {
+            String prompts = preferences.get("prompts", "");
+            if (!prompts.isEmpty()) {
+                promptMap = Arrays.stream(prompts.split("\\s*;\\s*"))
+                        .map(entry -> entry.split("=", 2))
+                        .collect(Collectors.toMap(arr -> arr[0], arr -> arr.length > 1 ? arr[1] : ""));
+            }
+        }
+        if (promptMap.isEmpty()) {
+            promptMap.put("test", "Generate JUnit Test");
+        }
+        return promptMap;
     }
 
-    public void setTestCasePrompt(String prompt) {
-        if (prompt != null && !prompt.isEmpty()) {
-            preferences.put("testCasePrompt", prompt);
+    public void setPrompts(Map<String, String> map) {
+        String prompts = map.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining("; "));
+        preferences.put("prompts", prompts);
+        promptMap = map;
+    }
+
+    public String getSystemMessage() {
+        return preferences.get("systemMessage", null);
+    }
+
+    public void setSystemMessage(String message) {
+        if (message != null && !message.isEmpty()) {
+            preferences.put("systemMessage", message);
         }
     }
 
