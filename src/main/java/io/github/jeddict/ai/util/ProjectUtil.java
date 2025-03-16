@@ -2,8 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package io.github.jeddict.ai.file;
+package io.github.jeddict.ai.util;
 
+import io.github.jeddict.ai.settings.PreferencesManager;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,10 +31,45 @@ import org.openide.filesystems.URLMapper;
 /**
  *
  * @author Gaurav Gupta
+ * @author Shiwani Gupta
  */
 public class ProjectUtil {
-    
-        public static SourceGroup[] getJavaSourceGroups(Project project) {
+
+    public static List<FileObject> getSourceFiles(Project project) {
+        List<FileObject> sourceFiles = new ArrayList<>();
+        collectFiles(project.getProjectDirectory(), project.getProjectDirectory(), sourceFiles,
+                new HashSet<>(PreferencesManager.getInstance().getFileExtensionListToInclude()),
+                new HashSet<>(PreferencesManager.getInstance().getExcludeDirList()));
+        return sourceFiles;
+    }
+
+    public static void collectFiles(FileObject baseDir, FileObject folder, List<FileObject> sourceFiles, Set<String> fileExtensionListToInclude, Set<String> excludes) {
+        for (FileObject file : folder.getChildren()) {
+            String relativePath = getRelativePath(baseDir, file);
+            boolean isExcluded = excludes.stream().filter(s -> !s.trim().isEmpty()).anyMatch(relativePath::startsWith);
+            if (isExcluded) {
+                continue;
+            }
+            if (file.isFolder()) {
+                collectFiles(baseDir, file, sourceFiles, fileExtensionListToInclude, excludes);
+            } else if (file.isData()) {
+                if (fileExtensionListToInclude.contains(file.getExt())) {
+                    sourceFiles.add(file);
+                }
+            }
+        }
+    }
+
+    private static String getRelativePath(FileObject baseDir, FileObject file) {
+        String basePath = baseDir.getPath();
+        String filePath = file.getPath();
+        if (filePath.startsWith(basePath)) {
+            return filePath.substring(basePath.length() + 1);
+        }
+        return filePath;
+    }
+
+    public static SourceGroup[] getJavaSourceGroups(Project project) {
         Parameters.notNull("project", project);
         SourceGroup[] sourceGroups = ProjectUtils.getSources(project).getSourceGroups(SOURCES_TYPE_JAVA);
         Set<SourceGroup> testGroups = getTestSourceGroups(sourceGroups);
@@ -45,8 +81,8 @@ public class ProjectUtil {
         }
         return result.toArray(new SourceGroup[result.size()]);
     }
-        
-           public static Set<SourceGroup> getTestSourceGroups(Project project) {
+
+    public static Set<SourceGroup> getTestSourceGroups(Project project) {
         return getTestSourceGroups(project, true);
     }
 
@@ -66,8 +102,8 @@ public class ProjectUtil {
     public static SourceGroup getTestSourceGroup(Project project) {
         return getTestSourceGroups(project, true).stream().findAny().get();
     }
-    
-        private static Map<FileObject, SourceGroup> createFoldersToSourceGroupsMap(final SourceGroup[] sourceGroups) {
+
+    private static Map<FileObject, SourceGroup> createFoldersToSourceGroupsMap(final SourceGroup[] sourceGroups) {
         Map result;
         if (sourceGroups.length == 0) {
             result = Collections.EMPTY_MAP;
@@ -80,7 +116,7 @@ public class ProjectUtil {
         }
         return result;
     }
-        
+
     private static Set<SourceGroup> getTestSourceGroups(SourceGroup[] sourceGroups) {
         Map<FileObject, SourceGroup> foldersToSourceGroupsMap = createFoldersToSourceGroupsMap(sourceGroups);
         Set<SourceGroup> testGroups = new HashSet<>();
@@ -89,7 +125,7 @@ public class ProjectUtil {
         }
         return testGroups;
     }
-    
+
     private static List<SourceGroup> getTestTargets(SourceGroup sourceGroup, Map<FileObject, SourceGroup> foldersToSourceGroupsMap) {
         final URL[] rootURLs = UnitTestForSourceQuery.findUnitTests(sourceGroup.getRootFolder());
         if (rootURLs.length == 0) {
@@ -105,8 +141,7 @@ public class ProjectUtil {
         }
         return result;
     }
-    
-    
+
     private static List<FileObject> getFileObjects(URL[] urls) {
         List<FileObject> result = new ArrayList<>();
         for (URL url : urls) {
@@ -119,16 +154,14 @@ public class ProjectUtil {
         }
         return result;
     }
-    
-        public static SourceGroup getFolderSourceGroup(FileObject folder) {
+
+    public static SourceGroup getFolderSourceGroup(FileObject folder) {
         Project project = FileOwnerQuery.getOwner(folder);
         return getFolderSourceGroup(
                 ProjectUtils.getSources(project).getSourceGroups(SOURCES_TYPE_JAVA),
                 folder
         );
     }
-        
-        
 
     /**
      * Gets the {@link SourceGroup} of the given <code>folder</code>.
@@ -151,7 +184,6 @@ public class ProjectUtil {
         return null;
     }
 
-    
     /**
      * Converts the path of the given <code>folder</code> to a package name.
      *
@@ -182,8 +214,7 @@ public class ProjectUtil {
             return "";          //NOI18N
         }
     }
-    
-    
+
     public static SourceGroup findSourceGroupForFile(Project project, FileObject folder) {
         return findSourceGroupForFile(getJavaSourceGroups(project), folder);
     }
