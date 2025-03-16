@@ -35,9 +35,17 @@ public class GenAIModel {
     public static Map<String, GenAIModel> MODELS = new HashMap<>();
 
     static {
-        MODELS.put("gemini-1.5-flash", new GenAIModel(GOOGLE, "gemini-1.5-flash", "A fast and cost-effective model for rapid assessments. Highly recommended.",
+        MODELS.put("gemini-2.0-flash", new GenAIModel(GOOGLE, "gemini-2.0-flash",
+                "Next-generation features, speed, and multimodal generation for a diverse variety of tasks.",
+                0.10, 0.40));
+        MODELS.put("gemini-2.0-flash-lite", new GenAIModel(GOOGLE, "gemini-2.0-flash-lite",
+                "A Gemini 2.0 Flash model optimized for cost efficiency and low latency.",
+                0.05, 0.20));
+        MODELS.put("gemini-1.5-flash", new GenAIModel(GOOGLE, "gemini-1.5-flash",
+                "A fast and cost-effective model for rapid assessments. Highly recommended.",
                 0.075, 0.30));
-        MODELS.put("gemini-1.5-pro", new GenAIModel(GOOGLE, "gemini-1.5-pro", "A professional version of the Gemini model with enhanced capabilities.",
+        MODELS.put("gemini-1.5-pro", new GenAIModel(GOOGLE, "gemini-1.5-pro",
+                "A professional version of the Gemini model with enhanced capabilities.",
                 1.25, 5.00));
 
         MODELS.put("gpt-4o-mini", new GenAIModel(OPEN_AI, "gpt-4o-mini", "Highly recommended for its excellent balance of performance and cost.",
