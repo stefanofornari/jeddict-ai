@@ -30,23 +30,21 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
-import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.BorderFactory;
-import javax.swing.DefaultCellEditor;
 import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import org.openide.util.NbBundle;
 
@@ -54,7 +52,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
     private final AIAssistanceOptionsPanelController controller;
     private DefaultTableModel excludeTableModel;
-    private DefaultTableModel promptModel;
+    private DefaultTableModel customHeadersTableModel;
     private DefaultTableModel promptTableModel;
 
     AIAssistancePanel(AIAssistanceOptionsPanelController controller) {
@@ -1288,6 +1286,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 }
             }
         };
+        
+        addContextMenuToTable(excludeDirTable);
         return excludeTableModel;
     }
 
@@ -1295,7 +1295,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         customHeadersTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
 
         Map<String, String> headerKeyValueMap = preferencesManager.getCustomHeaders();
-        Object[][] headerKeyValueArray = new Object[headerKeyValueMap.size() + 1][2]; // +1 for adding an empty row
+        Object[][] headerKeyValueArray = new Object[headerKeyValueMap.size() + 1][2]; // +1 for empty row
 
         int index = 0;
         for (Map.Entry<String, String> entry : headerKeyValueMap.entrySet()) {
@@ -1306,7 +1306,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         headerKeyValueArray[index][0] = "";
         headerKeyValueArray[index][1] = "";
 
-        promptModel = new DefaultTableModel(
+        customHeadersTableModel = new DefaultTableModel(
                 headerKeyValueArray,
                 new String[]{
                     NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.headerKey.text"),
@@ -1329,14 +1329,49 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             }
         };
 
-        return promptModel;
+        addContextMenuToTable(customHeadersTable);
+        return customHeadersTableModel;
+    }
+
+// Function to add a right-click delete context menu
+    private void addContextMenuToTable(JTable table) {
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem("Delete");
+
+        deleteItem.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow != -1 && selectedRow < table.getRowCount() - 1) { // Prevent deleting the last empty row
+                ((DefaultTableModel) table.getModel()).removeRow(selectedRow);
+            }
+        });
+
+        popupMenu.add(deleteItem);
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                showPopup(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                showPopup(e);
+            }
+
+            private void showPopup(MouseEvent e) {
+                if (e.isPopupTrigger() && table.rowAtPoint(e.getPoint()) >= 0) {
+                    table.setRowSelectionInterval(table.rowAtPoint(e.getPoint()), table.rowAtPoint(e.getPoint())); // Select row
+                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
     }
 
     private Map<String, String> getHeaderTableModelValues() {
         Map<String, String> map = new HashMap<>();
-        for (int row = 0; row < promptModel.getRowCount(); row++) {
-            Object key = promptModel.getValueAt(row, 0);
-            Object value = promptModel.getValueAt(row, 1);
+        for (int row = 0; row < customHeadersTableModel.getRowCount(); row++) {
+            Object key = customHeadersTableModel.getValueAt(row, 0);
+            Object value = customHeadersTableModel.getValueAt(row, 1);
 
             if (key != null && value != null && !key.toString().isEmpty()) {
                 map.put(key.toString(), value.toString());
@@ -1360,7 +1395,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         headerKeyValueArray[index][0] = "";
         headerKeyValueArray[index][1] = "";
 
-        promptModel = new DefaultTableModel(
+        promptTableModel = new DefaultTableModel(
                 headerKeyValueArray,
                 new String[]{
                     NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptName.text"),
@@ -1389,24 +1424,26 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             columnModel.getColumn(0).setPreferredWidth((int) (totalWidth * 0.2));
             columnModel.getColumn(1).setPreferredWidth((int) (totalWidth * 0.8));
         });
-        
-  
+
         // Add double-click listener to open popup for second column
         promptTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                int row = promptTable.rowAtPoint(e.getPoint());
-                int column = promptTable.columnAtPoint(e.getPoint());
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    int row = promptTable.rowAtPoint(e.getPoint());
+                    int column = promptTable.columnAtPoint(e.getPoint());
 
-                if (column == 1 && row >= 0) { // If second column is clicked
-                    Object promptNameObj = promptTable.getModel().getValueAt(row, 0);
-                    String promptName = (promptNameObj != null) ? promptNameObj.toString() : "";
-                    openTextEditorPopup(promptName, row, column);
+                    if (column == 1 && row >= 0) { // If second column is clicked
+                        Object promptNameObj = promptTable.getModel().getValueAt(row, 0);
+                        String promptName = (promptNameObj != null) ? promptNameObj.toString() : "";
+                        openTextEditorPopup(promptName, row, column);
+                    }
                 }
             }
         });
 
-        return promptModel;
+        addContextMenuToTable(promptTable);
+        return promptTableModel;
     }
 
     private void openTextEditorPopup(String promptName, int row, int column) {
@@ -1426,12 +1463,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
     }
 
-    
     private Map<String, String> getPromptModelValues() {
         Map<String, String> map = new HashMap<>();
-        for (int row = 0; row < promptModel.getRowCount(); row++) {
-            Object key = promptModel.getValueAt(row, 0);
-            Object value = promptModel.getValueAt(row, 1);
+        for (int row = 0; row < promptTableModel.getRowCount(); row++) {
+            Object key = promptTableModel.getValueAt(row, 0);
+            Object value = promptTableModel.getValueAt(row, 1);
 
             if (key != null && value != null && !key.toString().isEmpty()) {
                 map.put(key.toString(), value.toString());
@@ -1439,7 +1475,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         }
         return map;
     }
-    
+
     private String getCommaSeparatedValues(DefaultTableModel model) {
         StringBuilder sb = new StringBuilder();
         int rowCount = model.getRowCount();
