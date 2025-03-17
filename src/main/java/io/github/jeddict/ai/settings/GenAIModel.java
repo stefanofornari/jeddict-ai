@@ -48,20 +48,46 @@ public class GenAIModel {
                 "A professional version of the Gemini model with enhanced capabilities.",
                 1.25, 5.00));
 
-        MODELS.put("gpt-4o-mini", new GenAIModel(OPEN_AI, "gpt-4o-mini", "Highly recommended for its excellent balance of performance and cost.",
+
+               // Existing models
+        MODELS.put("gpt-4o-mini", new GenAIModel(OPEN_AI, "gpt-4o-mini",
+                "Highly recommended for its excellent balance of performance and cost.",
                 0.150, 0.600));
-        MODELS.put("o1-mini", new GenAIModel(OPEN_AI, "o1-mini", "A compact model for diverse tasks.",
+
+        MODELS.put("o1-mini", new GenAIModel(OPEN_AI, "o1-mini",
+                "A compact model for diverse tasks.",
                 3.00, 12.00));
-        MODELS.put("o1-preview", new GenAIModel(OPEN_AI, "o1-preview", "A preview version of the O1 model, designed for early testing and feedback.",
+
+        MODELS.put("o1-preview", new GenAIModel(OPEN_AI, "o1-preview",
+                "A preview version of the O1 model, designed for early testing and feedback.",
                 0.300, 1.200));
 
-        MODELS.put("chatgpt-4o-latest", new GenAIModel(OPEN_AI, "chatgpt-4o-latest", "Latest ChatGPT model offering powerful capabilities.",
+        MODELS.put("chatgpt-4o-latest", new GenAIModel(OPEN_AI, "chatgpt-4o-latest",
+                "Latest ChatGPT model offering powerful capabilities.",
                 5.00, 15.00));
-        MODELS.put("gpt-4o", new GenAIModel(OPEN_AI, "gpt-4o", "The premium choice for complex tasks requiring deep analysis and understanding.",
+
+        MODELS.put("gpt-4o", new GenAIModel(OPEN_AI, "gpt-4o",
+                "The premium choice for complex tasks requiring deep analysis and understanding.",
                 2.50, 10.00));
+
+        // Newly added models
+        MODELS.put("o3-mini", new GenAIModel(OPEN_AI, "o3-mini",
+                "A compact and efficient model designed for lightweight AI tasks.",
+                0.250, 1.000));
+
+        MODELS.put("o1", new GenAIModel(OPEN_AI, "o1",
+                "A powerful model for diverse applications with improved efficiency.",
+                1.10, 4.40));
+
+        MODELS.put("gpt-4.5", new GenAIModel(OPEN_AI, "gpt-4.5",
+                "An advanced model with enhanced reasoning and generative abilities.",
+                3.00, 12.00));  // Hypothetical pricing, update when confirmed.
 
         MODELS.put("claude-3-5-sonnet-20240620", new GenAIModel(ANTHROPIC, "claude-3-5-sonnet-20240620", "A sonnet model offering refined conversational capabilities.", 3.00, 15.00));
         MODELS.put("claude-3-haiku-20240307", new GenAIModel(ANTHROPIC, "claude-3-haiku-20240307", "A haiku model designed for concise and creative expression.", 0.25, 1.25));
+        MODELS.put("claude-3-5-sonnet-20241022", new GenAIModel(ANTHROPIC, "claude-3-5-sonnet-20241022", "An upgraded sonnet model with enhanced reasoning and computer use capabilities.", 3.00, 15.00));
+        MODELS.put("claude-3-5-haiku-20241022", new GenAIModel(ANTHROPIC, "claude-3-5-haiku-20241022", "An upgraded haiku model with improved intelligence and performance.", 0.50, 2.50));
+        MODELS.put("claude-3-7-sonnet-20250224", new GenAIModel(ANTHROPIC, "claude-3-7-sonnet-20250224", "A hybrid reasoning model excelling in complex problem-solving, especially in math and coding.", 3.00, 15.00));
 
         MODELS.put("open-codestral-mamba", new GenAIModel(MISTRAL, "open-codestral-mamba", "The first Mamba 2 open-source model, ideal for diverse tasks.", 0.0, 0.0));
         MODELS.put("pixtral-12b", new GenAIModel(MISTRAL, "pixtral-12b", "Version-capable small model.", 0.15, 0.15));
@@ -75,6 +101,9 @@ public class GenAIModel {
         MODELS.put("mistral-embed", new GenAIModel(MISTRAL, "mistral-embed", "State-of-the-art semantic model for extracting text representations.", 0.10, 0.00)); // No output price provided
         MODELS.put("ministral-3b-latest", new GenAIModel(MISTRAL, "ministral-3b-latest", "Most efficient edge model.", 0.04, 0.04));
         MODELS.put("ministral-8b-latest", new GenAIModel(MISTRAL, "ministral-8b-latest", "Powerful model for on-device use cases.", 0.10, 0.10));
+        MODELS.put("mistral-nemo-latest", new GenAIModel(MISTRAL, "mistral-nemo-latest", "A state-of-the-art 12B model with 128k context length, built in collaboration with NVIDIA.", 1.50, 4.50));
+        MODELS.put("pixtral-large-latest", new GenAIModel(MISTRAL, "pixtral-large-latest", "Frontier-class multimodal model for image and text understanding.", 2.50, 7.50));
+        MODELS.put("mistral-saba-latest", new GenAIModel(MISTRAL, "mistral-saba-latest", "Efficient model optimized for languages from the Middle East and South Asia.", 1.00, 3.00));
 
         MODELS.put("meta-llama/Llama-3.2-3B-Instruct", new GenAIModel(DEEPINFRA, "meta-llama/Llama-3.2-3B-Instruct", "A 3B instruct model by Meta for instructional tasks.", 0.15, 0.45));
         MODELS.put("Qwen/Qwen2.5-72B-Instruct", new GenAIModel(DEEPINFRA, "Qwen/Qwen2.5-72B-Instruct", "A large instruct model for various applications.", 0.20, 0.50));
