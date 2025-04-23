@@ -17,20 +17,40 @@ package io.github.jeddict.ai.util;
 
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
+import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.ImportTree;
+import com.sun.source.tree.LiteralTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.util.TreePathScanner;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import javax.lang.model.element.Name;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import org.json.JSONArray;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.modules.editor.indent.api.Reformat;
+import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.Exceptions;
 
 /**
@@ -127,4 +147,285 @@ public class SourceUtil {
     public static String removeJavadoc(String content) {
         return content.replaceAll("/\\*{1,2}[\\s\\S]*?\\*/|//.*|^\\s*///.*$", "");
     }
+    
+    public static void updateMethodInSource(FileObject fileObject, String sourceMethodSignature, String methodContent) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        try {
+            javaSource.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitMethod(MethodTree methodTree, Void v) {
+                        Name name = methodTree.getName();
+                        String targetMethodSignature = name.toString() + "("
+                                + methodTree.getParameters().stream()
+                                        .map(param -> param.getType().toString())
+                                        .collect(Collectors.joining(",")) + ")";
+
+                        // Compare the signature with the method being updated
+                        if (targetMethodSignature.equals(sourceMethodSignature)) {
+                            long startPos = copy.getTrees().getSourcePositions().getStartPosition(copy.getCompilationUnit(), methodTree);
+                            long endPos = copy.getTrees().getSourcePositions().getEndPosition(copy.getCompilationUnit(), methodTree);
+
+                            try {
+                                if (copy.getDocument() == null) {
+                                    openFileInEditor(fileObject);
+                                }
+                                insertAndReformat(copy.getDocument(), methodContent, (int) startPos, (int) endPos - (int) startPos);
+                            } catch (IOException ex) {
+                                Exceptions.printStackTrace(ex);
+                            }
+                        }
+                        return super.visitMethod(methodTree, v);
+                    }
+                }.scan(copy.getCompilationUnit(), null);
+
+            }).commit();
+        } catch (IOException e) {
+            System.out.println("Error updating method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
+        }
+    }
+
+    public static void updateFullSourceInFile(FileObject fileObject, String newSourceContent) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        try {
+            javaSource.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                Document document = copy.getDocument();
+
+                try {
+                    // Open the file in the editor if it is not already open
+                    if (document == null) {
+                        openFileInEditor(fileObject);
+                        document = copy.getDocument(); // Re-fetch the document after opening
+                    }
+
+                    // Replace the entire document content with the new source content
+                    document.remove(0, document.getLength());
+                    document.insertString(0, newSourceContent, null);
+
+                } catch (BadLocationException | IOException ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+            }).commit();
+        } catch (IOException e) {
+            System.out.println("Error updating source in file " + fileObject.getName() + ": " + e.getMessage());
+        }
+    }
+
+    public static String findMethodSourceInFileObject(FileObject fileObject, String sourceMethodSignature) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        StringBuilder methodSource = new StringBuilder();
+
+        try {
+            javaSource.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitMethod(MethodTree methodTree, Void v) {
+                        Name name = methodTree.getName();
+                        String targetMethodSignature = name.toString() + "("
+                                + methodTree.getParameters().stream()
+                                        .map(param -> param.getType().toString())
+                                        .collect(Collectors.joining(",")) + ")";
+
+                        // Check if the signatures match
+                        if (targetMethodSignature.equals(sourceMethodSignature)) {
+                            // Construct the method source code
+                            methodSource.append(methodTree.toString());
+                        }
+                        return super.visitMethod(methodTree, v);
+                    }
+                }.scan(copy.getCompilationUnit(), null);
+            }).commit();
+        } catch (IOException e) {
+            System.out.println("Error finding method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
+        }
+
+        if (methodSource.isEmpty()) {
+            try {
+                javaSource.runModificationTask(copy -> {
+                    copy.toPhase(JavaSource.Phase.RESOLVED);
+                    new TreePathScanner<Void, Void>() {
+                        @Override
+                        public Void visitMethod(MethodTree methodTree, Void v) {
+                            Name name = methodTree.getName();
+                            String targetMethodSignature = name.toString();
+
+                            // Check if the signatures match
+                            if (targetMethodSignature.equals(sourceMethodSignature)) {
+                                // Construct the method source code
+                                methodSource.append(methodTree.toString());
+                            }
+                            return super.visitMethod(methodTree, v);
+                        }
+                    }.scan(copy.getCompilationUnit(), null);
+                }).commit();
+            } catch (IOException e) {
+                System.out.println("Error finding method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
+            }
+        }
+        return methodSource.toString(); // Return the method source code
+    }
+
+    
+    public static void openFileInEditor(FileObject fileObject) {
+        try {
+            // Get the DataObject associated with the FileObject
+            DataObject dataObject = DataObject.find(fileObject);
+
+            // Lookup for the EditorCookie from the DataObject
+            EditorCookie editorCookie = dataObject.getLookup().lookup(EditorCookie.class);
+
+            if (editorCookie != null) {
+                // Open the file in the editor
+                editorCookie.open();
+                StatusDisplayer.getDefault().setStatusText("File opened in editor: " + fileObject.getNameExt());
+            } else {
+                StatusDisplayer.getDefault().setStatusText("Failed to find EditorCookie for file: " + fileObject.getNameExt());
+            }
+        } catch (DataObjectNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
+        try {
+            if (lengthToRemove > 0) {
+                document.remove(startPosition, lengthToRemove);
+            }
+            document.insertString(startPosition, content, null);
+            Reformat reformat = Reformat.get(document);
+            reformat.lock();
+            try {
+                reformat.reformat(startPosition, startPosition + content.length());
+            } finally {
+                reformat.unlock();
+            }
+        } catch (BadLocationException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    
+    public static void updateMethod(FileObject javaFile, String methodSignature, String newMethodText) {
+        try {
+            JavaSource javaSource = JavaSource.forFileObject(javaFile);
+            javaSource.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                
+                CompilationUnitTree cut = copy.getCompilationUnit();
+                TreeMaker maker = copy.getTreeMaker();
+                ClassTree classTree = (ClassTree) cut.getTypeDecls().get(0); // First class
+                
+                MethodTree newMethodTree = parseMethodTree(copy, methodSignature, newMethodText);
+                if (newMethodTree == null) {
+                    return;
+                }
+                
+                for (Tree member : classTree.getMembers()) {
+                    if (member instanceof MethodTree method) {
+                        String sig = method.getName() + method.getParameters().stream()
+                                .map(p -> p.getType().toString())
+                                .collect(java.util.stream.Collectors.joining(",", "(", ")"));
+                        if (sig.equals(methodSignature)) {
+                            copy.rewrite(method, newMethodTree);
+                            return;
+                        }
+                    }
+                }
+            }).commit();
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    private static MethodTree parseMethodTree(WorkingCopy copy, String expectedSignature, String methodText) throws IOException {
+        String dummyClass = "public class Dummy { " + methodText + " }";
+        FileObject tempFile = org.openide.filesystems.FileUtil.createMemoryFileSystem().getRoot().createData("Dummy.java");
+        try (OutputStream os = tempFile.getOutputStream(); Writer writer = new OutputStreamWriter(os)) {
+            writer.write(dummyClass);
+        }
+
+        JavaSource source = JavaSource.forFileObject(tempFile);
+        final MethodTree[] result = new MethodTree[1];
+
+        source.runUserActionTask(controller -> {
+            controller.toPhase(JavaSource.Phase.RESOLVED);
+            CompilationUnitTree cut = controller.getCompilationUnit();
+            for (Tree typeDecl : cut.getTypeDecls()) {
+                if (typeDecl instanceof ClassTree classTree) {
+                    for (Tree member : classTree.getMembers()) {
+                        if (member instanceof MethodTree method) {
+                            String sig = method.getName() + method.getParameters().stream()
+                                    .map(p -> p.getType().toString())
+                                    .collect(java.util.stream.Collectors.joining(",", "(", ")"));
+                            
+                            if (sig.equals(expectedSignature)) {
+                                result[0] = method;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }, true);
+        tempFile.delete();
+
+        if (result[0] == null) {
+            return null;
+        }
+
+        TreeMaker maker = copy.getTreeMaker();
+        MethodTree mt = result[0];
+
+        // Correcting annotations
+        List<? extends AnnotationTree> correctedAnnotations = mt.getModifiers().getAnnotations().stream()
+                .map(annotation -> {
+                    if (annotation.getArguments() != null && !annotation.getArguments().isEmpty()) {
+                        List<ExpressionTree> args = new ArrayList<>();
+                        for (ExpressionTree argument : annotation.getArguments()) {
+                            if (argument instanceof AssignmentTree assignment) {
+                                if ("value".equals(assignment.getVariable().toString())) {
+                                    ExpressionTree valueExpr = assignment.getExpression();
+                                    ExpressionTree safeExpr = valueExpr;
+
+                                    if (valueExpr instanceof LiteralTree literal) {
+                                        Object val = literal.getValue();
+                                        // Unquote if needed, though usually it's already clean
+                                        if (val instanceof String strVal) {
+                                            safeExpr = maker.Literal(strVal);
+                                        }
+                                    }
+
+                                    args.add(safeExpr);
+                                } else {
+                                    args.add(argument);
+                                }
+
+                            } else {
+                                args.add(argument);
+                            }
+                        }
+                        return maker.Annotation(annotation.getAnnotationType(), args);
+                    }
+                    return annotation;
+                }).collect(Collectors.toList());
+
+        // Update the method's modifiers with the corrected annotations
+        ModifiersTree updatedModifiers = maker.Modifiers(
+                mt.getModifiers().getFlags(), correctedAnnotations);
+
+        return maker.Method(
+                updatedModifiers,
+                mt.getName(),
+                mt.getReturnType(),
+                mt.getTypeParameters(),
+                mt.getParameters(),
+                mt.getThrows(),
+                mt.getBody(),
+                (ExpressionTree) mt.getDefaultValue()
+        );
+    }
+
 }

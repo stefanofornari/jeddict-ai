@@ -58,6 +58,7 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import io.github.jeddict.ai.util.SourceUtil;
 import java.awt.Dimension;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -551,9 +552,9 @@ public class AssistantTopComponent extends TopComponent {
             updateMethodItem.addActionListener(e -> {
                 SwingUtilities.invokeLater(() -> {
                     if (signature.equals(fileObject.getName())) {
-                        updateFullSourceInFile(fileObject, cachedMethodSignatures.get(signature));
+                        SourceUtil.updateFullSourceInFile(fileObject, cachedMethodSignatures.get(signature));
                     } else {
-                        updateMethodInSource(fileObject, signature, cachedMethodSignatures.get(signature));
+                        SourceUtil.updateMethodInSource(fileObject, signature, cachedMethodSignatures.get(signature));
                     }
                 });
             });
@@ -577,15 +578,14 @@ public class AssistantTopComponent extends TopComponent {
             if (signature.equals(fileObject.getName())) {
                 origin = fileObject.asText();
             } else {
-                origin = findMethodSourceInFileObject(fileObject, signature);
+                origin = SourceUtil.findMethodSourceInFileObject(fileObject, signature);
             }
             JPanel editorParent = (JPanel) editorPane.getParent();
             JPanel diffPanel = new JPanel();
             diffPanel.setLayout(new BorderLayout());
+            FileObject source;
             if (classSignature) {
-                FileObject source = createTempFileObject(fileObject.getName(), cachedMethodSignatures.get(signature));
-                SingleDiffPanel sdp = new SingleDiffPanel(source, fileObject, null);
-                diffPanel.add(sdp, BorderLayout.CENTER);
+                source = createTempFileObject(fileObject.getName(), cachedMethodSignatures.get(signature));
             } else {
 //                            StreamSource ss1 = StreamSource.createSource(
 //                                    "Source " + signature,
@@ -601,11 +601,11 @@ public class AssistantTopComponent extends TopComponent {
 //                            );
 //                            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
 //                            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
-                FileObject source = createTempFileObject(fileObject.getName(), fileObject.asText());
-                MethodUpdater.updateMethod(source, signature, cachedMethodSignatures.get(signature));
-                SingleDiffPanel sdp = new SingleDiffPanel(source, fileObject, null);
-                diffPanel.add(sdp, BorderLayout.CENTER);
+                source = createTempFileObject(fileObject.getName(), fileObject.asText());
+                SourceUtil.updateMethod(source, signature, cachedMethodSignatures.get(signature));
             }
+            SingleDiffPanel sdp = new SingleDiffPanel(source, fileObject, null);
+            diffPanel.add(sdp, BorderLayout.CENTER);
 
             JButton closeButton = new JButton("Hide Diff View");
             closeButton.setPreferredSize(new Dimension(30, 30));
@@ -720,164 +720,6 @@ public class AssistantTopComponent extends TopComponent {
         }
 
         return methodContent.toString();
-    }
-
-    private void updateMethodInSource(FileObject fileObject, String sourceMethodSignature, String methodContent) {
-        JavaSource javaSource = JavaSource.forFileObject(fileObject);
-        try {
-            javaSource.runModificationTask(copy -> {
-                copy.toPhase(JavaSource.Phase.RESOLVED);
-                new TreePathScanner<Void, Void>() {
-                    @Override
-                    public Void visitMethod(MethodTree methodTree, Void v) {
-                        Name name = methodTree.getName();
-                        String targetMethodSignature = name.toString() + "("
-                                + methodTree.getParameters().stream()
-                                        .map(param -> param.getType().toString())
-                                        .collect(Collectors.joining(",")) + ")";
-
-                        // Compare the signature with the method being updated
-                        if (targetMethodSignature.equals(sourceMethodSignature)) {
-                            long startPos = copy.getTrees().getSourcePositions().getStartPosition(copy.getCompilationUnit(), methodTree);
-                            long endPos = copy.getTrees().getSourcePositions().getEndPosition(copy.getCompilationUnit(), methodTree);
-
-                            try {
-                                if (copy.getDocument() == null) {
-                                    openFileInEditor(fileObject);
-                                }
-                                insertAndReformat(copy.getDocument(), methodContent, (int) startPos, (int) endPos - (int) startPos);
-                            } catch (IOException ex) {
-                                Exceptions.printStackTrace(ex);
-                            }
-                        }
-                        return super.visitMethod(methodTree, v);
-                    }
-                }.scan(copy.getCompilationUnit(), null);
-
-            }).commit();
-        } catch (IOException e) {
-            System.out.println("Error updating method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
-        }
-    }
-
-    private void updateFullSourceInFile(FileObject fileObject, String newSourceContent) {
-        JavaSource javaSource = JavaSource.forFileObject(fileObject);
-        try {
-            javaSource.runModificationTask(copy -> {
-                copy.toPhase(JavaSource.Phase.RESOLVED);
-                Document document = copy.getDocument();
-
-                try {
-                    // Open the file in the editor if it is not already open
-                    if (document == null) {
-                        openFileInEditor(fileObject);
-                        document = copy.getDocument(); // Re-fetch the document after opening
-                    }
-
-                    // Replace the entire document content with the new source content
-                    document.remove(0, document.getLength());
-                    document.insertString(0, newSourceContent, null);
-
-                } catch (BadLocationException | IOException ex) {
-                    Exceptions.printStackTrace(ex);
-                }
-            }).commit();
-        } catch (IOException e) {
-            System.out.println("Error updating source in file " + fileObject.getName() + ": " + e.getMessage());
-        }
-    }
-
-    private String findMethodSourceInFileObject(FileObject fileObject, String sourceMethodSignature) {
-        JavaSource javaSource = JavaSource.forFileObject(fileObject);
-        StringBuilder methodSource = new StringBuilder();
-
-        try {
-            javaSource.runModificationTask(copy -> {
-                copy.toPhase(JavaSource.Phase.RESOLVED);
-                new TreePathScanner<Void, Void>() {
-                    @Override
-                    public Void visitMethod(MethodTree methodTree, Void v) {
-                        Name name = methodTree.getName();
-                        String targetMethodSignature = name.toString() + "("
-                                + methodTree.getParameters().stream()
-                                        .map(param -> param.getType().toString())
-                                        .collect(Collectors.joining(",")) + ")";
-
-                        // Check if the signatures match
-                        if (targetMethodSignature.equals(sourceMethodSignature)) {
-                            // Construct the method source code
-                            methodSource.append(methodTree.toString());
-                        }
-                        return super.visitMethod(methodTree, v);
-                    }
-                }.scan(copy.getCompilationUnit(), null);
-            }).commit();
-        } catch (IOException e) {
-            System.out.println("Error finding method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
-        }
-
-        if (methodSource.isEmpty()) {
-            try {
-                javaSource.runModificationTask(copy -> {
-                    copy.toPhase(JavaSource.Phase.RESOLVED);
-                    new TreePathScanner<Void, Void>() {
-                        @Override
-                        public Void visitMethod(MethodTree methodTree, Void v) {
-                            Name name = methodTree.getName();
-                            String targetMethodSignature = name.toString();
-
-                            // Check if the signatures match
-                            if (targetMethodSignature.equals(sourceMethodSignature)) {
-                                // Construct the method source code
-                                methodSource.append(methodTree.toString());
-                            }
-                            return super.visitMethod(methodTree, v);
-                        }
-                    }.scan(copy.getCompilationUnit(), null);
-                }).commit();
-            } catch (IOException e) {
-                System.out.println("Error finding method " + sourceMethodSignature + " in file " + fileObject.getName() + ": " + e.getMessage());
-            }
-        }
-        return methodSource.toString(); // Return the method source code
-    }
-
-    public void openFileInEditor(FileObject fileObject) {
-        try {
-            // Get the DataObject associated with the FileObject
-            DataObject dataObject = DataObject.find(fileObject);
-
-            // Lookup for the EditorCookie from the DataObject
-            EditorCookie editorCookie = dataObject.getLookup().lookup(EditorCookie.class);
-
-            if (editorCookie != null) {
-                // Open the file in the editor
-                editorCookie.open();
-                StatusDisplayer.getDefault().setStatusText("File opened in editor: " + fileObject.getNameExt());
-            } else {
-                StatusDisplayer.getDefault().setStatusText("Failed to find EditorCookie for file: " + fileObject.getNameExt());
-            }
-        } catch (DataObjectNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
-        try {
-            if (lengthToRemove > 0) {
-                document.remove(startPosition, lengthToRemove);
-            }
-            document.insertString(startPosition, content, null);
-            Reformat reformat = Reformat.get(document);
-            reformat.lock();
-            try {
-                reformat.reformat(startPosition, startPosition + content.length());
-            } finally {
-                reformat.unlock();
-            }
-        } catch (BadLocationException ex) {
-            Exceptions.printStackTrace(ex);
-        }
     }
 
     public int getAllEditorCount() {
