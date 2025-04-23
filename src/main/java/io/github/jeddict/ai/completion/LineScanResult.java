@@ -36,10 +36,18 @@ public class LineScanResult {
         return fullText;
     }
 
+    /**
+     * Returns the prompt key
+     * @return 
+     */
     public String getFirstWord() {
         return firstWord;
     }
 
+    /**
+     * Returns the prompt extended description
+     * @return 
+     */
     public String getSecondWord() {
         return secondWord;
     }

@@ -53,8 +53,11 @@ import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
 import java.awt.Dimension;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -154,7 +157,6 @@ public class AssistantTopComponent extends TopComponent {
     public JEditorPane createPane() {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setEditable(false);
-//        editorPane.setBackground(Color.YELLOW);
         parentPanel.add(editorPane);
         return editorPane;
     }
@@ -436,7 +438,7 @@ public class AssistantTopComponent extends TopComponent {
                                 }
                                 return methodSignatures;
                             });
-                            
+
                             Map<String, String> cachedMethods = editorMethodCache.computeIfAbsent(editorPane, ep -> {
                                 Map<String, String> methodSignatures = new HashMap<>();
                                 try {
@@ -490,7 +492,7 @@ public class AssistantTopComponent extends TopComponent {
                 System.out.println("Error parsing file: " + fileObject.getName() + " - " + e.getMessage());
             }
         }
-        
+
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
                 if (menuItems.get(editorPane) == null) {
@@ -512,8 +514,8 @@ public class AssistantTopComponent extends TopComponent {
                                     javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
                                 }
                             } else {
-                                    javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
-                                }
+                                javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
+                            }
                         });
                     });
                     menuItems.get(editorPane).add(diffMethodItem);
@@ -568,62 +570,64 @@ public class AssistantTopComponent extends TopComponent {
         }
         return false;
     }
-    
-    
+
     private void diffAction(boolean classSignature, FileObject fileObject, String signature, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
         try {
-                        String origin;
-                        if (signature.equals(fileObject.getName())) {
-                            origin = fileObject.asText();
-                        } else {
-                            origin = findMethodSourceInFileObject(fileObject, signature);
-                        }
-                        JPanel editorParent = (JPanel) editorPane.getParent();
-                        JPanel diffPanel = new JPanel();
-                        diffPanel.setLayout(new BorderLayout());
+            String origin;
+            if (signature.equals(fileObject.getName())) {
+                origin = fileObject.asText();
+            } else {
+                origin = findMethodSourceInFileObject(fileObject, signature);
+            }
+            JPanel editorParent = (JPanel) editorPane.getParent();
+            JPanel diffPanel = new JPanel();
+            diffPanel.setLayout(new BorderLayout());
+            if (classSignature) {
+                FileObject source = createTempFileObject(fileObject.getName(), cachedMethodSignatures.get(signature));
+                SingleDiffPanel sdp = new SingleDiffPanel(source, fileObject, null);
+                diffPanel.add(sdp, BorderLayout.CENTER);
+            } else {
+//                            StreamSource ss1 = StreamSource.createSource(
+//                                    "Source " + signature,
+//                                    fileObject.getNameExt() + (classSignature ? "" : ("#" + signature)),
+//                                    "text/java",
+//                                    new StringReader(origin.trim())
+//                            );
+//                            StreamSource ss2 = StreamSource.createSource(
+//                                    "Target " + signature,
+//                                    "AI Generated " + signature,
+//                                    "text/java",
+//                                    new StringReader(cachedMethodSignatures.get(signature))
+//                            );
+//                            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
+//                            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
+                FileObject source = createTempFileObject(fileObject.getName(), fileObject.asText());
+                MethodUpdater.updateMethod(source, signature, cachedMethodSignatures.get(signature));
+                SingleDiffPanel sdp = new SingleDiffPanel(source, fileObject, null);
+                diffPanel.add(sdp, BorderLayout.CENTER);
+            }
 
-                        if (classSignature) {
-                            SingleDiffPanel sdp = new SingleDiffPanel(createTempFileObject(fileObject.getName(), cachedMethodSignatures.get(signature)), fileObject, null);
-                            diffPanel.add(sdp, BorderLayout.CENTER);
-                        } else {
-                            StreamSource ss1 = StreamSource.createSource(
-                                    "Source " + signature,
-                                    fileObject.getNameExt() + (classSignature ? "" : ("#" + signature)),
-                                    "text/java",
-                                    new StringReader(origin.trim())
-                            );
-                            StreamSource ss2 = StreamSource.createSource(
-                                    "Target " + signature,
-                                    "AI Generated " + signature,
-                                    "text/java",
-                                    new StringReader(cachedMethodSignatures.get(signature))
-                            );
-                            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
-                            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
-                        }
+            JButton closeButton = new JButton("Hide Diff View");
+            closeButton.setPreferredSize(new Dimension(30, 30));
+            closeButton.setContentAreaFilled(false);
 
-                        JButton closeButton = new JButton("Hide Diff View");
-                        closeButton.setPreferredSize(new Dimension(30, 30));
-                        closeButton.setContentAreaFilled(false);
-
-                        closeButton.addActionListener(e1 -> {
-                            diffPanel.setVisible(false);
-                            editorPane.setVisible(true);
-                            editorParent.revalidate();
-                            editorParent.repaint();
-                        });
-                        diffPanel.add(closeButton, BorderLayout.NORTH);
-                        int index = editorParent.getComponentZOrder(editorPane);
-                        editorParent.add(diffPanel, index + 1);
-                        editorPane.setVisible(false);
-                        editorParent.revalidate();
-                        editorParent.repaint();
-                    } catch (IOException ex) {
-                        Exceptions.printStackTrace(ex);
-                    }
+            closeButton.addActionListener(e1 -> {
+                diffPanel.setVisible(false);
+                editorPane.setVisible(true);
+                editorParent.revalidate();
+                editorParent.repaint();
+            });
+            diffPanel.add(closeButton, BorderLayout.NORTH);
+            int index = editorParent.getComponentZOrder(editorPane);
+            editorParent.add(diffPanel, index + 1);
+            editorPane.setVisible(false);
+            editorParent.revalidate();
+            editorParent.repaint();
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
     }
 
-    
     private void diffActionWithSelected(String origin, FileObject fileObject, JEditorPane editorPane) {
         try {
             JPanel editorParent = (JPanel) editorPane.getParent();
@@ -667,15 +671,57 @@ public class AssistantTopComponent extends TopComponent {
     }
 
     public FileObject createTempFileObject(String name, String content) throws IOException {
-        File tempFile = File.createTempFile("GenAI-"+name, ".java");
+        File tempFile = File.createTempFile("GenAI-" + name, ".java");
         tempFile.deleteOnExit();
         try (FileWriter writer = new FileWriter(tempFile)) {
             writer.write(content);
         }
+        tempFile = FileUtil.normalizeFile(tempFile);
         FileObject fileObject = FileUtil.toFileObject(tempFile);
         return fileObject;
     }
-    
+
+    private String getMethodContentFromSource(FileObject fileObject, String sourceMethodSignature) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        final StringBuilder methodContent = new StringBuilder();
+
+        try {
+            javaSource.runUserActionTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                CompilationUnitTree cu = copy.getCompilationUnit();
+                Trees trees = copy.getTrees();
+                SourcePositions sourcePositions = trees.getSourcePositions();
+
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitMethod(MethodTree methodTree, Void v) {
+                        String currentSignature = methodTree.getName().toString() + "("
+                                + methodTree.getParameters().stream()
+                                        .map(param -> param.getType().toString())
+                                        .collect(Collectors.joining(",")) + ")";
+
+                        if (currentSignature.equals(sourceMethodSignature)) {
+                            long start = sourcePositions.getStartPosition(cu, methodTree);
+                            long end = sourcePositions.getEndPosition(cu, methodTree);
+
+                            try {
+                                String fullText = copy.getText();
+                                methodContent.append(fullText.substring((int) start, (int) end));
+                            } catch (Exception e) {
+                                Exceptions.printStackTrace(e);
+                            }
+                        }
+                        return super.visitMethod(methodTree, v);
+                    }
+                }.scan(cu, null);
+            }, true);
+        } catch (IOException e) {
+            System.out.println("Error retrieving method " + sourceMethodSignature + " from file " + fileObject.getName() + ": " + e.getMessage());
+        }
+
+        return methodContent.toString();
+    }
+
     private void updateMethodInSource(FileObject fileObject, String sourceMethodSignature, String methodContent) {
         JavaSource javaSource = JavaSource.forFileObject(fileObject);
         try {
@@ -850,79 +896,17 @@ public class AssistantTopComponent extends TopComponent {
         }
         htmlEditorKit = new HTMLEditorKit();
         StyleSheet styleSheet = htmlEditorKit.getStyleSheet();
-        styleSheet.addRule("html { font-family: sans-serif; line-height: 1.15; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }");
-        styleSheet.addRule("article, aside, figcaption, figure, footer, header, hgroup, main, nav, section { display: block; }");
-        styleSheet.addRule("body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; text-align: left;}");
-        styleSheet.addRule("hr { box-sizing: content-box; height: 0; overflow: visible; }");
-        styleSheet.addRule("h1, h2, h3, h4, h5, h6 { margin-top: 0; margin-bottom: 0.5rem; }");
-        styleSheet.addRule("p { margin-top: 0; margin-bottom: 1rem; }");
-        styleSheet.addRule("abbr[title], abbr[data-original-title] { text-decoration: underline; -webkit-text-decoration: underline dotted; text-decoration: underline dotted; cursor: help; border-bottom: 0; -webkit-text-decoration-skip-ink: none; text-decoration-skip-ink: none; }");
-        styleSheet.addRule("address { margin-bottom: 1rem; font-style: normal; line-height: inherit; }");
-        styleSheet.addRule("ol, ul, dl { margin-top: 0; margin-bottom: 1rem; }");
-        styleSheet.addRule("ol ol, ul ul, ol ul, ul ol { margin-bottom: 0; }");
-        styleSheet.addRule("dt { font-weight: 700; }");
-        styleSheet.addRule("dd { margin-bottom: .5rem; margin-left: 0; }");
-        styleSheet.addRule("blockquote { margin: 0 0 1rem; }");
-        styleSheet.addRule("b, strong { font-weight: bolder; }");
-        styleSheet.addRule("small { font-size: 80%; }");
-        styleSheet.addRule("sub, sup { position: relative; font-size: 75%; line-height: 0; vertical-align: baseline; }");
-        styleSheet.addRule("sub { bottom: -.25em; }");
-        styleSheet.addRule("sup { top: -.5em; }");
-        styleSheet.addRule("a { color: #007bff; text-decoration: none; background-color: transparent; }");
-        styleSheet.addRule("a:hover { color: #0056b3; text-decoration: underline; }");
-        styleSheet.addRule("a:not([href]) { color: inherit; text-decoration: none; }");
-        styleSheet.addRule("a:not([href]):hover { color: inherit; text-decoration: none; }");
-        styleSheet.addRule("pre, code, kbd, samp { font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 1em; }");
-        styleSheet.addRule("pre { margin-top: 0; margin-bottom: 1rem; overflow: auto; }");
-        styleSheet.addRule("figure { margin: 0 0 1rem; }");
-        styleSheet.addRule("img { vertical-align: middle; border-style: none; }");
-        styleSheet.addRule("svg { overflow: hidden; vertical-align: middle; }");
-        styleSheet.addRule("table { border-collapse: collapse; }");
-        styleSheet.addRule("caption { padding-top: 0.75rem; padding-bottom: 0.75rem; color: #6c757d; text-align: left; caption-side: bottom; }");
-        styleSheet.addRule("th { text-align: inherit; }");
-        styleSheet.addRule("label { display: inline-block; margin-bottom: 0.5rem; }");
-        styleSheet.addRule("button { border-radius: 0; }");
-        styleSheet.addRule("button:focus { outline: 1px dotted; outline: 5px auto -webkit-focus-ring-color; }");
-        styleSheet.addRule("input, button, select, optgroup, textarea { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }");
-        styleSheet.addRule("button, input { overflow: visible; }");
-        styleSheet.addRule("button, select { text-transform: none; }");
-        styleSheet.addRule("select { word-wrap: normal; }");
-        styleSheet.addRule("button, [type='button'], [type='reset'], [type='submit'] { -webkit-appearance: button; }");
-        styleSheet.addRule("button:not(:disabled), [type='button']:not(:disabled), [type='reset']:not(:disabled), [type='submit']:not(:disabled) { cursor: pointer; }");
-        styleSheet.addRule("button::-moz-focus-inner, [type='button']::-moz-focus-inner, [type='reset']::-moz-focus-inner, [type='submit']::-moz-focus-inner { padding: 0; border-style: none; }");
-        styleSheet.addRule("input[type='radio'], input[type='checkbox'] { box-sizing: border-box; padding: 0; }");
-        styleSheet.addRule("input[type='date'], input[type='time'], input[type='datetime-local'], input[type='month'] { -webkit-appearance: listbox; }");
-        styleSheet.addRule("textarea { overflow: auto; resize: vertical; }");
-        styleSheet.addRule("fieldset { min-width: 0; padding: 0; margin: 0; border: 0; }");
-        styleSheet.addRule("legend { display: block; width: 100%; max-width: 100%; padding: 0; margin-bottom: .5rem; font-size: 1.5rem; line-height: inherit; color: inherit; white-space: normal; }");
-        styleSheet.addRule("progress { vertical-align: baseline; }");
-        styleSheet.addRule("[type='number']::-webkit-inner-spin-button, [type='number']::-webkit-outer-spin-button { height: auto; }");
-        styleSheet.addRule("[type='search'] { outline-offset: -2px; -webkit-appearance: none; }");
-        styleSheet.addRule("[type='search']::-webkit-search-decoration { -webkit-appearance: none; }");
-        styleSheet.addRule("::-webkit-file-upload-button { font: inherit; -webkit-appearance: button; }");
-        styleSheet.addRule("output { display: inline-block; }");
-        styleSheet.addRule("summary { display: list-item; cursor: pointer; }");
-        styleSheet.addRule("template { display: none; }");
-        styleSheet.addRule("[hidden] { display: none !important; }");
-        styleSheet.addRule("h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 { margin-bottom: 0.5rem; font-weight: 500; line-height: 1.2; }");
-        styleSheet.addRule("h1, .h1 { font-size: 2.5rem; }");
-        styleSheet.addRule("h2, .h2 { font-size: 2rem; }");
-        styleSheet.addRule("h3, .h3 { font-size: 1.75rem; }");
-        styleSheet.addRule("h4, .h4 { font-size: 1.5rem; }");
-        styleSheet.addRule("h5, .h5 { font-size: 1.25rem; }");
-        styleSheet.addRule("h6, .h6 { font-size: 1rem; }");
-        styleSheet.addRule(".lead { font-size: 1.25rem; font-weight: 300; }");
-        styleSheet.addRule(".display-1 { font-size: 6rem; font-weight: 300; line-height: 1.2; }");
-        styleSheet.addRule(".display-2 { font-size: 5.5rem; font-weight: 300; line-height: 1.2; }");
-        styleSheet.addRule(".display-3 { font-size: 4.5rem; font-weight: 300; line-height: 1.2; }");
-        styleSheet.addRule(".display-4 { font-size: 3.5rem; font-weight: 300; line-height: 1.2; }");
-        styleSheet.addRule("hr { margin-top: 1rem; margin-bottom: 1rem; border: 0; border-top: 1px solid rgba(0, 0, 0, 0.1); }");
-        styleSheet.addRule("pre, code, kbd, samp { font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 1em; }");
-        styleSheet.addRule("pre { margin-top: 0; margin-bottom: 1rem; overflow: auto; }");
-        styleSheet.addRule("code { font-size: 87.5%; color: #e83e8c; word-wrap: break-word; }");
-        styleSheet.addRule("pre { display: block; font-size: 87.5%; color: #212529; }");
-        styleSheet.addRule("pre code { font-size: inherit; color: inherit; word-break: normal; }");
-        styleSheet.addRule("strong { font-weight: bold; }");
+
+        try (InputStream is = getClass().getResourceAsStream("html-styles.css")) {
+            if (is != null) {
+                String css = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                styleSheet.addRule(css);
+            } else {
+                System.err.println("CSS file not found");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return htmlEditorKit;
     }

@@ -484,7 +484,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
             String firstWordLine = "";
             String lastWordLine = "";
             if (lineTextBeforeCaret != null && !lineTextBeforeCaret.trim().isEmpty()) {
-                String[] textSegments = lineTextBeforeCaret.trim().split("[^a-zA-Z0-9<]+");
+                String[] textSegments = lineTextBeforeCaret.trim().split("[^.a-zA-Z0-9<]+");
                 if (textSegments.length > 0) {
                     firstWordLine = textSegments[0];
                     lastWordLine = textSegments[textSegments.length - 1];
@@ -493,14 +493,15 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
             String firstWordSnippet = "";
             if (snippet.getSnippet() != null && !snippet.getSnippet().trim().isEmpty()) {
-                String[] textSegments = snippet.getSnippet().trim().split("[^a-zA-Z0-9]+");
+                String[] textSegments = snippet.getSnippet().trim().split("[^.a-zA-Z0-9]+");
                 if (textSegments.length > 0) {
                     firstWordSnippet = textSegments[0]; // Split by any non-alphanumeric character
                 }
             }
 
             boolean midWordMatched = false;
-            if (firstWordLine.equalsIgnoreCase(firstWordSnippet)) {
+            if (firstWordSnippet != null && !firstWordSnippet.isEmpty()
+                    && firstWordLine.equalsIgnoreCase(firstWordSnippet)) {
                 newcaretOffset = newcaretOffset - tlLineTextBeforeCaret.length();
             } else if (snippetWOSpace.startsWith(lastWordLine)) {
                 midWordMatched = true;
@@ -587,18 +588,14 @@ public class JeddictCompletionProvider implements CompletionProvider {
                                 resultSet.addItem(createItem(snippet, line, lineTextBeforeCaret, javaToken, kind, doc));
                             }
                         }
-                    } else if ((trimLeadingSpaces(line).length() > 0
-                            && trimLeadingSpaces(line).charAt(0) == '@') || kind == Tree.Kind.ANNOTATION) {
+                    } else if (resultSet != null &&
+                            ((trimLeadingSpaces(line).length() > 0
+                            && trimLeadingSpaces(line).charAt(0) == '@') || kind == Tree.Kind.ANNOTATION)) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE}");
                         List<Snippet> annotationSuggestions = getJeddictChatModel(fileObject)
                                 .suggestAnnotations(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, hintContext, queryType == -1);
                         for (Snippet annotationSuggestion : annotationSuggestions) {
-                            if (resultSet == null) {
-                                highlightMultiline(component, caretOffset, annotationSuggestion);
-                                break;
-                            } else {
-                                resultSet.addItem(createItem(annotationSuggestion, line, lineTextBeforeCaret, javaToken, kind, doc));
-                            }
+                            resultSet.addItem(createItem(annotationSuggestion, line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if (kind == Tree.Kind.MODIFIERS
                             || kind == Tree.Kind.IDENTIFIER) {
@@ -652,59 +649,39 @@ public class JeddictCompletionProvider implements CompletionProvider {
                                 resultSet.addItem(var);
                             }
                         }
-                    } else if (kind == Tree.Kind.VARIABLE) {
+                    } else if (kind == Tree.Kind.VARIABLE && resultSet != null) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_VAR_NAMES_LIST}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
                         List<String> sugs = getJeddictChatModel(fileObject)
                                 .suggestVariableNames(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
-                            if (resultSet == null) {
-                                highlightMultiline(component, caretOffset, new Snippet(snippet));
-                                break;
-                            } else {
-                                JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
-                                resultSet.addItem(var);
-                            }
-
+                            JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
+                            resultSet.addItem(var);
                         }
-                    } else if (kind == Tree.Kind.METHOD) {
+                    } else if (kind == Tree.Kind.METHOD && resultSet != null) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_METHOD_NAMES_LIST}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
-                        List<String> sugs = getJeddictChatModel(fileObject).suggestMethodNames(classDataContent, updateddoc, line);
+                        List<String> sugs = getJeddictChatModel(fileObject)
+                                .suggestMethodNames(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
-                            if (resultSet == null) {
-                                highlightMultiline(component, caretOffset, new Snippet(snippet));
-                                break;
-                            } else {
-                                JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
-                                resultSet.addItem(var);
-                            }
+                            JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
+                            resultSet.addItem(var);
                         }
-                    } else if (kind == Tree.Kind.METHOD_INVOCATION) {
+                    } else if (kind == Tree.Kind.METHOD_INVOCATION && resultSet != null) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_METHOD_INVOCATION}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
                         List<String> sugs = getJeddictChatModel(fileObject)
                                 .suggestMethodInvocations(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
-                            if (resultSet == null) {
-                                highlightMultiline(component, caretOffset, new Snippet(snippet));
-                                break;
-                            } else {
-                                snippet = snippet.replace("<", "&lt;").replace(">", "&gt;");
-                                JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
-                                resultSet.addItem(var);
-                            }
+                            snippet = snippet.replace("<", "&lt;").replace(">", "&gt;");
+                            JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
+                            resultSet.addItem(var);
                         }
-                    } else if (kind == Tree.Kind.STRING_LITERAL) {
+                    } else if (kind == Tree.Kind.STRING_LITERAL && resultSet != null) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_STRING_LITERAL_LIST}");
                         List<String> sugs = getJeddictChatModel(fileObject).suggestStringLiterals(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
-                            if (resultSet == null) {
-                                highlightMultiline(component, caretOffset, new Snippet(snippet));
-                                break;
-                            } else {
-                                resultSet.addItem(createItem(new Snippet(snippet), line, lineTextBeforeCaret, javaToken, kind, doc));
-                            }
+                            resultSet.addItem(createItem(new Snippet(snippet), line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if (kind == Tree.Kind.PARENTHESIZED
                             && parentKind != null
@@ -721,8 +698,35 @@ public class JeddictCompletionProvider implements CompletionProvider {
                                 resultSet.addItem(var);
                             }
                         }
+                    } else if (kind == Tree.Kind.MEMBER_SELECT
+                            && parentKind != null
+                            && parentKind == Tree.Kind.METHOD_INVOCATION) {
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE}");
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path, hintContext, queryType == -1);
+                        for (Snippet snippet : sugs) {
+                            if (resultSet == null) {
+                                highlightMultiline(component, caretOffset, snippet);
+                                break;
+                            } else {
+                                JeddictItem var = new JeddictItem(null, null, snippet.getSnippet(), snippet.getDescription(), snippet.getImports(), caretOffset, true, false, -1);
+                                resultSet.addItem(var);
+                            }
+                        }
                     } else {
                         System.out.println("Skipped : " + kind + " " + path.getLeaf().toString());
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE}");
+                        List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                .suggestNextLineCode(FileOwnerQuery.getOwner(fileObject), classDataContent, updateddoc, line, path, hintContext, queryType == -1);
+                        for (Snippet snippet : sugs) {
+                            if (resultSet == null) {
+                                highlightMultiline(component, caretOffset, snippet);
+                                break;
+                            } else {
+                                JeddictItem var = new JeddictItem(null, null, snippet.getSnippet(), snippet.getDescription(), snippet.getImports(), caretOffset, true, false, -1);
+                                resultSet.addItem(var);
+                            }
+                        }
                     }
                 } else if (COMPLETION_QUERY_TYPE == queryType && JAVA_MIME.equals(mimeType)) {
                     String line = getLineText(doc, caretOffset);
@@ -778,7 +782,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         if (sQLEditorSupport != null) {
                             SQLCompletion sqlCompletion = new SQLCompletion(sQLEditorSupport);
                             String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_SQL_QUERY_LIST}");
-                            List<Snippet> sugs = getJeddictChatModel(fileObject).suggestSQLQuery(sqlCompletion.getMetaData(), updateddoc);
+                            List<Snippet> sugs = getJeddictChatModel(fileObject)
+                                    .suggestSQLQuery(sqlCompletion.getMetaData(), updateddoc);
                             for (Snippet snippet : sugs) {
                                 if (resultSet == null) {
                                     highlightMultiline(component, caretOffset, snippet);
