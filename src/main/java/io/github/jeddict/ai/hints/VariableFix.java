@@ -20,6 +20,8 @@ import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.lang.JeddictChatModel;
+import static io.github.jeddict.ai.scanner.ProjectClassScanner.getClassDataContent;
+import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.SourceUtil;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import javax.lang.model.element.Element;
@@ -43,6 +45,8 @@ public class VariableFix extends JavaFix {
     private final Action action;
     private String actionTitleParam;
     private String compliationError;
+    
+    private static final PreferencesManager prefsManager = PreferencesManager.getInstance();
 
     public VariableFix(TreePathHandle tpHandle, Action action, ElementHandle classType) {
         super(tpHandle);
@@ -81,9 +85,14 @@ public class VariableFix extends JavaFix {
 
         // Check if it's a variable and there's an error to fix
         if (leaf.getKind() == Tree.Kind.VARIABLE && action == Action.COMPILATION_ERROR) {
+            String classDataContent = getClassDataContent(
+                        copy.getFileObject(),
+                        copy.getCompilationUnit(),
+                        prefsManager.getClassContext()
+                );
             content = new JeddictChatModel().fixVariableError(
                 FileOwnerQuery.getOwner(copy.getFileObject()), 
-                leaf.toString(), compliationError);
+                leaf.toString(), compliationError, classDataContent);
         }
 
         if (content == null) {

@@ -16,6 +16,7 @@
 package io.github.jeddict.ai.scanner;
 
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
@@ -35,10 +36,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
@@ -312,5 +315,44 @@ public class ProjectClassScanner {
             }
         }
         return Collections.emptyList();
+    }
+
+    public static Set<String> getReferencedClasses(CompilationUnitTree compilationUnit) throws IOException {
+        return findReferencedClasses(compilationUnit);
+    }
+
+    private static Set<String> findReferencedClasses(CompilationUnitTree compilationUnit) {
+        Set<String> referencedClasses = new HashSet<>();
+
+        for (Tree tree : compilationUnit.getTypeDecls()) {
+            if (tree instanceof ClassTree) {
+                ClassTree classTree = (ClassTree) tree;
+                Tree superclass = classTree.getExtendsClause();
+                if (superclass != null) {
+                    referencedClasses.add(superclass.toString());
+                }
+                for (Tree member : classTree.getMembers()) {
+                    if (member instanceof VariableTree) {
+                        VariableTree variable = (VariableTree) member;
+                        referencedClasses.add(variable.getType().toString());
+                    } else if (member instanceof MethodTree) {
+                        MethodTree method = (MethodTree) member;
+                        if (method.getReturnType() != null) {
+                            referencedClasses.add(method.getReturnType().toString());
+                        }
+                    }
+                }
+            }
+        }
+
+        return referencedClasses;
+    }
+
+    public static String getClassDataContent(FileObject fileObject, CompilationUnitTree compilationUnit, AIClassContext activeClassContext) {
+        Set<String> findReferencedClasses = findReferencedClasses(compilationUnit);
+        List<ClassData> classDatas = getClassData(fileObject, findReferencedClasses, activeClassContext);
+        return classDatas.stream()
+                .map(cd -> cd.toString())
+                .collect(Collectors.joining("\n------------\n"));
     }
 }

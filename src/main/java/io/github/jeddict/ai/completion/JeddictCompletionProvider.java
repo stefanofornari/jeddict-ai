@@ -71,6 +71,7 @@ import org.netbeans.api.lexer.TokenHierarchy;
 import org.netbeans.api.lexer.TokenSequence;
 import org.openide.filesystems.FileObject;
 import static io.github.jeddict.ai.scanner.ProjectClassScanner.getClassData;
+import static io.github.jeddict.ai.scanner.ProjectClassScanner.getClassDataContent;
 import static io.github.jeddict.ai.scanner.ProjectClassScanner.getJeddictChatModel;
 import io.github.jeddict.ai.settings.AIClassContext;
 import io.github.jeddict.ai.settings.PreferencesManager;
@@ -99,6 +100,7 @@ import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
 import org.openide.loaders.DataObject;
 import org.netbeans.editor.Utilities;
 import javax.swing.SwingUtilities;
+import static org.netbeans.spi.editor.completion.CompletionProvider.COMPLETION_ALL_QUERY_TYPE;
 
 @MimeRegistration(mimeType = "", service = CompletionProvider.class, position = 100)
 public class JeddictCompletionProvider implements CompletionProvider {
@@ -436,37 +438,6 @@ public class JeddictCompletionProvider implements CompletionProvider {
             return resultPath;
         }
 
-        public Set<String> getReferencedClasses(CompilationUnitTree compilationUnit) throws IOException {
-            return findReferencedClasses(compilationUnit);
-        }
-
-        private Set<String> findReferencedClasses(CompilationUnitTree compilationUnit) {
-            Set<String> referencedClasses = new HashSet<>();
-
-            for (Tree tree : compilationUnit.getTypeDecls()) {
-                if (tree instanceof ClassTree) {
-                    ClassTree classTree = (ClassTree) tree;
-                    Tree superclass = classTree.getExtendsClause();
-                    if (superclass != null) {
-                        referencedClasses.add(superclass.toString());
-                    }
-                    for (Tree member : classTree.getMembers()) {
-                        if (member instanceof VariableTree) {
-                            VariableTree variable = (VariableTree) member;
-                            referencedClasses.add(variable.getType().toString());
-                        } else if (member instanceof MethodTree) {
-                            MethodTree method = (MethodTree) member;
-                            if (method.getReturnType() != null) {
-                                referencedClasses.add(method.getReturnType().toString());
-                            }
-                        }
-                    }
-                }
-            }
-
-            return referencedClasses;
-        }
-
         private JeddictItem createItem(Snippet snippet, String line, String lineTextBeforeCaret, JavaToken javaToken, Tree.Kind kind, Document doc) throws BadLocationException {
             int newcaretOffset = caretOffset;
             if (javaToken.getId() == STRING_LITERAL && kind == Tree.Kind.STRING_LITERAL) {
@@ -540,7 +511,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 this.caretOffset = caretOffset;
                 String mimeType = (String) doc.getProperty("mimeType");
                 JavaToken javaToken = isJavaContext(component.getDocument(), caretOffset, true);
-                if ((COMPLETION_QUERY_TYPE == queryType || -1 == queryType) && JAVA_MIME.equals(mimeType)
+                if ((COMPLETION_QUERY_TYPE == queryType || -1 == queryType || COMPLETION_ALL_QUERY_TYPE == queryType)
+                        && JAVA_MIME.equals(mimeType)
                         && javaToken.isJavaContext()) {
                     JavacTask task = getJavacTask(doc);
                     Iterable<? extends CompilationUnitTree> ast = task.parse();
@@ -558,12 +530,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     if (kind == Tree.Kind.VARIABLE || kind == Tree.Kind.METHOD || kind == Tree.Kind.STRING_LITERAL) {
                         activeClassContext = prefsManager.getVarContext();
                     }
-                    Set<String> findReferencedClasses = findReferencedClasses(compilationUnit);
-                    List<ClassData> classDatas = getClassData(fileObject, findReferencedClasses, activeClassContext);
-                    String classDataContent = classDatas.stream()
-                            .map(cd -> cd.toString())
-                            .collect(Collectors.joining("\n------------\n"));
-
+                    String classDataContent = getClassDataContent(fileObject, compilationUnit, activeClassContext);
                     if (path == null || kind == Tree.Kind.ERRONEOUS) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE}");
                         List<Snippet> sugs = getJeddictChatModel(fileObject)
@@ -728,7 +695,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             }
                         }
                     }
-                } else if (COMPLETION_QUERY_TYPE == queryType && JAVA_MIME.equals(mimeType)) {
+                } else if ((COMPLETION_QUERY_TYPE == queryType || COMPLETION_ALL_QUERY_TYPE == queryType) && JAVA_MIME.equals(mimeType)) {
                     String line = getLineText(doc, caretOffset);
                     JavacTask task = getJavacTask(doc);
                     Iterable<? extends CompilationUnitTree> ast = task.parse();
