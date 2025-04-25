@@ -473,9 +473,7 @@ public class PreferencesManager {
     }
 
     public void setSystemMessage(String message) {
-        if (message != null && !message.isEmpty()) {
-            preferences.put("systemMessage", message);
-        }
+        preferences.put("systemMessage", message);
     }
 
     public String getCommonPromptRules() {

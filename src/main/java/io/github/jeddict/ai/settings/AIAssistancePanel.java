@@ -855,9 +855,21 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         if (!aiAssistantActivationCheckBox.isSelected()) {
             enableHintsCheckBox.setEnabled(false);
             enableSmartCodeCheckBox.setEnabled(false);
+            enableInlineHintCheckBox.setEnabled(false);
+            enableInlinePromptHintCheckBox.setEnabled(false);
+            enableHintsCheckBox.setSelected(false);
+            enableSmartCodeCheckBox.setSelected(false);
+            enableInlineHintCheckBox.setSelected(false);
+            enableInlinePromptHintCheckBox.setSelected(false);
         } else {
             enableHintsCheckBox.setEnabled(true);
             enableSmartCodeCheckBox.setEnabled(true);
+            enableInlineHintCheckBox.setEnabled(true);
+            enableInlinePromptHintCheckBox.setEnabled(true);
+            enableHintsCheckBox.setSelected(true);
+            enableSmartCodeCheckBox.setSelected(true);
+            enableInlineHintCheckBox.setSelected(true);
+            enableInlinePromptHintCheckBox.setSelected(true);
         }
     }//GEN-LAST:event_aiAssistantActivationCheckBoxActionPerformed
 

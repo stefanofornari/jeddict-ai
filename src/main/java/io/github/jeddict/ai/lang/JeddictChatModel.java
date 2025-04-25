@@ -161,8 +161,9 @@ public class JeddictChatModel {
     private <T> ChatModelBaseBuilder<T> builderModel(final ChatModelBaseBuilder<T> builder) {
         setIfPredicate(builder::baseUrl, preferencesManager.getProviderLocation(), String::isEmpty);
         setIfPredicate(builder::customHeaders, preferencesManager.getCustomHeaders(), Map::isEmpty);
+        boolean headless = preferencesManager.getProviderLocation() != null;
         builder
-                .apiKey(preferencesManager.getApiKey())
+                .apiKey(preferencesManager.getApiKey(headless))
                 .modelName(preferencesManager.getModelName());
 
         setIfValid(builder::temperature, preferencesManager.getTemperature(), Double.MIN_VALUE);
@@ -386,7 +387,13 @@ public class JeddictChatModel {
         return answer;
     }
 
-    public String fixMethodCompilationError(Project project, String javaClassContent, String methodContent, String errorMessage) {
+    public String fixMethodCompilationError(
+            Project project, 
+            String javaClassContent,
+            String methodContent, 
+            String errorMessage,
+            String classDatas) {
+        
         String prompt
                 = "You are an API server that fixes compilation errors in Java methods based on the provided error messages. "
                 + "Given the following Java method content, class content, and the error message, correct the method accordingly. "
@@ -399,13 +406,18 @@ public class JeddictChatModel {
                 + "Java Class Content:\n" + javaClassContent + "\n\n"
                 + "Java Method Content:\n" + methodContent;
 
+        prompt = loadClassData(prompt, classDatas);
         // Generate the fixed Java method
         String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String fixVariableError(Project project, String javaClassContent, String errorMessage) {
+    public String fixVariableError(
+            Project project, 
+            String javaClassContent, 
+            String errorMessage,
+            String classDatas) {
         String prompt
                 = "You are an API server that fixes variable-related compilation errors in Java classes based on the provided error messages. "
                 + "Given the following Java class content and the error message, correct given variable-related issues based on error message at class level. "
@@ -417,6 +429,7 @@ public class JeddictChatModel {
                 + "Error Message:\n" + errorMessage + "\n\n"
                 + "Java Class Content:\n" + javaClassContent;
 
+        prompt = loadClassData(prompt, classDatas);
         // Generate the fixed Java class or method
         String answer = generate(project, prompt);
         System.out.println(answer);
@@ -1211,7 +1224,6 @@ public class JeddictChatModel {
                   File Content:
                   """).append(fileContent);
         }
-     
        
         String jsonResponse = generate(project, prompt.toString());
         List<Snippet> nextLines = parseJsonToSnippets(jsonResponse);

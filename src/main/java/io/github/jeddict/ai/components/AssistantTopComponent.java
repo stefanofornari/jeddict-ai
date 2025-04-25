@@ -277,7 +277,8 @@ public class AssistantTopComponent extends TopComponent {
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             String fileExtension = getExtension(mimeType);
-            if (!file.getName().endsWith("." + fileExtension)) {
+            if (!file.getName().endsWith("." + fileExtension) 
+                    && fileExtension != null) {
                 file = new File(file.getAbsolutePath() + "." + fileExtension);
             }
 
