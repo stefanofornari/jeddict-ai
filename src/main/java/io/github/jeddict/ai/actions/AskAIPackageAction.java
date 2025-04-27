@@ -18,8 +18,10 @@ package io.github.jeddict.ai.actions;
 import io.github.jeddict.ai.hints.LearnFix;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import org.netbeans.api.project.FileOwnerQuery;
@@ -57,7 +59,7 @@ public final class AskAIPackageAction extends AbstractAction implements ContextA
     @Override
     public Action createContextAwareInstance(Lookup actionContext) {
         if (actionContext != null) {
-            Collection<? extends FileObject> selectedFileObjects = actionContext.lookupAll(FileObject.class);
+            List<FileObject> selectedFileObjects = new ArrayList<>(actionContext.lookupAll(FileObject.class));
             if (selectedFileObjects.isEmpty()) {
                 return new AskAIPackageAction.ContextAction(false, null);
             }
@@ -71,9 +73,9 @@ public final class AskAIPackageAction extends AbstractAction implements ContextA
 
     private static final class ContextAction extends AbstractAction {
 
-        private final Collection<? extends FileObject> selectedFileObjects;
+        private final List<FileObject> selectedFileObjects;
 
-        private ContextAction(boolean enable, Collection<? extends FileObject> selectedPackages) {
+        private ContextAction(boolean enable, List<FileObject> selectedPackages) {
             super(Bundle.CTL_AskAIPackageAction());
             this.putValue(DynamicMenuContent.HIDE_WHEN_DISABLED, true);
             this.setEnabled(enable);

@@ -1036,8 +1036,7 @@ public class JeddictChatModel {
     }
 
     public String generateDescription(
-            Project project,
-            String projectContent, String classContent, String methodContent,
+            Project project, String source, String methodContent,
             String previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
         String promptExtend = "";
@@ -1046,10 +1045,8 @@ public class JeddictChatModel {
         if (methodContent != null) {
             promptExtend = "Method Content:\n" + methodContent + "\n\n"
                     + "Do not return complete Java Class, return only Method";
-        } else if (projectContent != null) {
-            promptExtend = "Project Full Content:\n" + projectContent + "\n\n";
-        } else if (classContent != null) {
-            promptExtend = "Java Class Content:\n" + classContent + "\n\n";
+        } else if (source != null) {
+            promptExtend = "Source:\n" + source + "\n\n";
         }
 
         // Initialize the prompt
