@@ -23,8 +23,6 @@ import static com.sun.source.tree.Tree.Kind.ENUM;
 import static com.sun.source.tree.Tree.Kind.INTERFACE;
 import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.model.output.Response;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.lang.JeddictChatModel;
@@ -42,7 +40,6 @@ import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.ProjectUtil.getSourceFiles;
 import static io.github.jeddict.ai.util.SourceUtil.removeJavadoc;
 import io.github.jeddict.ai.util.StringUtil;
-import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.GridBagConstraints;
@@ -90,14 +87,24 @@ import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionListener;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.TransferHandler;
+import javax.swing.TransferHandler.TransferSupport;
 import org.netbeans.api.options.OptionsDisplayer;
+import java.io.File;
+import java.util.List;
+import org.openide.loaders.DataObject;
+import org.openide.filesystems.FileObject;
+import org.openide.nodes.Node;
+import org.openide.filesystems.FileUtil;
 
 /**
  *
@@ -116,11 +123,10 @@ public class LearnFix extends JavaFix {
     private int currentResponseIndex = -1;
     private String sourceCode = null;
     private Project project;
-    private Collection<? extends FileObject> selectedFileObjects;
-    private FileObject selectedFileObject;
+    private List<FileObject> selectedFileObjects;
     private FileObject fileObject;
     private String commitChanges;
-    private PreferencesManager pm = PreferencesManager.getInstance();
+    private final PreferencesManager pm = PreferencesManager.getInstance();
     private Tree leaf;
 
     private Project getProject() {
@@ -128,8 +134,6 @@ public class LearnFix extends JavaFix {
             return project;
         } else if (selectedFileObjects != null && !selectedFileObjects.isEmpty()) {
             return FileOwnerQuery.getOwner(selectedFileObjects.toArray(FileObject[]::new)[0]);
-        } else if (selectedFileObject != null) {
-            return FileOwnerQuery.getOwner(selectedFileObject);
         } else if (fileObject != null) {
             return FileOwnerQuery.getOwner(fileObject);
         } else {
@@ -160,7 +164,7 @@ public class LearnFix extends JavaFix {
         this.project = project;
     }
 
-    public LearnFix(Action action, Collection<? extends FileObject> selectedFileObjects) {
+    public LearnFix(Action action, List<FileObject> selectedFileObjects) {
         super(null);
         this.action = action;
         this.selectedFileObjects = selectedFileObjects;
@@ -169,7 +173,8 @@ public class LearnFix extends JavaFix {
     public LearnFix(Action action, FileObject selectedFileObject) {
         super(null);
         this.action = action;
-        this.selectedFileObject = selectedFileObject;
+        this.selectedFileObjects = new ArrayList<>();
+        this.selectedFileObjects.add(selectedFileObject);
     }
 
     @Override
@@ -285,13 +290,9 @@ public class LearnFix extends JavaFix {
     public List<FileObject> getFilesContextList() {
         List<FileObject> sourceFiles = new ArrayList<>();
         boolean includeNestedFiles = selectedFileObjects.stream()
-                .anyMatch(fileObject -> fileObject.getPath().contains("src/main/webapp")
-                || fileObject.getPath().endsWith("src/main")
+                .anyMatch(fo -> fo.getPath().contains("src/main/webapp")
+                || fo.getPath().endsWith("src/main")
                 );
-
-        for (FileObject sourceFile : selectedFileObjects) {
-            System.out.println("");
-        }
         // Function to collect files recursively
         if (includeNestedFiles) {
             for (FileObject selectedFile : selectedFileObjects) {
@@ -332,21 +333,6 @@ public class LearnFix extends JavaFix {
                 .forEach(subFolder -> collectNestedFiles(subFolder, sourceFiles));
     }
 
-    public String getFileContext() {
-        StringBuilder inputForAI = new StringBuilder();
-        try {
-            String text = selectedFileObject.asText();
-//            if ("java".equals(selectedFileObject.getExt()) && pm.isExcludeJavadocEnabled()) {
-//                text = removeJavadoc(text);
-//            }
-            inputForAI.append(text);
-            inputForAI.append("\n");
-        } catch (Exception ex) {
-            Exceptions.printStackTrace(ex);
-        }
-        return inputForAI.toString();
-    }
-
     public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
         ProjectInformation info = ProjectUtils.getInformation(project);
         String projectName = info.getDisplayName();
@@ -355,7 +341,6 @@ public class LearnFix extends JavaFix {
             JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                 @Override
                 public void onComplete(String response) {
-//                    response = removeCodeBlockMarkers(response);
                     sourceCode = EditorUtil.updateEditors(topComponent, response, getContextFiles());
                     responseHistory.add(response);
                     currentResponseIndex = responseHistory.size() - 1;
@@ -364,7 +349,6 @@ public class LearnFix extends JavaFix {
             };
             String response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
             if (response != null && !response.isEmpty()) {
-//                response = removeCodeBlockMarkers(response);
                 handler.onComplete(response);
             }
         });
@@ -610,6 +594,66 @@ public class LearnFix extends JavaFix {
         });
 
         updateButtons(prevButton, nextButton);
+   
+        questionPane.setTransferHandler(new TransferHandler() {
+            @Override
+            public boolean canImport(TransferSupport support) {
+                try {
+                    Transferable t = support.getTransferable();
+                    for (DataFlavor flavor : t.getTransferDataFlavors()) {
+                        if (flavor.isFlavorJavaFileListType()) {
+                            return true;
+                        }
+                        if (DataObject[].class.equals(flavor.getRepresentationClass())) {
+                            return true;
+                        }
+                        if (Node.class.isAssignableFrom(flavor.getRepresentationClass())) {
+                            return true; // <-- Updated
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return false;
+            }
+
+            @Override
+            public boolean importData(TransferSupport support) {
+                try {
+                    Transferable t = support.getTransferable();
+                    for (DataFlavor flavor : t.getTransferDataFlavors()) {
+                        if (flavor.isFlavorJavaFileListType()) {
+                            List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
+                            for (File file : files) {
+                                 selectedFileObjects.add(FileUtil.toFileObject(file));
+                            }
+                            return true;
+                        }
+                        if (DataObject[].class.equals(flavor.getRepresentationClass())) {
+                            DataObject[] dataObjects = (DataObject[]) t.getTransferData(flavor);
+                            for (DataObject dobj : dataObjects) {
+                                if (dobj != null) {
+                                selectedFileObjects.add(dobj.getPrimaryFile());
+                            }
+                            }
+                            return true;
+                        }
+                        if (Node.class.isAssignableFrom(flavor.getRepresentationClass())) {
+                            Node node = (Node) t.getTransferData(flavor);
+                            DataObject dobj = node.getLookup().lookup(DataObject.class);
+                            if (dobj != null) {
+                                selectedFileObjects.add(dobj.getPrimaryFile());
+                            }
+                            return true;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return false;
+            }
+
+        });
 
         return bottomPanel;
     }
@@ -620,8 +664,6 @@ public class LearnFix extends JavaFix {
             fileObjects = getProjectContextList();
         } else if (selectedFileObjects != null) {
             fileObjects = getFilesContextList();
-        } else if (selectedFileObject != null) {
-            fileObjects = Collections.singletonList(selectedFileObject);
         } else {
             fileObjects = Collections.EMPTY_LIST;
         }
@@ -720,13 +762,11 @@ public class LearnFix extends JavaFix {
                 } else if (commitChanges != null) {
                     response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, question);
                 } else if (project != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), getProjectContext(), null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), getProjectContext(), null, prevChat, question);
                 } else if (selectedFileObjects != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), getFilesContext(), null, null, prevChat, question);
-                } else if (selectedFileObject != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, getFileContext(), null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), getFilesContext(), null, prevChat, question);
                 } else if (treePath == null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, null, prevChat, question);
                 } else if (action == Action.TEST) {
                     if (leaf instanceof MethodTree) {
                         response = new JeddictChatModel(handler).generateTestCase(getProject(), null, null, leaf.toString(), prevChat, question);
@@ -734,7 +774,7 @@ public class LearnFix extends JavaFix {
                         response = new JeddictChatModel(handler).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, prevChat, question);
                     }
                 } else {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
                 }
 
                 if (response != null && !response.isEmpty()) {
