@@ -62,12 +62,16 @@ import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.util.SourceUtil;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.geom.Dimension2D;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -88,6 +92,19 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.StyledDocument;
 import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.modules.editor.NbEditorUtilities;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import javax.swing.JDialog;
+import javax.swing.JScrollPane;
+import net.sourceforge.plantuml.FileFormat;
+import net.sourceforge.plantuml.FileFormatOption;
+import net.sourceforge.plantuml.SourceStringReader;
+import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
+import org.apache.batik.swing.JSVGCanvas;
+import org.apache.batik.swing.gvt.GVTTreeRendererAdapter;
+import org.apache.batik.swing.gvt.GVTTreeRendererEvent;
+import org.apache.batik.util.XMLResourceDescriptor;
 
 /**
  *
@@ -111,7 +128,6 @@ public class AssistantTopComponent extends TopComponent {
 
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
-    private HTMLEditorKit htmlEditorKit;
     private final Project project;
 
     private String type = "java";
@@ -151,17 +167,24 @@ public class AssistantTopComponent extends TopComponent {
             }
         });
         editorPane.setEditable(false);
-        editorPane.setText(getHTMLContent(content));
+        editorPane.setText(getHTMLContent(getHtmlWrapWidth(), content));
         parentPanel.add(editorPane);
         return editorPane;
+    }
+
+    private int getHtmlWrapWidth() {
+        int width = this.getWidth() / 70;
+        Insets insets = this.getInsets(); // Get the insets (padding/borders)
+        width -= insets.left + insets.right;  // Subtract left and right insets
+        return Math.max(0, width);  // Ensure the width is non-negative
     }
 
     public JEditorPane createPane() {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setEditable(false);
-        Font newFont = getFontFromMimeType("text/x-java"); 
-        java.awt.Color textColor = getTextColorFromMimeType("text/x-java"); 
-        java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/x-java"); 
+        Font newFont = getFontFromMimeType("text/x-java");
+        java.awt.Color textColor = getTextColorFromMimeType("text/x-java");
+        java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/x-java");
 
         editorPane.setFont(newFont);
         editorPane.setForeground(textColor);
@@ -188,6 +211,264 @@ public class AssistantTopComponent extends TopComponent {
         addContextMenu(editorPane);
         parentPanel.add(editorPane);
         return editorPane;
+    }
+
+    public JSVGCanvas createSVGPane(final String content) {
+        JSVGCanvas canvas = new JSVGCanvas();
+        canvas.setDocumentState(JSVGCanvas.ALWAYS_DYNAMIC);
+        canvas.setDisableInteractions(true);
+
+        JPanel wrapperPanel = new JPanel();
+        wrapperPanel.setLayout(new GridBagLayout()); // Center the canvas nicely
+        wrapperPanel.add(canvas);
+        Color backgroundColor = getBackgroundColorFromMimeType("text/plain");
+        Color textColor = getTextColorFromMimeType("text/plain");
+        wrapperPanel.setBackground(backgroundColor);
+
+        parentPanel.add(wrapperPanel);
+        SwingUtilities.invokeLater(() -> {
+            String umlContent = content;
+            boolean isDarkTheme = isDarkColor(backgroundColor);
+            if(isDarkTheme) {
+                umlContent = addDarkTheme(umlContent, backgroundColor, textColor);
+            }
+            String svgContent = convertPlantUmlToSvg(umlContent);
+            loadSVG(canvas, svgContent);
+            addContextMenu(canvas, svgContent);
+        });
+        return canvas;
+    }
+   
+    public static String addDarkTheme(String content, Color backgroundColor, Color textColor) {
+            String skinParams = 
+            """
+            skinparam backgroundColor #1E1E1E
+            skinparam shadowing false
+            skinparam ArrowColor #CCCCCC
+            skinparam ArrowFontColor #FFFFFF
+            
+            skinparam shadowing false
+            
+            ' Node styles
+            skinparam rectangle {
+                BackgroundColor #2C2C2C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+            }
+            
+            skinparam actor {
+                BackgroundColor #2C2C2C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+            }
+            
+            skinparam usecase {
+                BackgroundColor #2C2C2C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+            }
+            
+            skinparam class {
+                BackgroundColor #2C2C2C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+                AttributeFontColor #DDDDDD
+                MethodFontColor #DDDDDD
+            }
+            
+            skinparam component {
+                BackgroundColor #2C2C2C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+            }
+            
+            ' Arrows and connections
+            skinparam ArrowColor #CCCCCC
+            skinparam ArrowFontColor #FFFFFF
+            
+            ' Notes
+            skinparam note {
+                BackgroundColor #3C3C3C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+            }
+            
+            ' Titles
+            skinparam title {
+                FontColor #FFFFFF
+            }
+            
+            ' Activity Diagrams
+            skinparam activity {
+                BackgroundColor #2C2C2C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+            }
+            
+            ' Sequence diagrams
+            skinparam sequence {
+                ActorBackgroundColor #2C2C2C
+                LifeLineBorderColor #CCCCCC
+                LifeLineBackgroundColor #2C2C2C
+                ParticipantBackgroundColor #2C2C2C
+                ParticipantBorderColor #CCCCCC
+                ParticipantFontColor #FFFFFF
+            }
+            
+            ' Swimlanes
+            skinparam swimlane {
+                BackgroundColor #2C2C2C
+                BorderColor #CCCCCC
+                FontColor #FFFFFF
+            }
+            """;
+            
+        if (textColor != null) {
+            skinParams = skinParams.replace("White", "#" + Integer.toHexString(textColor.getRGB()).substring(2).toUpperCase());
+        }
+        if (backgroundColor != null) {
+            skinParams = skinParams.replace("#1E1E1E", "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
+        }
+
+        int index = content.indexOf("@startuml");
+        if (index == -1) {
+            throw new IllegalArgumentException("Invalid PlantUML content: missing @startuml");
+        }
+
+        int insertPos = content.indexOf("\n", index);
+        if (insertPos == -1) {
+            // If no newline after @startuml, append after @startuml directly
+            insertPos = index + "@startuml".length();
+            return content.substring(0, insertPos) + "\n" + skinParams + content.substring(insertPos);
+        } else {
+            // Insert after the first line (@startuml line)
+            return content.substring(0, insertPos + 1) + skinParams + content.substring(insertPos + 1);
+        }
+    }
+
+private boolean isDarkColor(Color color) {
+    // Simple luminance check
+    double luminance = 0.2126 * color.getRed() / 255 +
+                       0.7152 * color.getGreen() / 255 +
+                       0.0722 * color.getBlue() / 255;
+    return luminance < 0.5; // Threshold: lower = darker
+}
+
+
+    private void addContextMenu(JSVGCanvas canvas, String svgContent) {
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem openInBrowserItem = new JMenuItem("Open in Browser");
+
+        openInBrowserItem.addActionListener(e -> {
+            try {
+                File tempFile = File.createTempFile("temp_svg_", ".svg");
+                tempFile.deleteOnExit(); // Clean up later
+                try (FileWriter writer = new FileWriter(tempFile)) {
+                    writer.write(svgContent);
+                }
+                Desktop.getDesktop().browse(tempFile.toURI());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(canvas, "Failed to open in browser: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        popupMenu.add(openInBrowserItem);
+
+        canvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+            
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    openFullViewPopup(svgContent);
+                }
+            }
+        });
+    }
+
+    private void openFullViewPopup(String svgContent) {
+        JDialog dialog = new JDialog((Frame) null, "Full View", true);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        JSVGCanvas fullViewCanvas = new JSVGCanvas();
+        fullViewCanvas.setDocumentState(JSVGCanvas.ALWAYS_DYNAMIC);
+        fullViewCanvas.setDisableInteractions(false); // Allow zooming/panning in full view if you want
+
+        dialog.getContentPane().add(new JScrollPane(fullViewCanvas)); // Add scroll if too big
+        dialog.setSize(800, 600); // Or full screen: Toolkit.getDefaultToolkit().getScreenSize()
+        dialog.setLocationRelativeTo(null); // Center on screen
+
+        SwingUtilities.invokeLater(() -> loadSVG(fullViewCanvas, svgContent));
+
+        dialog.setVisible(true);
+    }
+
+    public void loadSVG(JSVGCanvas svgCanvas, String svgContent) {
+        try {
+            // Convert the SVG string to InputStream
+            InputStream inputStream = new ByteArrayInputStream(svgContent.getBytes("UTF-8"));
+            String parser = XMLResourceDescriptor.getXMLParserClassName();
+            SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(parser);
+
+            // Create the SVGDocument
+            org.w3c.dom.svg.SVGDocument svgDocument = factory.createSVGDocument("http://www.w3.org/2000/svg", inputStream);
+            svgCanvas.setSVGDocument(svgDocument);
+
+            svgCanvas.addGVTTreeRendererListener(new GVTTreeRendererAdapter() {
+                @Override
+                public void gvtRenderingCompleted(GVTTreeRendererEvent e) {
+                    SwingUtilities.invokeLater(() -> {
+                        Dimension2D docSize = svgCanvas.getSVGDocumentSize();
+                        if (docSize != null) {
+                            int width = (int) Math.ceil(docSize.getWidth());
+                            int height = (int) Math.ceil(docSize.getHeight());
+                            svgCanvas.setPreferredSize(new Dimension(width, height));
+                            svgCanvas.revalidate();
+                        }
+                    });
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Converts a PlantUML string to SVG format.
+     *
+     * @param plantUmlString The PlantUML string to be converted.
+     * @return The SVG representation of the PlantUML string, or null if
+     * conversion fails.
+     */
+    public String convertPlantUmlToSvg(String plantUmlString) {
+        // Create a ByteArrayOutputStream to hold the SVG output
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            // Create a SourceStringReader with the PlantUML string
+            SourceStringReader reader = new SourceStringReader(plantUmlString);
+
+            // Output the image in SVG format
+            reader.outputImage(outputStream, new FileFormatOption(FileFormat.SVG));
+
+            // Return the SVG as a string
+            return outputStream.toString("UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace(); // Handle exceptions appropriately in your application
+        }
+        return null; // Return null if conversion fails
     }
 
     private final Map<JEditorPane, JPopupMenu> menus = new HashMap<>();
@@ -740,7 +1021,5 @@ public class AssistantTopComponent extends TopComponent {
         }
         return count;
     }
-
-   
 
 }
