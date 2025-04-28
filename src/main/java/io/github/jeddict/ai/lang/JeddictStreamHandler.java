@@ -58,7 +58,6 @@ public abstract class JeddictStreamHandler implements StreamingResponseHandler<A
         SwingUtilities.invokeLater(() -> {
             String response = out.content().text();
             if (response != null && !response.isEmpty()) {
-//                response = removeCodeBlockMarkers(response);
                 onComplete(response);
             }
         });
