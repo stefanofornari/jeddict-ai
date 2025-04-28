@@ -16,6 +16,7 @@
 package io.github.jeddict.ai.util;
 
 import io.github.jeddict.ai.components.AssistantTopComponent;
+import java.awt.Font;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +28,11 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.awt.FontMetrics;
 import java.util.List;
+import javax.swing.text.AttributeSet;
+import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.editor.settings.FontColorNames;
+import org.netbeans.api.editor.settings.FontColorSettings;
 import org.openide.filesystems.FileObject;
 
 /**
@@ -61,7 +67,7 @@ public class EditorUtil {
                 } else {
                     topComponent.createCodePane(getMimeType(null), parts[i]);
                 }
-            }
+            }                       
         }
         
         topComponent.getParseCodeEditor(fileObjects);
@@ -245,5 +251,83 @@ public class EditorUtil {
 
         // Check if the MIME type is allowed for web applications
         return allowedMimeTypes.contains(mimeType);
+    }
+    
+     public static String getHTMLContent(String bodyContent) {
+        Font newFont = getFontFromMimeType("text/html");
+        java.awt.Color textColor = getTextColorFromMimeType("text/html"); // Get text color
+        java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/html"); // Get background color
+
+        String newContent = """
+    <html>
+      <head>
+        <style>
+          html, body { margin: 0; padding: 10px; font-family: 'NB_FONT_NAME'; font-size: NB_FONT_SIZEpx; line-height: 1.5; color: NB_FONT_COLOR; background-color: NB_BACKGROUND_COLOR; }
+          h1, h2, h3, h4, h5, h6 { margin: 0 0 10px 0; font-weight: bold; font-size: inherit; }
+          p { margin: 0 0 10px 0; }
+          a { color: #007bff; text-decoration: none; }
+          a:hover { text-decoration: underline; }
+          strong { font-weight: bold; }
+          pre, code { font-family: 'Courier New', Courier, monospace; font-size: 90%; }
+        </style>
+      </head>
+      <body>
+        """ + bodyContent + """
+      </body>
+    </html>
+    """;
+        newContent = newContent.replace("NB_FONT_SIZE", String.valueOf(newFont.getSize()));
+        newContent = newContent.replace("NB_FONT_NAME", newFont.getName());
+
+        if (textColor != null) {
+            newContent = newContent.replace("NB_FONT_COLOR", "#" + Integer.toHexString(textColor.getRGB()).substring(2).toUpperCase());
+        }
+        if (backgroundColor != null) {
+            newContent = newContent.replace("NB_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
+        }
+        return newContent;
+    }
+
+    public static Font getFontFromMimeType(String mimeType) {
+        FontColorSettings fcs = MimeLookup.getLookup(MimePath.parse(mimeType))
+                .lookup(FontColorSettings.class);
+
+        if (fcs != null) {
+            AttributeSet defaultSet = fcs.getFontColors(FontColorNames.DEFAULT_COLORING);
+            if (defaultSet != null) {
+                String fontFamily = (String) defaultSet.getAttribute(javax.swing.text.StyleConstants.FontFamily);
+                Integer fontSize = (Integer) defaultSet.getAttribute(javax.swing.text.StyleConstants.FontSize);
+                if (fontFamily != null && fontSize != null) {
+                    return new Font(fontFamily, Font.PLAIN, fontSize);
+                }
+            }
+        }
+        return null;
+    }
+
+    public static java.awt.Color getTextColorFromMimeType(String mimeType) {
+        FontColorSettings fcs = MimeLookup.getLookup(MimePath.parse(mimeType))
+                .lookup(FontColorSettings.class);
+
+        if (fcs != null) {
+            AttributeSet defaultSet = fcs.getFontColors(FontColorNames.DEFAULT_COLORING);
+            if (defaultSet != null) {
+                return (java.awt.Color) defaultSet.getAttribute(javax.swing.text.StyleConstants.Foreground);
+            }
+        }
+        return null; // Default color if not found
+    }
+
+    public static java.awt.Color getBackgroundColorFromMimeType(String mimeType) {
+        FontColorSettings fcs = MimeLookup.getLookup(MimePath.parse(mimeType))
+                .lookup(FontColorSettings.class);
+
+        if (fcs != null) {
+            AttributeSet defaultSet = fcs.getFontColors(FontColorNames.DEFAULT_COLORING);
+            if (defaultSet != null) {
+                return (java.awt.Color) defaultSet.getAttribute(javax.swing.text.StyleConstants.Background);
+            }
+        }
+        return null; // Default background color if not found
     }
 }

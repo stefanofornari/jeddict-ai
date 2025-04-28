@@ -390,10 +390,22 @@ public class LearnFix extends JavaFix {
                 }
             }));
             questionPane.setText(query);
+            initialMessage();
         });
     }
 
-    JEditorPane questionPane;
+    private void initialMessage() {
+        topComponent.createHtmlPane(
+                    "<div style='margin:20px; padding:20px; border-radius:10px;'>"
+                    + "<div style='text-align:center;'>"
+                    + "👋 <strong>Welcome!</strong><br><br>"
+                    + "I'm here to assist you with any questions you have.<br>"
+                    + "Feel free to ask anything!<br>"
+                    + "</div>"
+                    + "</div>"
+            );
+    }
+    private JEditorPane questionPane;
 
     private JPanel createBottomPanel(String type, String fileName, String title, Consumer<String> action) {
         // Create a panel for the text field and buttons
@@ -481,16 +493,6 @@ public class LearnFix extends JavaFix {
         });
         westButtonPanel.add(optionsButton);
 
-        // Jeddict Button (West)
-//        JButton jeddictButton = createButton(logoIcon);
-//        jeddictButton.addActionListener(e -> {
-//            try {
-//                Desktop.getDesktop().browse(new URI("https://jeddict.github.io/page.html?l=tutorial/AI"));
-//            } catch (Exception ex) {
-//                ex.printStackTrace();
-//            }
-//        });
-//        westButtonPanel.add(jeddictButton);
         // New Chat Button (West)
         JButton newChatButton = createButton(newEditorIcon);
         newChatButton.setToolTipText("Start a new chat");
@@ -542,6 +544,7 @@ public class LearnFix extends JavaFix {
         newChatButton.addActionListener(e -> {
             topComponent.clear();
             topComponent.repaint();
+            initialMessage();
             responseHistory.clear();
             currentResponseIndex = -1;
             updateButtons(prevButton, nextButton);

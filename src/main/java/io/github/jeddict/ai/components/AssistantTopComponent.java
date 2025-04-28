@@ -46,7 +46,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.java.source.JavaSource;
@@ -58,32 +57,32 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
+import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.util.SourceUtil;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.lang.model.element.Name;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 import org.netbeans.api.diff.Diff;
 import org.netbeans.api.diff.DiffView;
 import org.netbeans.api.diff.StreamSource;
 import org.netbeans.modules.diff.builtin.SingleDiffPanel;
-import org.netbeans.modules.editor.indent.api.Reformat;
-import org.openide.awt.StatusDisplayer;
-import org.openide.cookies.EditorCookie;
 import org.openide.util.Exceptions;
 
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
-import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.windows.TopComponent;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.StyledDocument;
@@ -138,8 +137,10 @@ public class AssistantTopComponent extends TopComponent {
 
     public JEditorPane createHtmlPane(String content) {
         JEditorPane editorPane = new JEditorPane();
+        editorPane.setBorder(BorderFactory.createEmptyBorder()); // No border
+        editorPane.setMargin(new Insets(1, 0, 1, 0));
         editorPane.setContentType("text/html");
-        editorPane.setEditorKit(getHTMLEditorKit());
+        editorPane.setEditorKit(new HTMLEditorKit());
         editorPane.addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
                 try {
@@ -150,7 +151,7 @@ public class AssistantTopComponent extends TopComponent {
             }
         });
         editorPane.setEditable(false);
-        editorPane.setText(content);
+        editorPane.setText(getHTMLContent(content));
         parentPanel.add(editorPane);
         return editorPane;
     }
@@ -158,6 +159,13 @@ public class AssistantTopComponent extends TopComponent {
     public JEditorPane createPane() {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setEditable(false);
+        Font newFont = getFontFromMimeType("text/x-java"); 
+        java.awt.Color textColor = getTextColorFromMimeType("text/x-java"); 
+        java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/x-java"); 
+
+        editorPane.setFont(newFont);
+        editorPane.setForeground(textColor);
+        editorPane.setBackground(backgroundColor);
         parentPanel.add(editorPane);
         return editorPane;
     }
@@ -277,7 +285,7 @@ public class AssistantTopComponent extends TopComponent {
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             String fileExtension = getExtension(mimeType);
-            if (!file.getName().endsWith("." + fileExtension) 
+            if (!file.getName().endsWith("." + fileExtension)
                     && fileExtension != null) {
                 file = new File(file.getAbsolutePath() + "." + fileExtension);
             }
@@ -733,25 +741,6 @@ public class AssistantTopComponent extends TopComponent {
         return count;
     }
 
-    private HTMLEditorKit getHTMLEditorKit() {
-        if (htmlEditorKit != null) {
-            return htmlEditorKit;
-        }
-        htmlEditorKit = new HTMLEditorKit();
-        StyleSheet styleSheet = htmlEditorKit.getStyleSheet();
-
-        try (InputStream is = getClass().getResourceAsStream("html-styles.css")) {
-            if (is != null) {
-                String css = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                styleSheet.addRule(css);
-            } else {
-                System.err.println("CSS file not found");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return htmlEditorKit;
-    }
+   
 
 }
