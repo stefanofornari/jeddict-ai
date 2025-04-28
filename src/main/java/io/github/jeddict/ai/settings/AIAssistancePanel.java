@@ -160,6 +160,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         jScrollPane2 = new javax.swing.JScrollPane();
         excludeDirTable = new javax.swing.JTable();
         jLayeredPane1 = new javax.swing.JLayeredPane();
+        defaultAIAssistantPlacementLabel = new javax.swing.JLabel();
+        defaultAIAssistantPlacement = new javax.swing.JComboBox<>();
         excludeJavadocCommentsCheckBox = new javax.swing.JCheckBox();
         inlineCompletionPane = new javax.swing.JLayeredPane();
         classContextPane = new javax.swing.JLayeredPane();
@@ -612,9 +614,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 .addGroup(fileFilterationPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(fileExtLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 137, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0))
         );
 
         askAIPane.add(fileFilterationPane);
@@ -629,6 +631,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         askAIPane.add(jLayeredPane2);
 
         jLayeredPane1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 15, 5));
+
+        org.openide.awt.Mnemonics.setLocalizedText(defaultAIAssistantPlacementLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.defaultAIAssistantPlacementLabel.text")); // NOI18N
+        jLayeredPane1.add(defaultAIAssistantPlacementLabel);
+
+        defaultAIAssistantPlacement.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Left", "Center", "Right" }));
+        jLayeredPane1.add(defaultAIAssistantPlacement);
 
         org.openide.awt.Mnemonics.setLocalizedText(excludeJavadocCommentsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.text")); // NOI18N
         excludeJavadocCommentsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.toolTipText")); // NOI18N
@@ -1168,6 +1176,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
+        defaultAIAssistantPlacement.setSelectedItem(preferencesManager.getChatPlacement());
         systemMessage.setText(preferencesManager.getSystemMessage());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
@@ -1208,6 +1217,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setCustomHeaders(getHeaderTableModelValues());
         preferencesManager.setPrompts(getPromptModelValues());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
+        preferencesManager.setChatPlacement((String)defaultAIAssistantPlacement.getSelectedItem());
         preferencesManager.setSystemMessage(systemMessage.getText());
 
         if (!temperature.getText().isEmpty()) {
@@ -1560,6 +1570,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane customHeadersPane;
     private javax.swing.JScrollPane customHeadersScrollPane;
     private javax.swing.JTable customHeadersTable;
+    private javax.swing.JComboBox<String> defaultAIAssistantPlacement;
+    private javax.swing.JLabel defaultAIAssistantPlacementLabel;
     private javax.swing.JCheckBox enableHintsCheckBox;
     private javax.swing.JCheckBox enableInlineHintCheckBox;
     private javax.swing.JCheckBox enableInlinePromptHintCheckBox;

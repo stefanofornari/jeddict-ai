@@ -376,6 +376,15 @@ public class PreferencesManager {
         preferences.putBoolean("excludeJavadoc", enabled);
     }
 
+    
+    public String getChatPlacement() {
+        return preferences.get("chatPlacement", "Right");
+    }
+
+    public void setChatPlacement(String placement) {
+        preferences.put("chatPlacement", placement);
+    }
+
     private final List<String> DEFAULT_ACCEPTED_EXTENSIONS = Arrays.asList(
             "java", "php", "jsf", "kt", "groovy", "scala", "xml", "json", "yaml", "yml",
             "properties", "txt", "md", "js", "ts", "css", "scss", "html", "xhtml", "sh",
