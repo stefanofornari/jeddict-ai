@@ -45,13 +45,10 @@ import java.awt.Desktop;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 import javax.swing.JButton;
@@ -67,7 +64,6 @@ import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.spi.java.hints.JavaFix;
-import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import java.awt.Color;
@@ -105,6 +101,7 @@ import org.openide.loaders.DataObject;
 import org.openide.filesystems.FileObject;
 import org.openide.nodes.Node;
 import org.openide.filesystems.FileUtil;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -382,6 +379,15 @@ public class LearnFix extends JavaFix {
             JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
             topComponent.add(scrollPane, BorderLayout.CENTER);
             topComponent.add(createBottomPanel(type, fileName, title, action), BorderLayout.SOUTH);
+            if(PreferencesManager.getInstance().getChatPlacement().equals("Left")) {
+                WindowManager.getDefault()
+                    .findMode("explorer")
+                    .dockInto(topComponent);
+            } else if(PreferencesManager.getInstance().getChatPlacement().equals("Right")) {
+                WindowManager.getDefault()
+                    .findMode("properties")
+                    .dockInto(topComponent);
+            }
             topComponent.open();
             topComponent.requestActive();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
