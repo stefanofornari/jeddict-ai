@@ -16,6 +16,8 @@
 package io.github.jeddict.ai.util;
 
 import io.github.jeddict.ai.components.AssistantTopComponent;
+import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_PUML;
 import java.awt.Font;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,11 +53,11 @@ public class EditorUtil {
         String regex = "(\\w+)\\n([\\s\\S]+)";
         Pattern pattern = Pattern.compile(regex);
 
-        int wordBreakLimit = getWordBreakLimit(topComponent);
+//        int wordBreakLimit = getWordBreakLimit(topComponent);
         for (int i = 0; i < parts.length; i++) {
             if (i % 2 == 0) {
-                String newText = addLineBreaksToMarkdown(parts[i].trim(), wordBreakLimit);
-                String html = renderer.render(parser.parse(newText));
+//                String newText = addLineBreaksToMarkdown(parts[i].trim(), wordBreakLimit);
+                String html = renderer.render(parser.parse(parts[i]));
                 topComponent.createHtmlPane(html);
             } else {
                 Matcher matcher = pattern.matcher(parts[i]);
@@ -63,7 +65,15 @@ public class EditorUtil {
                     String codeType = matcher.group(1);
                     String codeContent = matcher.group(2);
                     code.append('\n').append(codeContent).append('\n');
-                    topComponent.createCodePane(getMimeType(codeType), codeContent);
+                    String mimeType = getMimeType(codeType);
+                    boolean puml = MIME_PUML.equals(mimeType);
+                    if (puml) {
+                        mimeType = JAVA_MIME;
+                    }
+                    topComponent.createCodePane(mimeType, codeContent);
+                    if (puml) {
+                       topComponent.createSVGPane(codeContent);
+                    }
                 } else {
                     topComponent.createCodePane(getMimeType(null), parts[i]);
                 }
@@ -78,7 +88,8 @@ public class EditorUtil {
     private static int getWordBreakLimit(AssistantTopComponent topComponent) {
         int width;
         try {
-            FontMetrics metrics = topComponent.getFontMetrics(topComponent.getFont());
+            Font font = getFontFromMimeType("text/plain");
+            FontMetrics metrics = topComponent.getFontMetrics(font);
             width = (int) (topComponent.getWidth() / metrics.charWidth('O'));
         } catch (Exception ex) {
             width = 100;
@@ -126,6 +137,8 @@ public class EditorUtil {
     static {
         // OpenAI Code Block and NetBeans Editor MIME type mappings
         OPENAI_NETBEANS_EDITOR_MAP.put("java", "text/x-java");
+        OPENAI_NETBEANS_EDITOR_MAP.put("puml", "text/x-puml");
+        OPENAI_NETBEANS_EDITOR_MAP.put("plantuml", "text/x-puml");
         OPENAI_NETBEANS_EDITOR_MAP.put("xml", "text/xml");
         OPENAI_NETBEANS_EDITOR_MAP.put("python", "text/x-python");
         OPENAI_NETBEANS_EDITOR_MAP.put("javascript", "text/javascript");
@@ -253,7 +266,9 @@ public class EditorUtil {
         return allowedMimeTypes.contains(mimeType);
     }
     
-     public static String getHTMLContent(String bodyContent) {
+  
+
+     public static String getHTMLContent(int wrapWidth, String bodyContent) {
         Font newFont = getFontFromMimeType("text/html");
         java.awt.Color textColor = getTextColorFromMimeType("text/html"); // Get text color
         java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/html"); // Get background color
@@ -262,13 +277,12 @@ public class EditorUtil {
     <html>
       <head>
         <style>
-          html, body { margin: 0; padding: 10px; font-family: 'NB_FONT_NAME'; font-size: NB_FONT_SIZEpx; line-height: 1.5; color: NB_FONT_COLOR; background-color: NB_BACKGROUND_COLOR; }
+          html, body { margin: 0; padding: 10px; width:NB_WRAP_WIDTHpx; font-family: 'NB_FONT_NAME'; font-size: NB_FONT_SIZEpx; line-height: 1.5; color: NB_FONT_COLOR; background-color: NB_BACKGROUND_COLOR; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
           h1, h2, h3, h4, h5, h6 { margin: 0 0 10px 0; font-weight: bold; font-size: inherit; }
           p { margin: 0 0 10px 0; }
           a { color: #007bff; text-decoration: none; }
           a:hover { text-decoration: underline; }
           strong { font-weight: bold; }
-          pre, code { font-family: 'Courier New', Courier, monospace; font-size: 90%; }
         </style>
       </head>
       <body>
@@ -278,6 +292,7 @@ public class EditorUtil {
     """;
         newContent = newContent.replace("NB_FONT_SIZE", String.valueOf(newFont.getSize()));
         newContent = newContent.replace("NB_FONT_NAME", newFont.getName());
+        newContent = newContent.replace("NB_WRAP_WIDTH", String.valueOf(wrapWidth));
 
         if (textColor != null) {
             newContent = newContent.replace("NB_FONT_COLOR", "#" + Integer.toHexString(textColor.getRGB()).substring(2).toUpperCase());

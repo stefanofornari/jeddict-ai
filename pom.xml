@@ -186,6 +186,22 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-swing</artifactId>
+            <version>1.17</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-script</artifactId>
+            <version>1.17</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.plantuml</groupId>
+            <artifactId>plantuml</artifactId>
+            <version>1.2025.2</version>
+        </dependency>
+        <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
             <version>0.36.0</version>
@@ -468,25 +484,25 @@
             <version>RELEASE250</version>
         </dependency>
         <dependency>
-    <groupId>org.netbeans.api</groupId>
-    <artifactId>org-netbeans-api-progress</artifactId>
-    <version>RELEASE250</version>
-</dependency>
-<dependency>
-    <groupId>org.netbeans.api</groupId>
-    <artifactId>org-netbeans-modules-java-project</artifactId>
-    <version>RELEASE250</version>
-</dependency>
-<dependency>
-    <groupId>org.netbeans.api</groupId>
-    <artifactId>org-netbeans-modules-projectuiapi</artifactId>
-    <version>RELEASE250</version>
-</dependency>
-<dependency>
-    <groupId>org.netbeans.api</groupId>
-    <artifactId>org-netbeans-modules-java-project-ui</artifactId>
-    <version>RELEASE250</version>
-</dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-api-progress</artifactId>
+            <version>RELEASE250</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-java-project</artifactId>
+            <version>RELEASE250</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-projectuiapi</artifactId>
+            <version>RELEASE250</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-java-project-ui</artifactId>
+            <version>RELEASE250</version>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
