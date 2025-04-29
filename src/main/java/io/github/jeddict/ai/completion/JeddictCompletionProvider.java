@@ -833,10 +833,10 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 LanguagePath path = LanguagePath.get(MimeLookup.getLookup("text/x-dialog-binding").lookup(Language.class)); //NOI18N
                 Document d = (Document) attributes.getValue(path, "dialogBinding.document"); //NOI18N
                 if (d != null) {
-                    return new JavaToken(true);//"text/x-java".equals(NbEditorUtilities.getMimeType(d)); //NOI18N
+                    return new JavaToken(true);//JAVA_MIME.equals(NbEditorUtilities.getMimeType(d)); //NOI18N
                 }
                 FileObject fo = (FileObject) attributes.getValue(path, "dialogBinding.fileObject"); //NOI18N
-                return new JavaToken("text/x-java".equals(fo.getMIMEType())); //NOI18N
+                return new JavaToken(JAVA_MIME.equals(fo.getMIMEType())); //NOI18N
             }
             TokenSequence<JavaTokenId> ts = SourceUtils.getJavaTokenSequence(TokenHierarchy.get(doc), offset);
             if (ts == null) {

@@ -26,6 +26,7 @@ public class MimeUtil {
 
     public static final String JAVA_MIME = "text/x-java";
     public static final String MIME_PUML = "text/x-puml";
+    public static final String MIME_MARKDOWN = "text/x-markdown";
     public static final String MIME_HTML = "text/html";
     public static final String MIME_CSS = "text/css";
     public static final String MIME_SCSS = "text/scss";
@@ -69,6 +70,7 @@ public class MimeUtil {
 
     static {
         MIME_TYPE_DESCRIPTIONS.put(MIME_PUML, "Planet UML diagram");
+        MIME_TYPE_DESCRIPTIONS.put(MIME_MARKDOWN, "Markdown");
         MIME_TYPE_DESCRIPTIONS.put(MIME_HTML, "HTML elements and attributes");
         MIME_TYPE_DESCRIPTIONS.put(MIME_CSS, "CSS styles");
         MIME_TYPE_DESCRIPTIONS.put(MIME_SCSS, "SCSS styles (Sassy CSS extension)");
