@@ -1256,6 +1256,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         if (!organizationId.getText().isEmpty()) {
             preferencesManager.setOrganizationId(organizationId.getText());
         }
+        if (!timeout.getText().isEmpty()) {
+            preferencesManager.setTimeout(Integer.parseInt(timeout.getText()));
+        }
         preferencesManager.setAllowCodeExecution(allowCodeExecution.isSelected());
         preferencesManager.setIncludeCodeExecutionOutput(includeCodeExecutionOutput.isSelected());
         preferencesManager.setLogRequestsEnabled(logRequests.isSelected());
