@@ -17,6 +17,8 @@ package io.github.jeddict.ai.util;
 
 import io.github.jeddict.ai.components.AssistantTopComponent;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_MARKDOWN;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PUML;
 import java.awt.Font;
 import java.util.Arrays;
@@ -49,46 +51,33 @@ public class EditorUtil {
         topComponent.clear();
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
-        String[] parts = text.split("```");
-        String regex = "(\\w+)\\n([\\s\\S]+)";
-        Pattern pattern = Pattern.compile(regex);
-
-//        int wordBreakLimit = getWordBreakLimit(topComponent);
-        for (int i = 0; i < parts.length; i++) {
-            if (i % 2 == 0) {
-//                String newText = addLineBreaksToMarkdown(parts[i].trim(), wordBreakLimit);
-                String html = renderer.render(parser.parse(parts[i]));
+        
+        for (MarkdownParser.MarkdownBlock block : MarkdownParser.parseMarkdown(text)) {
+            if (block.type.equals("text")) {
+                String html = renderer.render(parser.parse(block.content));
                 topComponent.createHtmlPane(html);
             } else {
-                Matcher matcher = pattern.matcher(parts[i]);
-                if (matcher.matches()) {
-                    String codeType = matcher.group(1);
-                    String codeContent = matcher.group(2);
-                    code.append('\n').append(codeContent).append('\n');
-                    String mimeType = getMimeType(codeType);
-                    boolean puml = MIME_PUML.equals(mimeType);
-                    if (puml) {
-                        mimeType = JAVA_MIME;
-                    }
-                    topComponent.createCodePane(mimeType, codeContent);
-                    if (puml) {
-                       topComponent.createSVGPane(codeContent);
-                    }
+                code.append('\n').append(block.content).append('\n');
+                String mimeType = getMimeType(block.type);
+                if (MIME_PUML.equals(mimeType)) {
+                    topComponent.createSVGPane(block.content);
+                } else if (MIME_MARKDOWN.equals(mimeType)) {
+                    topComponent.createMarkdownPane(block.content);
                 } else {
-                    topComponent.createCodePane(getMimeType(null), parts[i]);
+                    topComponent.createCodePane(mimeType, block.content);
                 }
-            }                       
+            }
         }
         
         topComponent.getParseCodeEditor(fileObjects);
-        
         return code.toString();
     }
+    
 
     private static int getWordBreakLimit(AssistantTopComponent topComponent) {
         int width;
         try {
-            Font font = getFontFromMimeType("text/plain");
+            Font font = getFontFromMimeType(MIME_PLAIN_TEXT);
             FontMetrics metrics = topComponent.getFontMetrics(font);
             width = (int) (topComponent.getWidth() / metrics.charWidth('O'));
         } catch (Exception ex) {
@@ -98,12 +87,12 @@ public class EditorUtil {
     }
 
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
-        String[] lines = markdown.split("\n");  // Split the markdown by new lines
+        String[] lines = markdown.split("\n");
         StringBuilder formattedMarkdown = new StringBuilder();
 
         for (String line : lines) {
             if (!line.trim().isEmpty()) {
-                formattedMarkdown.append(breakLongLine(line, maxLineLength));  // Process the line for length
+                formattedMarkdown.append(breakLongLine(line, maxLineLength));
             }
             formattedMarkdown.append('\n');
         }
@@ -117,13 +106,11 @@ public class EditorUtil {
 
         for (int i = 0; i < line.length(); i++) {
             if (i - lastBreakIndex >= maxLineLength && (line.charAt(i) == '.' || line.charAt(i) == ',')) {
-                // Add a break tag after punctuation when the line exceeds max length
                 formattedLine.append(line, lastBreakIndex, i + 1).append("<br>");
                 lastBreakIndex = i + 1;
             }
         }
 
-        // Append remaining part of the line
         if (lastBreakIndex < line.length()) {
             formattedLine.append(line.substring(lastBreakIndex));
         }
@@ -136,9 +123,11 @@ public class EditorUtil {
 
     static {
         // OpenAI Code Block and NetBeans Editor MIME type mappings
-        OPENAI_NETBEANS_EDITOR_MAP.put("java", "text/x-java");
+        OPENAI_NETBEANS_EDITOR_MAP.put("java", JAVA_MIME);
         OPENAI_NETBEANS_EDITOR_MAP.put("puml", "text/x-puml");
         OPENAI_NETBEANS_EDITOR_MAP.put("plantuml", "text/x-puml");
+        OPENAI_NETBEANS_EDITOR_MAP.put("md", "text/x-markdown");
+        OPENAI_NETBEANS_EDITOR_MAP.put("markdown", "text/x-markdown");
         OPENAI_NETBEANS_EDITOR_MAP.put("xml", "text/xml");
         OPENAI_NETBEANS_EDITOR_MAP.put("python", "text/x-python");
         OPENAI_NETBEANS_EDITOR_MAP.put("javascript", "text/javascript");
@@ -162,7 +151,6 @@ public class EditorUtil {
         OPENAI_NETBEANS_EDITOR_MAP.put("json", "text/x-json");
         OPENAI_NETBEANS_EDITOR_MAP.put("asm", "text/x-asm");
         OPENAI_NETBEANS_EDITOR_MAP.put("haskell", "text/x-haskell");
-        OPENAI_NETBEANS_EDITOR_MAP.put("markdown", "text/x-markdown");
         OPENAI_NETBEANS_EDITOR_MAP.put("latex", "text/x-tex");
         OPENAI_NETBEANS_EDITOR_MAP.put("groovy", "text/x-groovy");
         OPENAI_NETBEANS_EDITOR_MAP.put("powershell", "text/x-powershell");
@@ -209,20 +197,20 @@ public class EditorUtil {
         OPENAI_NETBEANS_EDITOR_MAP.put("html5", "text/html"); // HTML5 files
 
 // OpenAI Code Block and NetBeans Editor MIME type mappings for Jakarta EE
-        OPENAI_NETBEANS_EDITOR_MAP.put("jakarta", "text/x-java"); // General Jakarta EE Java files
+        OPENAI_NETBEANS_EDITOR_MAP.put("jakarta", JAVA_MIME); // General Jakarta EE Java files
         OPENAI_NETBEANS_EDITOR_MAP.put("jsp", "text/x-jsp"); // JavaServer Pages
         OPENAI_NETBEANS_EDITOR_MAP.put("faces", "text/x-jsf"); // JavaServer Faces
         OPENAI_NETBEANS_EDITOR_MAP.put("webxml", "text/xml"); // web.xml deployment descriptor
-        OPENAI_NETBEANS_EDITOR_MAP.put("persistence", "text/x-java"); // JPA persistence.xml files
-        OPENAI_NETBEANS_EDITOR_MAP.put("beans", "text/x-java"); // CDI beans.xml files
-        OPENAI_NETBEANS_EDITOR_MAP.put("context", "text/x-java"); // CDI context.xml files
+        OPENAI_NETBEANS_EDITOR_MAP.put("persistence", JAVA_MIME); // JPA persistence.xml files
+        OPENAI_NETBEANS_EDITOR_MAP.put("beans", JAVA_MIME); // CDI beans.xml files
+        OPENAI_NETBEANS_EDITOR_MAP.put("context", JAVA_MIME); // CDI context.xml files
         OPENAI_NETBEANS_EDITOR_MAP.put("config", "text/x-properties"); // Configuration properties files
         OPENAI_NETBEANS_EDITOR_MAP.put("js", "text/javascript"); // JavaScript files for web applications
 
         for (Map.Entry<String, String> entry : OPENAI_NETBEANS_EDITOR_MAP.entrySet()) {
             REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put(entry.getValue(), entry.getKey());
 
-            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/x-java", "java");
+            REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put(JAVA_MIME, "java");
             REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/xml", "xml");
             REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/javascript", "js");
             REVERSE_OPENAI_NETBEANS_EDITOR_MAP.put("text/x-yaml", "yaml");
@@ -234,9 +222,9 @@ public class EditorUtil {
     // Method to get the NetBeans MIME type for a given ChatGPT code block type
     public static String getMimeType(String chatGptType) {
          if (chatGptType == null) {
-            return "text/plain";
+            return MIME_PLAIN_TEXT;
         }
-        return OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(chatGptType, "text/plain"); // Default to binary if not found
+        return OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(chatGptType, MIME_PLAIN_TEXT); // Default to binary if not found
     }
 
     public static String getExtension(String mimeType) {
