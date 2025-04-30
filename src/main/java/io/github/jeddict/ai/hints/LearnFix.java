@@ -81,6 +81,7 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.settingsIcon
 import io.github.jeddict.ai.components.ContextDialog;
 import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
+import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -116,6 +117,7 @@ public class LearnFix extends JavaFix {
     private SQLCompletion sqlCompletion;
     private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton;
     private AssistantTopComponent topComponent;
+    private JEditorPane questionPane;
     private final List<String> responseHistory = new ArrayList<>();
     private int currentResponseIndex = -1;
     private String sourceCode = null;
@@ -173,7 +175,7 @@ public class LearnFix extends JavaFix {
         this.selectedFileObjects = new ArrayList<>();
         this.selectedFileObjects.add(selectedFileObject);
     }
-
+    
     @Override
     protected String getText() {
         if (action == Action.LEARN) {
@@ -402,16 +404,16 @@ public class LearnFix extends JavaFix {
 
     private void initialMessage() {
         topComponent.createHtmlPane(
-                    "<div style='margin:20px; padding:20px; border-radius:10px;'>"
-                    + "<div style='text-align:center;'>"
-                    + "👋 <strong>Welcome!</strong><br><br>"
-                    + "I'm here to assist you with any questions you have.<br>"
-                    + "Feel free to ask anything!<br>"
-                    + "</div>"
-                    + "</div>"
-            );
+                "<div style='margin:20px; padding:20px; border-radius:10px;'>"
+                + "<div style='text-align:center;'>"
+                + "👋 <strong>Welcome!</strong><br><br>"
+                + "I'm here to assist you with any questions you have.<br>"
+                + "Feel free to ask anything!<br>"
+                + "</div>"
+                + "</div>"
+        );
+        EventQueue.invokeLater(() -> questionPane.requestFocusInWindow());
     }
-    private JEditorPane questionPane;
 
     private JPanel createBottomPanel(String type, String fileName, String title, Consumer<String> action) {
         // Create a panel for the text field and buttons

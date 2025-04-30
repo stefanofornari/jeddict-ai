@@ -1222,42 +1222,68 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         if (!temperature.getText().isEmpty()) {
             preferencesManager.setTemperature(Double.parseDouble(temperature.getText()));
+        } else {
+            preferencesManager.setTemperature(Double.MIN_VALUE);
         }
         if (!maxTokens.getText().isEmpty()) {
             preferencesManager.setMaxTokens(Integer.parseInt(maxTokens.getText()));
+        } else {
+            preferencesManager.setMaxTokens(Integer.MIN_VALUE);
         }
         if (!topP.getText().isEmpty()) {
             preferencesManager.setTopP(Double.parseDouble(topP.getText()));
+        } else {
+            preferencesManager.setTopP(Double.MIN_VALUE);
         }
         if (!presencePenalty.getText().isEmpty()) {
             preferencesManager.setPresencePenalty(Double.parseDouble(presencePenalty.getText()));
+        } else {
+            preferencesManager.setPresencePenalty(Double.MIN_VALUE);
         }
         if (!frequencyPenalty.getText().isEmpty()) {
             preferencesManager.setFrequencyPenalty(Double.parseDouble(frequencyPenalty.getText()));
+        } else {
+            preferencesManager.setFrequencyPenalty(Double.MIN_VALUE);
         }
         if (!repeatPenalty.getText().isEmpty()) {
             preferencesManager.setRepeatPenalty(Double.parseDouble(repeatPenalty.getText()));
+        } else {
+            preferencesManager.setRepeatPenalty(Double.MIN_VALUE);
         }
         if (!seed.getText().isEmpty()) {
             preferencesManager.setSeed(Integer.parseInt(seed.getText()));
+        } else {
+            preferencesManager.setSeed(Integer.MIN_VALUE);
         }
         if (!topK.getText().isEmpty()) {
             preferencesManager.setTopK(Integer.parseInt(topK.getText()));
+        } else {
+            preferencesManager.setTopK(Integer.MIN_VALUE);
         }
         if (!maxCompletionTokens.getText().isEmpty()) {
             preferencesManager.setMaxCompletionTokens(Integer.parseInt(maxCompletionTokens.getText()));
+        } else {
+            preferencesManager.setMaxCompletionTokens(Integer.MIN_VALUE);
         }
         if (!maxOutputTokens.getText().isEmpty()) {
             preferencesManager.setMaxOutputTokens(Integer.parseInt(maxOutputTokens.getText()));
+        } else {
+            preferencesManager.setMaxOutputTokens(Integer.MIN_VALUE);
         }
         if (!maxRetries.getText().isEmpty()) {
             preferencesManager.setMaxRetries(Integer.parseInt(maxRetries.getText()));
+        } else {
+            preferencesManager.setMaxRetries(Integer.MIN_VALUE);
         }
         if (!organizationId.getText().isEmpty()) {
             preferencesManager.setOrganizationId(organizationId.getText());
+        } else {
+            preferencesManager.setOrganizationId("");
         }
         if (!timeout.getText().isEmpty()) {
             preferencesManager.setTimeout(Integer.parseInt(timeout.getText()));
+        } else {
+            preferencesManager.setTimeout(Integer.MIN_VALUE);
         }
         preferencesManager.setAllowCodeExecution(allowCodeExecution.isSelected());
         preferencesManager.setIncludeCodeExecutionOutput(includeCodeExecutionOutput.isSelected());

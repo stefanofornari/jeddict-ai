@@ -15,20 +15,26 @@
  */
 package io.github.jeddict.ai.actions;
 
+import io.github.jeddict.ai.hints.LearnFix;
 import static javax.swing.Action.NAME;
 import org.openide.util.NbBundle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyledDocument;
+import org.netbeans.api.editor.EditorRegistry;
+import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
-import org.openide.util.Utilities;
-import org.openide.util.actions.Presenter;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.text.NbDocument;
+import org.openide.util.Exceptions;
 
 @ActionID(
         category = "Edit/Chat",
@@ -37,28 +43,101 @@ import org.openide.util.actions.Presenter;
 @ActionRegistration(
         displayName = "#CTL_AIAssistantPopupAction", lazy = false
 )
-@ActionReference(path = "Editors/Popup", position = 101)
+@ActionReferences({
+    @ActionReference(path = "Editors/Popup", position = 101),
+    @ActionReference(path = "Shortcuts", name = "C-QUOTE")
+})
 @NbBundle.Messages("CTL_AIAssistantPopupAction=AI Assistant")
-public final class AIAssistantPopupAction extends AbstractAction implements ActionListener, Presenter.Popup {
+public final class AIAssistantPopupAction extends AbstractAction implements ActionListener {
 
     public AIAssistantPopupAction() {
         putValue(NAME, Bundle.CTL_AIAssistantPopupAction());
         setEnabled(true);
     }
 
+    
     @Override
     public void actionPerformed(ActionEvent e) {
+
+        LearnFix learnFix;
+        JTextComponent editor = EditorRegistry.lastFocusedComponent();
+        String selectedText = editor.getSelectedText();
+        final StyledDocument document = (StyledDocument) editor.getDocument();
+
+        FileObject file = getFileObject(document);
+        int selectionStartPosition = editor.getSelectionStart();
+        if (selectedText == null || selectedText.isEmpty()) {
+            selectionStartPosition = -1;
+            selectedText = "";
+            learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, file);
+        } else {
+            learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY);
+        }
+        final String text = selectedText;
+        final int startLocation = selectionStartPosition;
+        learnFix.openChat(null, selectedText, file.getName(), "Chat with AI", content -> {
+            NbDocument.runAtomic(document, () -> {
+                if (!text.isEmpty()) {
+                    insertAndReformat(document, content, startLocation, text.length());
+                } else {
+                    JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
+                    String currentSelectedText = currenteditor.getSelectedText();
+                    final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
+                    int currentSelectionStartPosition = currenteditor.getSelectionStart();
+                    DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
+                    if (currentDO != null) {
+                        FileObject currentfile = currentDO.getPrimaryFile();
+                        if (currentfile != null) {
+                            if (currentSelectedText == null || currentSelectedText.isEmpty()) {
+                                insertAndReformat(currentDocument, content, currentSelectionStartPosition, 0);
+                            } else {
+                                insertAndReformat(currentDocument, content, currentSelectionStartPosition, currentSelectedText.length());
+                            }
+                        }
+                    } else {
+                        javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the original editor before updating.");
+                    }
+                }
+            });
+        });
     }
 
-    @Override
-    public JMenuItem getPopupPresenter() {
-        setEnabled(true);
-        JMenu main = new JMenu(this);
-        List<? extends Action> actionsForPath = Utilities.actionsForPath("Actions/Chat/SubActions");
-        actionsForPath.forEach((action) -> {
-            main.add(action);
-        });
-        return main;
+    private void insertAndReformat(StyledDocument document, String content, int startPosition, int lengthToRemove) {
+        try {
+            if (lengthToRemove > 0) {
+                document.remove(startPosition, lengthToRemove);
+            }
+            document.insertString(startPosition, content, null);
+            Reformat reformat = Reformat.get(document);
+            reformat.lock();
+            try {
+                reformat.reformat(startPosition, startPosition + content.length());
+            } finally {
+                reformat.unlock();
+            }
+        } catch (BadLocationException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    /**
+     * Retrieves the FileObject associated with the given JTextComponent.
+     *
+     * @param editor The JTextComponent from which to derive the FileObject.
+     * @return The FileObject associated with the document, or null if not
+     * found.
+     */
+    private FileObject getFileObject(StyledDocument document) {
+        try {
+            // Retrieve the DataObject directly from the document's stream property
+            DataObject dataObject = NbEditorUtilities.getDataObject(document);
+            if (dataObject != null) {
+                return dataObject.getPrimaryFile();
+            }
+        } catch (Exception ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return null;
     }
 
 }
