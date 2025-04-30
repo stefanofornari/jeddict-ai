@@ -21,7 +21,6 @@ import static io.github.jeddict.ai.util.EditorUtil.getExtension;
 import static io.github.jeddict.ai.util.EditorUtil.isSuitableForWebAppDirectory;
 import static io.github.jeddict.ai.util.StringUtil.convertToCapitalized;
 import java.awt.BorderLayout;
-import java.awt.Desktop;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -30,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,14 +41,13 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.EditorKit;
-import javax.swing.text.html.HTMLEditorKit;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodTree;
@@ -60,24 +57,17 @@ import com.sun.source.util.Trees;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
+import io.github.jeddict.ai.response.Block;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.SourceUtil;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.geom.Dimension2D;
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import org.netbeans.api.diff.Diff;
@@ -95,20 +85,12 @@ import javax.swing.text.StyledDocument;
 import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.modules.editor.NbEditorUtilities;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import javax.swing.JDialog;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.plaf.basic.BasicTabbedPaneUI;
-import net.sourceforge.plantuml.FileFormat;
-import net.sourceforge.plantuml.FileFormatOption;
-import net.sourceforge.plantuml.SourceStringReader;
-import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
-import org.apache.batik.swing.JSVGCanvas;
-import org.apache.batik.swing.gvt.GVTTreeRendererAdapter;
-import org.apache.batik.swing.gvt.GVTTreeRendererEvent;
-import org.apache.batik.util.XMLResourceDescriptor;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Set;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /**
  *
@@ -175,34 +157,40 @@ public class AssistantTopComponent extends TopComponent {
         return editorPane;
     }
 
-    public JEditorPane createCodePane(String content) {
+    public JEditorPane createCodePane(String mimeType, Block content) {
         JEditorPane editorPane = new JEditorPane();
-        editorPane.setEditorKit(createEditorKit("text/x-" + type));
-        editorPane.setText(content);
+        EditorKit editorKit = createEditorKit(mimeType == null ? ("text/x-" + type) : mimeType);
+        editorPane.setEditorKit(editorKit);
+        editorPane.setText(content.getContent());
+        editorPane.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                content.setContent(editorPane.getText());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                content.setContent(editorPane.getText());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                content.setContent(editorPane.getText());
+            }
+        });
         addContextMenu(editorPane);
         parentPanel.add(editorPane);
         return editorPane;
     }
 
-    public JEditorPane createCodePane(String mimeType, String content) {
-        JEditorPane editorPane = new JEditorPane();
-        EditorKit editorKit = createEditorKit(mimeType == null ? ("text/x-" + type) : mimeType);
-        System.out.println("Mime " + mimeType + " - " + editorKit);
-        editorPane.setEditorKit(editorKit);
-        editorPane.setText(content);
-        addContextMenu(editorPane);
-        parentPanel.add(editorPane);
-        return editorPane;
-    }
-    
-    public void createSVGPane(String content) {
+    public void createSVGPane(Block content) {
         SVGPane svgPane = new SVGPane();
         JEditorPane sourcePane = svgPane.createPane(content);
         addContextMenu(sourcePane);
         parentPanel.add(svgPane);
     }
 
-    public void createMarkdownPane(String content) {
+    public void createMarkdownPane(Block content) {
         MarkdownPane pane = new MarkdownPane();
         JEditorPane sourcePane = pane.createPane(content, this);
         addContextMenu(sourcePane);
@@ -211,11 +199,13 @@ public class AssistantTopComponent extends TopComponent {
 
     private final Map<JEditorPane, JPopupMenu> menus = new HashMap<>();
     private final Map<JEditorPane, List<JMenuItem>> menuItems = new HashMap<>();
+    private final Map<JEditorPane, List<JMenuItem>> submenuItems = new HashMap<>();
 
     private void addContextMenu(JEditorPane editorPane) {
         JPopupMenu contextMenu = new JPopupMenu();
         menus.put(editorPane, contextMenu);
         menuItems.clear();
+        submenuItems.clear();
         JMenuItem copyItem = new JMenuItem("Copy");
         copyItem.addActionListener(e -> {
             if (editorPane.getSelectedText() != null) {
@@ -421,12 +411,14 @@ public class AssistantTopComponent extends TopComponent {
                 String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
                 CompilationUnit cu = StaticJavaParser.parse(content);
                 List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
-                Set<String> fileMethodSignatures = methods.stream()
-                        .map(method -> method.getNameAsString() + "("
-                        + method.getParameters().stream()
-                                .map(param -> param.getType().asString())
-                                .collect(Collectors.joining(",")) + ")")
-                        .collect(Collectors.toSet());
+                Map<String, Integer> fileMethodSignatures = cu.findAll(MethodDeclaration.class).stream()
+                        .collect(Collectors.toMap(
+                                method -> method.getNameAsString() + "("
+                                + method.getParameters().stream()
+                                        .map(param -> param.getType().asString())
+                                        .collect(Collectors.joining(",")) + ")",
+                                method -> method.toString().length()
+                        ));
                 Map<String, Long> fileMethods = methods.stream()
                         .collect(Collectors.groupingBy(
                                 method -> method.getNameAsString(),
@@ -437,7 +429,7 @@ public class AssistantTopComponent extends TopComponent {
                     if (parentPanel.getComponent(i) instanceof JEditorPane) {
                         JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
                         if (editorPane.getEditorKit().getContentType().equals(JAVA_MIME)) {
-
+                            Set<String> classes = new HashSet<>();
                             Map<String, String> cachedMethodSignatures = editorMethodSignCache.computeIfAbsent(editorPane, ep -> {
                                 Map<String, String> methodSignatures = new HashMap<>();
                                 try {
@@ -449,7 +441,14 @@ public class AssistantTopComponent extends TopComponent {
                                     methodSignatures.put(signature, editorPane.getText());
                                 } catch (Exception e) {
                                     try {
-                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
+                                        
+                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText() );
+                                        edCu.findAll(ClassOrInterfaceDeclaration.class)
+                                                .forEach(classDecl -> {
+                                                    classes.add(classDecl.getNameAsString());
+                                                     methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
+                                                });
+//                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
                                         List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : edMethods) {
                                             String signature = edMethod.getNameAsString() + "("
@@ -460,6 +459,11 @@ public class AssistantTopComponent extends TopComponent {
                                         }
                                     } catch (Exception e1) {
                                         CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
+                                         edCu.findAll(ClassOrInterfaceDeclaration.class)
+                                                .forEach(classDecl -> {
+                                                    classes.add(classDecl.getNameAsString());
+                                                     methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
+                                                });
                                         if (edCu.getTypes().isNonEmpty()) {
                                             methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
                                         }
@@ -476,7 +480,8 @@ public class AssistantTopComponent extends TopComponent {
                                     methodSignatures.put(signature, editorPane.getText());
                                 } catch (Exception e) {
                                     try {
-                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
+//                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
+                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText() );
                                         List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : edMethods) {
                                             String signature = edMethod.getNameAsString();
@@ -494,23 +499,22 @@ public class AssistantTopComponent extends TopComponent {
 
                             try {
                                 int menuCreationCount = 0;
-                                for (String signature : fileMethodSignatures) {
-                                    if (createEditorPaneMenus(fileObject, signature, editorPane, cachedMethodSignatures)) {
+                                for (Entry<String, Integer> signature : fileMethodSignatures.entrySet()) {
+                                    if (createEditorPaneMenus(fileObject, signature.getKey(), signature.getValue(), editorPane, cachedMethodSignatures)) {
                                         menuCreationCount++;
                                     }
                                 }
                                 if (menuCreationCount == 0) {
                                     for (String method : fileMethods.keySet()) {
                                         if (fileMethods.get(method) == 1) {
-                                            if (createEditorPaneMenus(fileObject, method, editorPane, cachedMethods)) {
+                                            if (createEditorPaneMenus(fileObject, method, -1, editorPane, cachedMethods)) {
                                                 menuCreationCount++;
                                             }
                                         }
                                     }
                                 }
-                                if (menuCreationCount == 0) {
-                                    createEditorPaneMenus(fileObject, fileObject.getName(), editorPane, cachedMethodSignatures);
-                                }
+                                
+                                createEditorPaneMenus(fileObject, fileObject.getName(), -1, editorPane, cachedMethodSignatures);
                             } catch (Exception e) {
                                 System.out.println("Error parsing single method declaration from editor content: " + e.getMessage());
                             }
@@ -553,27 +557,31 @@ public class AssistantTopComponent extends TopComponent {
         }
 
         for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
-            if (entry.getValue().size() > 3) {
-                JMenu methodMenu = new JMenu("Methods");
-                for (JMenuItem jMenuItem : entry.getValue()) {
-                    methodMenu.add(jMenuItem);
-                }
-                menus.get(entry.getKey()).add(methodMenu);
-            } else {
-                JPopupMenu mainMenu = menus.get(entry.getKey());
-                for (JMenuItem jMenuItem : entry.getValue()) {
-                    mainMenu.add(jMenuItem);
-                }
+            JPopupMenu mainMenu = menus.get(entry.getKey());
+            for (JMenuItem jMenuItem : entry.getValue()) {
+                mainMenu.add(jMenuItem);
             }
+        }
+
+        for (Map.Entry<JEditorPane, List<JMenuItem>> entry : submenuItems.entrySet()) {
+            JMenu methodMenu = new JMenu("Methods");
+            for (JMenuItem jMenuItem : entry.getValue()) {
+                methodMenu.add(jMenuItem);
+            }
+            menus.get(entry.getKey()).add(methodMenu);
         }
         return 0;
     }
 
-    private boolean createEditorPaneMenus(FileObject fileObject, String signature, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
+    private boolean createEditorPaneMenus(FileObject fileObject, String signature, Integer bodyLength, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
         boolean classSignature = fileObject.getName().equals(signature);
-        if (cachedMethodSignatures.get(signature) != null) {
+        if (cachedMethodSignatures.get(signature) != null
+                && (cachedMethodSignatures.get(signature).length() != bodyLength || bodyLength == -1)) {
             if (menuItems.get(editorPane) == null) {
                 menuItems.put(editorPane, new ArrayList<>());
+            }
+            if (submenuItems.get(editorPane) == null) {
+                submenuItems.put(editorPane, new ArrayList<>());
             }
             String menuSubText = (classSignature ? "" : (signature + " in "));
             JMenuItem updateMethodItem = new JMenuItem("Update " + menuSubText + fileObject.getName());
@@ -586,7 +594,11 @@ public class AssistantTopComponent extends TopComponent {
                     }
                 });
             });
-            menuItems.get(editorPane).add(updateMethodItem);
+            if (fileObject.getName().equals(signature)) {
+                menuItems.get(editorPane).add(updateMethodItem);
+            } else {
+                submenuItems.get(editorPane).add(updateMethodItem);
+            }
 
             JMenuItem diffMethodItem = new JMenuItem("Diff " + menuSubText + fileObject.getName());
             diffMethodItem.addActionListener(e -> {
@@ -594,7 +606,11 @@ public class AssistantTopComponent extends TopComponent {
                     diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
                 });
             });
-            menuItems.get(editorPane).add(diffMethodItem);
+            if (fileObject.getName().equals(signature)) {
+                menuItems.get(editorPane).add(diffMethodItem);
+            } else {
+                submenuItems.get(editorPane).add(diffMethodItem);
+            }
             return true;
         }
         return false;

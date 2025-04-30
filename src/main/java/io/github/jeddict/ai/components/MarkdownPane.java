@@ -19,6 +19,7 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.createEditor
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
+import io.github.jeddict.ai.response.Block;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.Color;
@@ -37,6 +38,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.text.EditorKit;
@@ -78,7 +81,7 @@ public class MarkdownPane extends JTabbedPane {
         return Math.max(0, width);
     }
 
-    public JEditorPane createPane(final String content, JComponent component) {
+    public JEditorPane createPane(final Block content, JComponent component) {
         Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
         Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
         JTabbedPane tabbedPane = this;
@@ -86,7 +89,7 @@ public class MarkdownPane extends JTabbedPane {
         
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
-        String html = renderer.render(parser.parse(content));
+        String html = renderer.render(parser.parse(content.getContent()));
 
         JEditorPane viewPane = createHtmlPane(html, component);
         tabbedPane.addTab("View", viewPane);
@@ -94,22 +97,41 @@ public class MarkdownPane extends JTabbedPane {
         JEditorPane editorPane = new JEditorPane();
         EditorKit editorKit = createEditorKit(JAVA_MIME);
         editorPane.setEditorKit(editorKit);
-        editorPane.setText(content);
+        editorPane.setText(content.getContent());
         tabbedPane.addTab("Source", editorPane);
+        
+        final boolean[] reRender = {true};
+        editorPane.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                reRender[0]= true;
+                content.setContent(editorPane.getText());
+            }
 
-        boolean isDarkTheme = isDarkColor(backgroundColor);
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                reRender[0]= true;
+                content.setContent(editorPane.getText());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                reRender[0]= true;
+                content.setContent(editorPane.getText());
+            }
+        });
+
         tabbedPane.setBackgroundAt(0, backgroundColor);
         tabbedPane.setBackgroundAt(1, backgroundColor);
         tabbedPane.setForegroundAt(0, textColor);
         tabbedPane.setForegroundAt(1, textColor);
         tabbedPane.setUI(new ColoredTabbedPaneUI(backgroundColor));
 
-        final String[] lastContent = {""};
 
         Runnable updateViewer = () -> {
             String mdContent = editorPane.getText();
-            if (!mdContent.equals(lastContent[0])) {
-                lastContent[0] = mdContent;
+            if (reRender[0] == true) {
+                reRender[0] = false;
                 String newhtml = renderer.render(parser.parse(mdContent));
                 viewPane.setText(getHTMLContent(getHtmlWrapWidth(component), newhtml));
             }

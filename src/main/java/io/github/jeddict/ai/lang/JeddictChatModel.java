@@ -21,6 +21,7 @@ package io.github.jeddict.ai.lang;
  */
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -54,6 +55,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
+import io.github.jeddict.ai.response.Response;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -193,11 +195,18 @@ public class JeddictChatModel {
     public String generate(final Project project, final String prompt) {
         try ( final ProgressHandle handle = ProgressHandle.createHandle(HANDLE) ) {
             handle.start();
-            return generateInternal(project, prompt);
+            return generateInternal(project, prompt, null);
+        }
+    }
+    
+    public String generate(final Project project, final String prompt, Response prevRes) {
+        try ( final ProgressHandle handle = ProgressHandle.createHandle(HANDLE) ) {
+            handle.start();
+            return generateInternal(project, prompt, prevRes);
         }
     }
 
-    private String generateInternal(Project project, String prompt) {
+    private String generateInternal(Project project, String prompt, Response prevRes) {
         if (model == null && handler == null) {
             JOptionPane.showMessageDialog(null,
                     "AI assistance model not intitalized.",
@@ -211,6 +220,9 @@ public class JeddictChatModel {
         List<ChatMessage> messages = new ArrayList<>();
         if (systemMessage != null && !systemMessage.trim().isEmpty()) {
             messages.add(SystemMessage.from(systemMessage));
+        }
+        if (prevRes != null) {
+            messages.add(AiMessage.from(prevRes.toString()));
         }
         messages.add(UserMessage.from(prompt));
 
@@ -1037,7 +1049,7 @@ public class JeddictChatModel {
 
     public String generateDescription(
             Project project, String source, String methodContent,
-            String previousChatResponse, String userQuery) {
+            Response previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
         String promptExtend = "";
 
@@ -1058,23 +1070,13 @@ public class JeddictChatModel {
                     .append("\n\n");
         }
 
-        // Append previous chat response and user query
-        if (previousChatResponse == null) {
-            prompt.append("Given the following content, and the user's query to addresses the specific query. ");
-        } else {
-            prompt.append("Given the following content, the previous chat response, and the user's query to addresses the specific query. ")
-                    .append("Previous Chat Response:\n")
-                    .append(previousChatResponse)
-                    .append("\n\n");
-        }
-
         // Append the extended prompt content and user query
         prompt.append(promptExtend)
                 .append("User Query:\n")
                 .append(userQuery);
 
         // Generate the answer
-        String answer = generate(project, prompt.toString());
+        String answer = generate(project, prompt.toString(), previousChatResponse);
         System.out.println(answer);
         return answer;
     }
@@ -1082,7 +1084,7 @@ public class JeddictChatModel {
     public String generateTestCase(
             Project project,
             String projectContent, String classContent, String methodContent,
-            String previousChatResponse, String userQuery) {
+            Response previousChatResponse, String userQuery) {
 
         StringBuilder promptBuilder = new StringBuilder();
         StringBuilder promptExtend = new StringBuilder();
@@ -1164,25 +1166,14 @@ public class JeddictChatModel {
                     .append("\n\n");
         }
 
-        // Build the main prompt
-        if (previousChatResponse == null) {
-            promptBuilder.append(testCaseType).append(" test cases in Java for a given class or method based on the original Java class content. ")
-                    .append("Given the following Java class or method content and the user's query, generate ")
-                    .append(testCaseType).append(" test cases that are well-structured and functional. ")
-                    .append(promptExtend)
-                    .append(userQuery);
-        } else {
-            promptBuilder.append(testCaseType).append(" test cases in Java for a given class or method based on the original Java class content and previous chat content. ")
-                    .append("Given the following Java class content, previous chat response, and the user's query, generate ")
-                    .append(testCaseType).append(" test cases that directly address the user's query. ")
-                    .append("Ensure the ").append(testCaseType).append(" test cases are well-structured and reflect any modifications or updates suggested in the previous chat response. ")
-                    .append("Previous Chat Response:\n").append(previousChatResponse).append("\n\n")
-                    .append(promptExtend)
-                    .append(userQuery);
-        }
+        promptBuilder.append(testCaseType).append(" test cases in Java for a given class or method based on the original Java class content. ")
+                .append("Given the following Java class or method content and the user's query, generate ")
+                .append(testCaseType).append(" test cases that are well-structured and functional. ")
+                .append(promptExtend)
+                .append(userQuery);
 
         // Generate the test cases
-        String answer = generate(project, promptBuilder.toString());
+        String answer = generate(project, promptBuilder.toString(), previousChatResponse);
         System.out.println(answer);
         return answer;
     }

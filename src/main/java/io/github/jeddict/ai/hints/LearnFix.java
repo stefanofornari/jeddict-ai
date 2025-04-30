@@ -81,6 +81,7 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.settingsIcon
 import io.github.jeddict.ai.components.ContextDialog;
 import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
+import io.github.jeddict.ai.response.Response;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -98,6 +99,7 @@ import javax.swing.TransferHandler.TransferSupport;
 import org.netbeans.api.options.OptionsDisplayer;
 import java.io.File;
 import java.util.List;
+import javax.swing.JComponent;
 import org.openide.loaders.DataObject;
 import org.openide.filesystems.FileObject;
 import org.openide.nodes.Node;
@@ -118,7 +120,7 @@ public class LearnFix extends JavaFix {
     private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton;
     private AssistantTopComponent topComponent;
     private JEditorPane questionPane;
-    private final List<String> responseHistory = new ArrayList<>();
+    private final List<Response> responseHistory = new ArrayList<>();
     private int currentResponseIndex = -1;
     private String sourceCode = null;
     private Project project;
@@ -217,7 +219,8 @@ public class LearnFix extends JavaFix {
                     displayHtmlContent(fileName, name + " AI Assistant");
                     JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                         @Override
-                        public void onComplete(String response) {
+                        public void onComplete(String textResponse) {
+                            Response response = new Response(textResponse);
                             sourceCode = EditorUtil.updateEditors(topComponent, response, getContextFiles());
                             responseHistory.add(response);
                             currentResponseIndex = responseHistory.size() - 1;
@@ -339,7 +342,8 @@ public class LearnFix extends JavaFix {
             displayHtmlContent(null, projectName + " GenAI Commit");
             JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                 @Override
-                public void onComplete(String response) {
+                public void onComplete(String textResponse) {
+                    Response response = new Response(textResponse);
                     sourceCode = EditorUtil.updateEditors(topComponent, response, getContextFiles());
                     responseHistory.add(response);
                     currentResponseIndex = responseHistory.size() - 1;
@@ -589,7 +593,7 @@ public class LearnFix extends JavaFix {
         prevButton.addActionListener(e -> {
             if (currentResponseIndex > 0) {
                 currentResponseIndex--;
-                String historyResponse = responseHistory.get(currentResponseIndex);
+                Response historyResponse = responseHistory.get(currentResponseIndex);
                 sourceCode = EditorUtil.updateEditors(topComponent, historyResponse, getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
@@ -598,7 +602,7 @@ public class LearnFix extends JavaFix {
         nextButton.addActionListener(e -> {
             if (currentResponseIndex < responseHistory.size() - 1) {
                 currentResponseIndex++;
-                String historyResponse = responseHistory.get(currentResponseIndex);
+                Response historyResponse = responseHistory.get(currentResponseIndex);
                 sourceCode = EditorUtil.updateEditors(topComponent, historyResponse, getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
@@ -606,26 +610,23 @@ public class LearnFix extends JavaFix {
 
         updateButtons(prevButton, nextButton);
    
+        TransferHandler defaultHandler = questionPane.getTransferHandler();
         questionPane.setTransferHandler(new TransferHandler() {
             @Override
             public boolean canImport(TransferSupport support) {
                 try {
                     Transferable t = support.getTransferable();
                     for (DataFlavor flavor : t.getTransferDataFlavors()) {
-                        if (flavor.isFlavorJavaFileListType()) {
+                        if (flavor.isFlavorJavaFileListType()
+                                || DataObject[].class.equals(flavor.getRepresentationClass())
+                                || Node.class.isAssignableFrom(flavor.getRepresentationClass())) {
                             return true;
-                        }
-                        if (DataObject[].class.equals(flavor.getRepresentationClass())) {
-                            return true;
-                        }
-                        if (Node.class.isAssignableFrom(flavor.getRepresentationClass())) {
-                            return true; // <-- Updated
                         }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                return false;
+                return defaultHandler.canImport(support);
             }
 
             @Override
@@ -661,9 +662,13 @@ public class LearnFix extends JavaFix {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                return false;
+                return defaultHandler.importData(support);
             }
-
+            
+            @Override
+            public void exportToClipboard(JComponent comp, Clipboard clipboard, int action) throws IllegalStateException {
+                defaultHandler.exportToClipboard(comp, clipboard, action);
+            }
         });
 
         return bottomPanel;
@@ -740,7 +745,7 @@ public class LearnFix extends JavaFix {
     private void handleQuestion(String question, JButton submitButton) {
         executorService.submit(() -> {
             try {
-                String prevChat = responseHistory.isEmpty() ? null : responseHistory.get(responseHistory.size() - 1);
+                Response prevChat = responseHistory.isEmpty() ? null : responseHistory.get(responseHistory.size() - 1);
                 if (action == Action.LEARN) {
                     if (responseHistory.size() - 1 == 0) {
                         prevChat = null;
@@ -751,14 +756,14 @@ public class LearnFix extends JavaFix {
                 }
                 JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                     @Override
-                    public void onComplete(String response) {
-                        if (responseHistory.isEmpty() || !response.equals(responseHistory.get(responseHistory.size() - 1))) {
+                    public void onComplete(String textResponse) {
+                        Response response = new Response(textResponse);
+                        if (responseHistory.isEmpty() || !textResponse.equals(responseHistory.get(responseHistory.size() - 1))) {
                             responseHistory.add(response);
                             currentResponseIndex = responseHistory.size() - 1;
                         }
-                        String finalResponse = response;
                         SwingUtilities.invokeLater(() -> {
-                            sourceCode = EditorUtil.updateEditors(topComponent, finalResponse, getContextFiles());
+                            sourceCode = EditorUtil.updateEditors(topComponent, response, getContextFiles());
                             submitButton.setIcon(startIcon);
                             submitButton.setEnabled(true);
                             saveButton.setEnabled(sourceCode != null);
