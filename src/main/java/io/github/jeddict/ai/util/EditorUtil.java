@@ -15,6 +15,8 @@
  */
 package io.github.jeddict.ai.util;
 
+import io.github.jeddict.ai.response.Response;
+import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.components.AssistantTopComponent;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_MARKDOWN;
@@ -45,30 +47,31 @@ import org.openide.filesystems.FileObject;
  */
 public class EditorUtil {
 
-    public static String updateEditors(AssistantTopComponent topComponent, String text, List<FileObject> fileObjects) {
+    public static String updateEditors(AssistantTopComponent topComponent, Response response, List<FileObject> fileObjects) {
         StringBuilder code = new StringBuilder();
         
         topComponent.clear();
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
         
-        for (MarkdownParser.MarkdownBlock block : MarkdownParser.parseMarkdown(text)) {
-            if (block.type.equals("text")) {
-                String html = renderer.render(parser.parse(block.content));
+        for (Block block : response.getBlocks()) {
+            if (block.getType().equals("text")) {
+                String html = renderer.render(parser.parse(block.getContent()));
                 topComponent.createHtmlPane(html);
             } else {
-                code.append('\n').append(block.content).append('\n');
-                String mimeType = getMimeType(block.type);
+                code.append('\n').append(block.getContent()).append('\n');
+                String mimeType = getMimeType(block.getType());
                 if (MIME_PUML.equals(mimeType)) {
-                    topComponent.createSVGPane(block.content);
+                    topComponent.createSVGPane(block);
                 } else if (MIME_MARKDOWN.equals(mimeType)) {
-                    topComponent.createMarkdownPane(block.content);
+                    topComponent.createMarkdownPane(block);
                 } else {
-                    topComponent.createCodePane(mimeType, block.content);
+                    topComponent.createCodePane(mimeType, block);
                 }
             }
         }
-        
+        topComponent.revalidate();
+        topComponent.repaint();
         topComponent.getParseCodeEditor(fileObjects);
         return code.toString();
     }
@@ -265,12 +268,61 @@ public class EditorUtil {
     <html>
       <head>
         <style>
-          html, body { margin: 0; padding: 10px; width:NB_WRAP_WIDTHpx; font-family: 'NB_FONT_NAME'; font-size: NB_FONT_SIZEpx; line-height: 1.5; color: NB_FONT_COLOR; background-color: NB_BACKGROUND_COLOR; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
-          h1, h2, h3, h4, h5, h6 { margin: 0 0 10px 0; font-weight: bold; font-size: inherit; }
-          p { margin: 0 0 10px 0; }
-          a { color: #007bff; text-decoration: none; }
-          a:hover { text-decoration: underline; }
-          strong { font-weight: bold; }
+            html, body {
+              margin: 0;
+              padding: 10px;
+              width: NB_WRAP_WIDTHpx;
+              font-family: 'NB_FONT_NAME';
+              font-size: NB_FONT_SIZEpx;
+              line-height: 1.5;
+              color: NB_FONT_COLOR;
+              background-color: NB_BACKGROUND_COLOR;
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+              white-space: normal;
+            }
+
+            h1, h2, h3, h4, h5, h6 {
+              margin: 0 0 10px 0;
+              font-weight: bold;
+              font-size: inherit;
+            }
+
+            p {
+              margin: 0 0 10px 0;
+            }
+
+            a {
+              color: #007bff;
+              text-decoration: none;
+            }
+
+            a:hover {
+              text-decoration: underline;
+            }
+
+            strong {
+              font-weight: bold;
+            }
+
+            code {
+              font-family: monospace;
+              padding: 2px 4px;
+              border-radius: 3px;
+            }
+
+            pre {
+              padding: 10px;
+              overflow-x: auto;
+              border-radius: 3px;
+              font-family: monospace;
+              margin: 10px 0;
+            }
+
+            pre code {
+              padding: 0;
+              background: none;
+            }
         </style>
       </head>
       <body>

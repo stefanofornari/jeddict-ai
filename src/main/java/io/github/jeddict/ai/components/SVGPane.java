@@ -18,6 +18,7 @@ package io.github.jeddict.ai.components;
 import static io.github.jeddict.ai.components.AssistantTopComponent.createEditorKit;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
+import io.github.jeddict.ai.response.Block;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.Color;
@@ -45,6 +46,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.text.EditorKit;
 import net.sourceforge.plantuml.FileFormat;
@@ -63,7 +66,7 @@ import org.apache.batik.util.XMLResourceDescriptor;
 public class SVGPane extends JTabbedPane {
     
     
-    public JEditorPane createPane(final String content) {
+    public JEditorPane createPane(final Block content) {
         Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
         Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
         JTabbedPane tabbedPane = this;
@@ -80,9 +83,28 @@ public class SVGPane extends JTabbedPane {
         JEditorPane editorPane = new JEditorPane();
         EditorKit editorKit = createEditorKit(JAVA_MIME);
         editorPane.setEditorKit(editorKit);
-        editorPane.setText(content);
+        editorPane.setText(content.getContent());
         tabbedPane.addTab("Source", editorPane);
+        final boolean[] reRender = {true};
+        editorPane.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                reRender[0]= true;
+                content.setContent(editorPane.getText());
+            }
 
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                reRender[0]= true;
+                content.setContent(editorPane.getText());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                reRender[0]= true;
+                content.setContent(editorPane.getText());
+            }
+        });
         boolean isDarkTheme = isDarkColor(backgroundColor);
         tabbedPane.setBackgroundAt(0, backgroundColor);
         tabbedPane.setBackgroundAt(1, backgroundColor);
@@ -90,12 +112,10 @@ public class SVGPane extends JTabbedPane {
         tabbedPane.setForegroundAt(1, textColor);
         tabbedPane.setUI(new ColoredTabbedPaneUI(backgroundColor));
 
-        final String[] lastContent = {""};
-
         Runnable updateCanvas = () -> {
             String umlContent = editorPane.getText();
-            if (!umlContent.equals(lastContent[0])) {
-                lastContent[0] = umlContent;
+            if (reRender[0] == true) {
+                reRender[0] = false;
                 if (isDarkTheme) {
                     umlContent = addDarkTheme(umlContent, backgroundColor, textColor);
                 }
