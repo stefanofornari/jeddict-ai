@@ -58,10 +58,13 @@ import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeTyp
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.response.Block;
+import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.SourceUtil;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,6 +92,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
+import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -100,22 +105,14 @@ public class AssistantTopComponent extends TopComponent {
 
     public static final ImageIcon icon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo16.png"));
     public static final ImageIcon logoIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo28.png"));
-    public static final ImageIcon copyIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/copyIcon.gif"));
-    public static final ImageIcon saveasIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveIcon.png"));
-    public static final ImageIcon startIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/startIcon.png"));
-    public static final ImageIcon progressIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/progressIcon.png"));
-    public static final ImageIcon upIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/browserIcon.png"));
-    public static final ImageIcon forwardIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/forwardIcon.png"));
-    public static final ImageIcon backIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/backIcon.png"));
-    public static final ImageIcon saveToEditorIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/saveToEditorIcon.png"));
-    public static final ImageIcon newEditorIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/newEditorIcon.png"));
-    public static final ImageIcon attachIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/attachIcon.gif"));
-    public static final ImageIcon settingsIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/settingsIcon.png"));
 
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
     private final Project project;
 
+    private final Map<JEditorPane, JPopupMenu> menus = new HashMap<>();
+    private final Map<JEditorPane, List<JMenuItem>> menuItems = new HashMap<>();
+    private final Map<JEditorPane, List<JMenuItem>> submenuItems = new HashMap<>();
     private String type = "java";
 
     public AssistantTopComponent(String name, String type, Project project) {
@@ -136,6 +133,80 @@ public class AssistantTopComponent extends TopComponent {
         parentPanel.removeAll();
         menus.clear();
     }
+
+public JTextPane createUserPane(Consumer<String> queryUpdate, String content) {
+    JTextPane textPane = new JTextPane();
+    textPane.setText(content);
+    textPane.setEditable(false);
+
+    // Set fonts/colors like before
+    Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
+    Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
+    Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+
+    boolean isDark = ColorUtil.isDarkColor(backgroundColor);
+    textPane.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
+    textPane.setFont(newFont);
+    textPane.setForeground(textColor);
+
+    JPanel wrapper = new JPanel(new BorderLayout());
+    wrapper.add(textPane, BorderLayout.CENTER);
+
+    JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+    JButton saveButton = QueryPane.createIconButton("Send ", "\u25B6\uFE0F");
+    JButton cancelButton =QueryPane.createIconButton("Cancel", "\u274C"); 
+
+    saveButton.addActionListener(e -> {
+        // Handle save (e.g., persist or process content)
+        textPane.setEditable(false);
+        buttonPanel.setVisible(false);
+        
+        String question = textPane.getText();
+        if (!question.isEmpty()) {
+            queryUpdate.accept(question);
+        }
+    });
+
+    cancelButton.addActionListener(e -> {
+        // Handle cancel (e.g., revert content)
+        textPane.setEditable(false);
+        buttonPanel.setVisible(false);
+    });
+
+    buttonPanel.add(cancelButton);
+    buttonPanel.add(saveButton);
+    buttonPanel.setVisible(false);  // Initially hidden
+
+    wrapper.add(buttonPanel, BorderLayout.SOUTH);
+
+    // Context menu for edit
+    JPopupMenu popupMenu = new JPopupMenu();
+    JMenuItem copyItem = new JMenuItem("Copy");
+    JMenuItem editItem = new JMenuItem("Edit Message");
+
+    copyItem.addActionListener(e -> textPane.copy());
+    editItem.addActionListener(e -> {
+        textPane.setEditable(true);
+        buttonPanel.setVisible(true);
+        textPane.requestFocus();
+    });
+
+    popupMenu.add(copyItem);
+    popupMenu.add(editItem);
+
+    textPane.addMouseListener(new MouseAdapter() {
+        public void mousePressed(MouseEvent e) {
+            if (e.isPopupTrigger()) popupMenu.show(e.getComponent(), e.getX(), e.getY());
+        }
+
+        public void mouseReleased(MouseEvent e) {
+            if (e.isPopupTrigger()) popupMenu.show(e.getComponent(), e.getX(), e.getY());
+        }
+    });
+
+    parentPanel.add(wrapper);
+    return textPane;
+}
 
     public JEditorPane createHtmlPane(String content) {
         JEditorPane editorPane = MarkdownPane.createHtmlPane(content, this);
@@ -183,23 +254,21 @@ public class AssistantTopComponent extends TopComponent {
         return editorPane;
     }
 
-    public void createSVGPane(Block content) {
+    public SVGPane createSVGPane(Block content) {
         SVGPane svgPane = new SVGPane();
         JEditorPane sourcePane = svgPane.createPane(content);
         addContextMenu(sourcePane);
         parentPanel.add(svgPane);
+        return svgPane;
     }
 
-    public void createMarkdownPane(Block content) {
+    public MarkdownPane createMarkdownPane(Block content) {
         MarkdownPane pane = new MarkdownPane();
         JEditorPane sourcePane = pane.createPane(content, this);
         addContextMenu(sourcePane);
         parentPanel.add(pane);
+        return pane;
     }
-
-    private final Map<JEditorPane, JPopupMenu> menus = new HashMap<>();
-    private final Map<JEditorPane, List<JMenuItem>> menuItems = new HashMap<>();
-    private final Map<JEditorPane, List<JMenuItem>> submenuItems = new HashMap<>();
 
     private void addContextMenu(JEditorPane editorPane) {
         JPopupMenu contextMenu = new JPopupMenu();
@@ -381,7 +450,7 @@ public class AssistantTopComponent extends TopComponent {
                     allText.append(editorPane.getText());
                     allText.append("</code></pre>");
                 } else {
-                    allText.append(editorPane.getText());
+                    allText.append(editorPane.getText().replaceAll("(?is)<style[^>]*?>.*?</style>", ""));
                 }
             }
         }
@@ -558,8 +627,10 @@ public class AssistantTopComponent extends TopComponent {
 
         for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
             JPopupMenu mainMenu = menus.get(entry.getKey());
-            for (JMenuItem jMenuItem : entry.getValue()) {
-                mainMenu.add(jMenuItem);
+            if (mainMenu != null) {
+                for (JMenuItem jMenuItem : entry.getValue()) {
+                    mainMenu.add(jMenuItem);
+                }
             }
         }
 
@@ -568,7 +639,10 @@ public class AssistantTopComponent extends TopComponent {
             for (JMenuItem jMenuItem : entry.getValue()) {
                 methodMenu.add(jMenuItem);
             }
-            menus.get(entry.getKey()).add(methodMenu);
+            JPopupMenu mainMenu = menus.get(entry.getKey());
+            if (mainMenu != null) {
+                mainMenu.add(methodMenu);
+            }
         }
         return 0;
     }

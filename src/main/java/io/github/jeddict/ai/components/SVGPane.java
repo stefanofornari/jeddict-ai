@@ -19,6 +19,7 @@ import static io.github.jeddict.ai.components.AssistantTopComponent.createEditor
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.response.Block;
+import static io.github.jeddict.ai.util.ColorUtil.isDarkColor;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.Color;
@@ -268,13 +269,6 @@ public class SVGPane extends JTabbedPane {
             // Insert after the first line (@startuml line)
             return content.substring(0, insertPos + 1) + skinParams + content.substring(insertPos + 1);
         }
-    }
-
-    private boolean isDarkColor(Color color) {
-        double luminance = 0.2126 * color.getRed() / 255
-                + 0.7152 * color.getGreen() / 255
-                + 0.0722 * color.getBlue() / 255;
-        return luminance < 0.5; // Threshold: lower = darker
     }
 
     private void addContextMenu(JSVGCanvas canvas, String svgContent) {

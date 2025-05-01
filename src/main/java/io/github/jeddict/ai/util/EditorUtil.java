@@ -28,12 +28,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import java.awt.FontMetrics;
 import java.util.List;
+import java.util.function.Consumer;
+import javax.swing.JComponent;
 import javax.swing.text.AttributeSet;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
@@ -47,28 +46,41 @@ import org.openide.filesystems.FileObject;
  */
 public class EditorUtil {
 
-    public static String updateEditors(AssistantTopComponent topComponent, Response response, List<FileObject> fileObjects) {
+    public static String updateEditors(Consumer<String> queryUpdate, AssistantTopComponent topComponent, Response response, List<FileObject> fileObjects) {
         StringBuilder code = new StringBuilder();
         
         topComponent.clear();
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
         
+        if (response.getQuery() != null && !response.getQuery().isEmpty()) {
+            topComponent.createUserPane(queryUpdate, response.getQuery());
+        }
+        
+        JComponent firstPane = null;
         for (Block block : response.getBlocks()) {
+            JComponent pane;
             if (block.getType().equals("text")) {
                 String html = renderer.render(parser.parse(block.getContent()));
-                topComponent.createHtmlPane(html);
+                pane = topComponent.createHtmlPane(html);
             } else {
                 code.append('\n').append(block.getContent()).append('\n');
                 String mimeType = getMimeType(block.getType());
                 if (MIME_PUML.equals(mimeType)) {
-                    topComponent.createSVGPane(block);
+                    pane = topComponent.createSVGPane(block);
                 } else if (MIME_MARKDOWN.equals(mimeType)) {
-                    topComponent.createMarkdownPane(block);
+                    pane = topComponent.createMarkdownPane(block);
                 } else {
-                    topComponent.createCodePane(mimeType, block);
+                   pane = topComponent.createCodePane(mimeType, block);
                 }
             }
+            if(firstPane == null) {
+                firstPane = pane;
+            }
+        }
+        
+        if (firstPane != null) {
+            firstPane.scrollRectToVisible(firstPane.getBounds());
         }
         topComponent.revalidate();
         topComponent.repaint();
@@ -76,19 +88,6 @@ public class EditorUtil {
         return code.toString();
     }
     
-
-    private static int getWordBreakLimit(AssistantTopComponent topComponent) {
-        int width;
-        try {
-            Font font = getFontFromMimeType(MIME_PLAIN_TEXT);
-            FontMetrics metrics = topComponent.getFontMetrics(font);
-            width = (int) (topComponent.getWidth() / metrics.charWidth('O'));
-        } catch (Exception ex) {
-            width = 100;
-        }
-        return width;
-    }
-
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
         String[] lines = markdown.split("\n");
         StringBuilder formattedMarkdown = new StringBuilder();
@@ -306,12 +305,14 @@ public class EditorUtil {
             }
 
             code {
+              font-size: NB_FONT_SIZEpx;
               font-family: monospace;
               padding: 2px 4px;
               border-radius: 3px;
             }
 
             pre {
+              font-size: NB_FONT_SIZEpx;
               padding: 10px;
               overflow-x: auto;
               border-radius: 3px;

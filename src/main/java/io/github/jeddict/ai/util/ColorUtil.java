@@ -32,4 +32,11 @@ public class ColorUtil {    // Lighten the color by a given percentage
         float[] hsb = Color.RGBtoHSB(original.getRed(), original.getGreen(), original.getBlue(), null);
         return Color.getHSBColor(hsb[0], hsb[1], Math.max(0f, hsb[2] - percentage));  // Decrease brightness
     }
+    
+    public static boolean isDarkColor(Color color) {
+        double luminance = 0.2126 * color.getRed() / 255
+                + 0.7152 * color.getGreen() / 255
+                + 0.0722 * color.getBlue() / 255;
+        return luminance < 0.5; // Threshold: lower = darker
+    }
 }

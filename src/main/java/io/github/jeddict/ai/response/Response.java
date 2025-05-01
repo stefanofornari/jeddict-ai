@@ -27,12 +27,18 @@ import java.util.regex.Pattern;
  */
 public class Response {
 
+    private final String query;
     private List<Block> blocks;
 
-    public Response(String response) {
+    public Response(String query, String response) {
+        this.query = query;
         this.blocks = parseMarkdown(response);
     }
 
+    public String getQuery() {
+        return query;
+    }
+    
     public List<Block> getBlocks() {
         return blocks;
     }
