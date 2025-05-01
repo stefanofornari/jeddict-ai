@@ -173,13 +173,6 @@ public class MarkdownPane extends JTabbedPane {
         }
     }
 
-    private boolean isDarkColor(Color color) {
-        double luminance = 0.2126 * color.getRed() / 255
-                + 0.7152 * color.getGreen() / 255
-                + 0.0722 * color.getBlue() / 255;
-        return luminance < 0.5; // Threshold: lower = darker
-    }
-
     private void addContextMenu(JSVGCanvas canvas, String svgContent) {
         JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem openInBrowserItem = new JMenuItem("Open in Browser");
