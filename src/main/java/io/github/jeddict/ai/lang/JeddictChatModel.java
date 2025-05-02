@@ -19,6 +19,8 @@ package io.github.jeddict.ai.lang;
  *
  * @author Shiwani Gupta
  */
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import dev.langchain4j.data.message.AiMessage;
@@ -56,6 +58,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import io.github.jeddict.ai.response.Response;
+import io.github.jeddict.ai.response.TokenHandler;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -64,6 +67,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -225,12 +229,15 @@ public class JeddictChatModel {
             messages.add(AiMessage.from(prevRes.toString()));
         }
         messages.add(UserMessage.from(prompt));
-
+        
+        TokenHandler.saveInputToken(messages);
         try {
             if (streamModel != null) {
                 streamModel.generate(messages, handler);
             } else {
-                return model.generate(messages).content().text();
+                String response = model.generate(messages).content().text();
+                TokenHandler.saveOutputToken(response);
+                return response;
             }
         } catch (Exception e) {
             String errorMessage = e.getMessage();

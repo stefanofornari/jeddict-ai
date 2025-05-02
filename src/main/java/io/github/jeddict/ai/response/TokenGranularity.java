@@ -13,25 +13,26 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.github.jeddict.ai.util;
+package io.github.jeddict.ai.response;
 
 /**
  *
  * @author Gaurav Gupta
  */
-public class Labels {
+public enum TokenGranularity {
+    MINUTE(60_000L),
+    HOUR(3_600_000L),
+    DAY(86_400_000L),
+    WEEK(7 * 86_400_000L),        // 604,800,000 ms
+    MONTH(30 * 86_400_000L);      // 2,592,000,000 ms (approximate)
 
-    public static final String PREV = "Prev";
-    public static final String NEXT = "Next";
-    public static final String VIEW = "View";
-    public static final String COPY = "Copy";
-    public static final String SAVE = "Save";
-    public static final String UPDATE = "Update";
-    public static final String NEW_CHAT = "New Chat";
-    public static final String STATS = "Stats";
-    public static final String SETTINGS = "Settings";
-    public static final String CONTEXT = "Context";
-    public static final String SEND = "Send";
-    public static final String EDIT = "Edit";
-    public static final String CANCEL = "Cancel";
+    public final long intervalMillis;
+
+    TokenGranularity(long intervalMillis) {
+        this.intervalMillis = intervalMillis;
+    }
+
+    public long getCurrentBucketKey() {
+        return System.currentTimeMillis() / intervalMillis;
+    }
 }

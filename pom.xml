@@ -237,6 +237,11 @@
             <version>0.36.0</version>
         </dependency>
         <dependency>
+            <groupId>com.knuddels</groupId>
+            <artifactId>jtokkit</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.commonmark</groupId>
             <artifactId>commonmark</artifactId>
             <version>0.21.0</version>
@@ -245,6 +250,11 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20240303</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.5.5</version>
         </dependency>
         <dependency>
             <groupId>com.github.javaparser</groupId>

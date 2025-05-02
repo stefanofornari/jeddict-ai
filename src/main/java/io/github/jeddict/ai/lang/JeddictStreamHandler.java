@@ -19,6 +19,7 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.output.Response;
 import io.github.jeddict.ai.components.AssistantTopComponent;
+import io.github.jeddict.ai.response.TokenHandler;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 
@@ -58,6 +59,7 @@ public abstract class JeddictStreamHandler implements StreamingResponseHandler<A
         SwingUtilities.invokeLater(() -> {
             String response = out.content().text();
             if (response != null && !response.isEmpty()) {
+                TokenHandler.saveOutputToken(response);
                 onComplete(response);
             }
         });

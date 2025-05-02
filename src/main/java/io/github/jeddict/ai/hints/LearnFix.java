@@ -73,12 +73,12 @@ import javax.swing.ImageIcon;
 import io.github.jeddict.ai.components.ContextDialog;
 import io.github.jeddict.ai.components.CustomScrollBarUI;
 import static io.github.jeddict.ai.components.QueryPane.createIconButton;
+import io.github.jeddict.ai.components.TokenUsageChartDialog;
 import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
-import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.Icons.ICON_CONTEXT;
 import static io.github.jeddict.ai.util.Icons.ICON_COPY;
 import static io.github.jeddict.ai.util.Icons.ICON_NEW_CHAT;
@@ -87,12 +87,12 @@ import static io.github.jeddict.ai.util.Icons.ICON_PREV;
 import static io.github.jeddict.ai.util.Icons.ICON_SAVE;
 import static io.github.jeddict.ai.util.Icons.ICON_SEND;
 import static io.github.jeddict.ai.util.Icons.ICON_SETTINGS;
+import static io.github.jeddict.ai.util.Icons.ICON_STATS;
 import static io.github.jeddict.ai.util.Icons.ICON_UPDATE;
 import static io.github.jeddict.ai.util.Icons.ICON_WEB;
 import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.EventQueue;
-import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -490,6 +490,13 @@ public class LearnFix extends JavaFix {
         saveToEditorButton.setVisible(fileName != null);
         leftButtonPanel.add(saveToEditorButton);
 
+        JButton showChartsButton = createIconButton(Labels.STATS, ICON_STATS);
+        showChartsButton.setToolTipText("Show Token Usage Charts");
+        rightButtonPanel.add(showChartsButton);
+        showChartsButton.addActionListener(e -> {
+            TokenUsageChartDialog.showDialog(SwingUtilities.getWindowAncestor(showChartsButton));
+        });
+
         JButton optionsButton = createIconButton(Labels.SETTINGS, ICON_SETTINGS);
         optionsButton.setToolTipText("Open Jeddict AI Assistant Settings");
         optionsButton.addActionListener(e -> OptionsDisplayer.getDefault().open("JeddictAIAssistant"));
@@ -529,6 +536,7 @@ public class LearnFix extends JavaFix {
                 updateButton(saveButton, showOnlyIcons, ICON_SAVE, Labels.SAVE + " " + ICON_SAVE);
                 updateButton(saveToEditorButton, showOnlyIcons, ICON_UPDATE, Labels.UPDATE + " " + ICON_UPDATE);
                 updateButton(newChatButton, showOnlyIcons, ICON_NEW_CHAT, Labels.NEW_CHAT + " " + ICON_NEW_CHAT);
+                updateButton(showChartsButton, showOnlyIcons, ICON_STATS, Labels.STATS + " " + ICON_STATS);
                 updateButton(optionsButton, showOnlyIcons, ICON_SETTINGS, Labels.SETTINGS + " " + ICON_SETTINGS);
                 updateButton(contextButton, showOnlyIcons, ICON_CONTEXT, Labels.CONTEXT + " " + ICON_CONTEXT);
                 updateButton(submitButton, showOnlyIcons, ICON_SEND, Labels.SEND + " " + ICON_SEND);

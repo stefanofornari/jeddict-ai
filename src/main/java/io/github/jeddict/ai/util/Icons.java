@@ -33,4 +33,6 @@ public class Icons {
     public static final String ICON_SEND = "\u25B6\uFE0F️︎";  // ▶️
     public static final String ICON_EDIT = "\uD83D\uDD8D\uFE0F"; // 🖍️
     public static final String ICON_CANCEL = "\u274C";       // ❌
+    public static final String ICON_STATS = "\uD83D\uDCC8"; // 📈
+
 }
