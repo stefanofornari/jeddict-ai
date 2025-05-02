@@ -78,14 +78,29 @@ import io.github.jeddict.ai.util.EditorUtil;
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
+import static io.github.jeddict.ai.util.Icons.ICON_CONTEXT;
+import static io.github.jeddict.ai.util.Icons.ICON_COPY;
+import static io.github.jeddict.ai.util.Icons.ICON_NEW_CHAT;
+import static io.github.jeddict.ai.util.Icons.ICON_NEXT;
+import static io.github.jeddict.ai.util.Icons.ICON_PREV;
+import static io.github.jeddict.ai.util.Icons.ICON_SAVE;
+import static io.github.jeddict.ai.util.Icons.ICON_SEND;
+import static io.github.jeddict.ai.util.Icons.ICON_SETTINGS;
+import static io.github.jeddict.ai.util.Icons.ICON_UPDATE;
+import static io.github.jeddict.ai.util.Icons.ICON_WEB;
+import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -116,6 +131,7 @@ public class LearnFix extends JavaFix {
     private TreePath treePath;
     private final Action action;
     private SQLCompletion sqlCompletion;
+    private ComponentAdapter buttonPanelAdapter;
     private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton;
     private AssistantTopComponent topComponent;
     private JEditorPane questionPane;
@@ -176,7 +192,7 @@ public class LearnFix extends JavaFix {
         this.action = action;
         this.selectedFileObjects.add(selectedFileObject);
     }
-    
+
     @Override
     protected String getText() {
         if (action == Action.LEARN) {
@@ -390,14 +406,14 @@ public class LearnFix extends JavaFix {
             }
             topComponent.add(scrollPane, BorderLayout.CENTER);
             topComponent.add(createBottomPanel(type, fileName, action), BorderLayout.SOUTH);
-            if(PreferencesManager.getInstance().getChatPlacement().equals("Left")) {
+            if (PreferencesManager.getInstance().getChatPlacement().equals("Left")) {
                 WindowManager.getDefault()
-                    .findMode("explorer")
-                    .dockInto(topComponent);
-            } else if(PreferencesManager.getInstance().getChatPlacement().equals("Right")) {
+                        .findMode("explorer")
+                        .dockInto(topComponent);
+            } else if (PreferencesManager.getInstance().getChatPlacement().equals("Right")) {
                 WindowManager.getDefault()
-                    .findMode("properties")
-                    .dockInto(topComponent);
+                        .findMode("properties")
+                        .dockInto(topComponent);
             }
             topComponent.open();
             topComponent.requestActive();
@@ -444,58 +460,88 @@ public class LearnFix extends JavaFix {
         leftButtonPanel.setBorder(BorderFactory.createEmptyBorder());
         buttonPanel.add(leftButtonPanel, BorderLayout.WEST);
 
-        prevButton = createIconButton("Prev", "\u2B05️︎");
+        prevButton = createIconButton(Labels.PREV, ICON_PREV);
         prevButton.setToolTipText("Previous Chat");
         leftButtonPanel.add(prevButton);
 
-        // Next Button (West)
-        nextButton = createIconButton("Next", "\u27A1️︎");
+        nextButton = createIconButton(Labels.NEXT, ICON_NEXT);
         nextButton.setToolTipText("Next Chat");
         leftButtonPanel.add(nextButton);
-        
-        openInBrowserButton = createIconButton("View", "\uD83C\uDF10");
+
+        openInBrowserButton = createIconButton(Labels.VIEW, ICON_WEB);
         openInBrowserButton.setToolTipText("Open in Browser");
         openInBrowserButton.setVisible(topComponent.getAllEditorCount() > 0);
         leftButtonPanel.add(openInBrowserButton);
 
         int javaEditorCount = topComponent.getAllCodeEditorCount();
 
-        copyButton = createIconButton("Copy", "\uD83D\uDCCB");
+        copyButton = createIconButton(Labels.COPY, ICON_COPY);
         copyButton.setToolTipText("Copy to clipboard");
         copyButton.setVisible(javaEditorCount > 0);
         leftButtonPanel.add(copyButton);
 
-        saveButton = createIconButton("Save", "\uD83D\uDCBE");
+        saveButton = createIconButton(Labels.SAVE, ICON_SAVE);
         saveButton.setToolTipText("Save as");
         saveButton.setVisible(javaEditorCount > 0);
         leftButtonPanel.add(saveButton);
 
-        JButton saveToEditorButton = createIconButton("Update " + fileName, "\u270D\uFE0F");
+        JButton saveToEditorButton = createIconButton(Labels.UPDATE + " " + fileName, ICON_UPDATE);
         saveToEditorButton.setToolTipText("Update " + fileName);
         saveToEditorButton.setVisible(fileName != null);
         leftButtonPanel.add(saveToEditorButton);
 
-        JButton optionsButton = createIconButton("Settings", "\u2699\uFE0F️");
+        JButton optionsButton = createIconButton(Labels.SETTINGS, ICON_SETTINGS);
         optionsButton.setToolTipText("Open Jeddict AI Assistant Settings");
-        optionsButton.addActionListener(e -> {
-            OptionsDisplayer.getDefault().open("JeddictAIAssistant");
-        });
+        optionsButton.addActionListener(e -> OptionsDisplayer.getDefault().open("JeddictAIAssistant"));
         rightButtonPanel.add(optionsButton);
-        
-        JButton contextButton = createIconButton("Context", "\uD83D\uDCC2");
+
+        JButton contextButton = createIconButton(Labels.CONTEXT, ICON_CONTEXT);
         contextButton.setToolTipText("View detailed context of the current chat session.");
-        contextButton.addActionListener(e -> {
-            showFilePathPopup();
-        });
+        contextButton.addActionListener(e -> showFilePathPopup());
         rightButtonPanel.add(contextButton);
-        
-        JButton newChatButton = createIconButton("New Chat", "\u2795");
+
+        JButton newChatButton = createIconButton(Labels.NEW_CHAT, ICON_NEW_CHAT);
         newChatButton.setToolTipText("Start a new chat");
         leftButtonPanel.add(newChatButton);
-        
-        JButton submitButton = createIconButton("Send", "\u25B6\uFE0F️︎");
+
+        JButton submitButton = createIconButton(Labels.SEND, ICON_SEND);
         submitButton.setToolTipText("Ask a question");
         rightButtonPanel.add(submitButton);
+
+        buttonPanelAdapter = new ComponentAdapter() {
+            boolean showOnlyIcons = false;
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                double totalButtonWidth = leftButtonPanel.getPreferredSize().width
+                        + rightButtonPanel.getPreferredSize().width;
+                if (showOnlyIcons) {
+                    totalButtonWidth = totalButtonWidth * 2;
+                }
+
+                int availableWidth = buttonPanel.getWidth();
+                showOnlyIcons = availableWidth < totalButtonWidth;
+
+                updateButton(prevButton, showOnlyIcons, ICON_PREV, Labels.PREV + " " + ICON_PREV);
+                updateButton(nextButton, showOnlyIcons, ICON_NEXT, Labels.NEXT + " " + ICON_NEXT);
+                updateButton(openInBrowserButton, showOnlyIcons, ICON_WEB, Labels.VIEW + " " + ICON_WEB);
+                updateButton(copyButton, showOnlyIcons, ICON_COPY, Labels.COPY + " " + ICON_COPY);
+                updateButton(saveButton, showOnlyIcons, ICON_SAVE, Labels.SAVE + " " + ICON_SAVE);
+                updateButton(saveToEditorButton, showOnlyIcons, ICON_UPDATE, Labels.UPDATE + " " + ICON_UPDATE);
+                updateButton(newChatButton, showOnlyIcons, ICON_NEW_CHAT, Labels.NEW_CHAT + " " + ICON_NEW_CHAT);
+                updateButton(optionsButton, showOnlyIcons, ICON_SETTINGS, Labels.SETTINGS + " " + ICON_SETTINGS);
+                updateButton(contextButton, showOnlyIcons, ICON_CONTEXT, Labels.CONTEXT + " " + ICON_CONTEXT);
+                updateButton(submitButton, showOnlyIcons, ICON_SEND, Labels.SEND + " " + ICON_SEND);
+
+                topComponent.updateUserPaneButtons(showOnlyIcons);
+
+            }
+
+            private void updateButton(JButton button, boolean iconOnly, String iconText, String fullText) {
+                button.setText(iconOnly ? iconText : fullText);
+            }
+        };
+        buttonPanel.addComponentListener(buttonPanelAdapter);
 
         questionPane = new JEditorPane();
         questionPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
@@ -526,7 +572,6 @@ public class LearnFix extends JavaFix {
                 updateHeight();
             }
         });
-
 
         copyButton.addActionListener(e -> {
             StringSelection stringSelection = new StringSelection(topComponent.getAllCodeEditorText());
@@ -667,10 +712,9 @@ public class LearnFix extends JavaFix {
         bottomPanel.add(javax.swing.Box.createVerticalStrut(0)); // spacing
         bottomPanel.add(buttonPanel);      // Compact button row
 
-
         return bottomPanel;
     }
-    
+
     private void updateHeight() {
         int lineHeight = questionPane.getFontMetrics(questionPane.getFont()).getHeight();
         String text = questionPane.getText().trim();
@@ -690,7 +734,7 @@ public class LearnFix extends JavaFix {
     }
 
     private List<FileObject> getContextFiles() {
-          List<FileObject> fileObjects;
+        List<FileObject> fileObjects;
         if (project != null) {
             fileObjects = getProjectContextList();
         } else if (selectedFileObjects != null) {
@@ -700,6 +744,7 @@ public class LearnFix extends JavaFix {
         }
         return fileObjects;
     }
+
     private void showFilePathPopup() {
         List<FileObject> fileObjects = getContextFiles();
         String projectRootDir = null;
@@ -760,11 +805,11 @@ public class LearnFix extends JavaFix {
     private void handleQuestion(String question, JButton submitButton, boolean newQuery) {
         executorService.submit(() -> {
             try {
-                if (currentResponseIndex >=0 
+                if (currentResponseIndex >= 0
                         && currentResponseIndex + 1 < responseHistory.size()) {
                     responseHistory.subList(currentResponseIndex + 1, responseHistory.size()).clear();
                 }
-                if(!newQuery && !responseHistory.isEmpty()) {
+                if (!newQuery && !responseHistory.isEmpty()) {
                     responseHistory.remove(responseHistory.size() - 1);
                     currentResponseIndex = currentResponseIndex - 1;
                 }
@@ -791,9 +836,9 @@ public class LearnFix extends JavaFix {
                             Consumer<String> queryUpdate = newQuery -> {
                                 handleQuestion(newQuery, submitButton, false);
                             };
-                            
+
                             sourceCode = EditorUtil.updateEditors(queryUpdate, topComponent, response, getContextFiles());
-                            submitButton.setText("Send \u25B6\uFE0F");
+                            buttonPanelAdapter.componentResized(null);
                             submitButton.setEnabled(true);
                             saveButton.setVisible(sourceCode != null);
                             updateButtons(prevButton, nextButton);
@@ -827,7 +872,7 @@ public class LearnFix extends JavaFix {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                submitButton.setText("Send \u25B6\uFE0F");
+                buttonPanelAdapter.componentResized(null);
                 submitButton.setEnabled(true);
             }
         });

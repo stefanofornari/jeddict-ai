@@ -54,7 +54,7 @@ public class EditorUtil {
         HtmlRenderer renderer = HtmlRenderer.builder().build();
         
         if (response.getQuery() != null && !response.getQuery().isEmpty()) {
-            topComponent.createUserPane(queryUpdate, response.getQuery());
+            topComponent.createUserQueryPane(queryUpdate, response.getQuery());
         }
         
         JComponent firstPane = null;
