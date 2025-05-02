@@ -44,6 +44,12 @@ public class QueryPane {
         button.setForeground(newtextColor);
         button.setMargin(new Insets(4, 8, 4, 8));
         button.setBorder(new EmptyBorder(8, 16, 8, 16));
+        
+        button.addActionListener(e -> {
+            Color clickedColor = isDark ? textColor.brighter() : textColor.darker();
+            button.setForeground(clickedColor);
+            new Timer(1000, evt -> button.setForeground(newtextColor)).start();
+        });
 
         button.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
             @Override

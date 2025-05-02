@@ -19,6 +19,7 @@ package io.github.jeddict.ai.settings;
  *
  * @author Gaurav Gupta, Shiwani Gupta
  */
+import io.github.jeddict.ai.response.TokenGranularity;
 import static io.github.jeddict.ai.settings.GenAIModel.DEFAULT_MODEL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +30,7 @@ import org.openide.util.NbPreferences;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
+import org.json.JSONObject;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 
 public class PreferencesManager {
@@ -61,6 +63,9 @@ public class PreferencesManager {
     private static final String ALLOW_CODE_EXECUTION_PREFERENCE = "allowCodeExecution";
     private static final String INCLUDE_CODE_EXECUTION_OUTPUT_PREFERENCE = "includeCodeExecutionOutput";
     private static final String MAX_RETRIES_PREFERENCE = "maxRetries";
+    private static final String DAILY_INPUT_TOKEN_STATS_KEY = "dailyInputTokenStats";
+    private static final String DAILY_OUTPUT_TOKEN_STATS_KEY = "dailyOutputTokenStats";
+    private static final String TOKEN_GRANULARITY_KEY = "tokenGranularity";
 
     private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
             // Test Resources
@@ -131,7 +136,11 @@ public class PreferencesManager {
             "azure-pipelines.yml",
             "Jenkinsfile"
     );
-
+    
+    private JSONObject dailyInputTokenStats;
+    private JSONObject dailyOutputTokenStats;
+    private TokenGranularity tokenGranularity;
+    
     private PreferencesManager() {
         preferences = NbPreferences.forModule(AIAssistancePanel.class);
     }
@@ -638,4 +647,42 @@ public class PreferencesManager {
     public void setMaxRetries(Integer maxRetries) {
         preferences.putInt(MAX_RETRIES_PREFERENCE, maxRetries);
     }
+
+    public JSONObject getDailyInputTokenStats() {
+        if (dailyInputTokenStats != null) {
+            return dailyInputTokenStats;
+        }
+        return new JSONObject(preferences.get(DAILY_INPUT_TOKEN_STATS_KEY, "{}"));
+    }
+
+    public void setDailyInputTokenStats(JSONObject usage) {
+        this.dailyInputTokenStats = usage;
+        preferences.put(DAILY_INPUT_TOKEN_STATS_KEY, usage.toString());
+    }
+
+    public JSONObject getDailyOutputTokenStats() {
+        if (dailyOutputTokenStats != null) {
+            return dailyOutputTokenStats;
+        }
+        return new JSONObject(preferences.get(DAILY_OUTPUT_TOKEN_STATS_KEY, "{}"));
+    }
+
+    public void setDailyOutputTokenStats(JSONObject usage) {
+        this.dailyOutputTokenStats = usage;
+        preferences.put(DAILY_OUTPUT_TOKEN_STATS_KEY, usage.toString());
+    }
+
+    public TokenGranularity getTokenGranularity() {
+        if (tokenGranularity != null) {
+            return tokenGranularity;
+        }
+        tokenGranularity = TokenGranularity.valueOf(preferences.get(TOKEN_GRANULARITY_KEY, TokenGranularity.DAY.name()));
+        return tokenGranularity;
+    }
+
+    public void setTokenGranularity(TokenGranularity granularity) {
+        this.tokenGranularity = granularity;
+        preferences.put(TOKEN_GRANULARITY_KEY, granularity.name());
+    }
+
 }
