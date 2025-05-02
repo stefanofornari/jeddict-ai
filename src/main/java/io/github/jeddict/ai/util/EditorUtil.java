@@ -23,6 +23,7 @@ import static io.github.jeddict.ai.util.MimeUtil.MIME_MARKDOWN;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PUML;
 import java.awt.Font;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ import java.util.Set;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.swing.JComponent;
 import javax.swing.text.AttributeSet;
@@ -46,7 +48,7 @@ import org.openide.filesystems.FileObject;
  */
 public class EditorUtil {
 
-    public static String updateEditors(Consumer<String> queryUpdate, AssistantTopComponent topComponent, Response response, List<FileObject> fileObjects) {
+    public static String updateEditors(BiConsumer<String, List<FileObject>> queryUpdate, AssistantTopComponent topComponent, Response response, List<FileObject> threadContext) {
         StringBuilder code = new StringBuilder();
         
         topComponent.clear();
@@ -54,7 +56,7 @@ public class EditorUtil {
         HtmlRenderer renderer = HtmlRenderer.builder().build();
         
         if (response.getQuery() != null && !response.getQuery().isEmpty()) {
-            topComponent.createUserQueryPane(queryUpdate, response.getQuery());
+            topComponent.createUserQueryPane(queryUpdate, response.getQuery(), response.getMessageContext());
         }
         
         JComponent firstPane = null;
@@ -84,7 +86,14 @@ public class EditorUtil {
         }
         topComponent.revalidate();
         topComponent.repaint();
-        topComponent.getParseCodeEditor(fileObjects);
+        List<FileObject> context = new ArrayList<>();
+        if (threadContext != null && !threadContext.isEmpty()) {
+            context.addAll(threadContext);
+        }
+        if (response.getMessageContext() != null && !response.getMessageContext().isEmpty()) {
+            context.addAll(response.getMessageContext());
+        }
+        topComponent.getParseCodeEditor(context);
         return code.toString();
     }
     

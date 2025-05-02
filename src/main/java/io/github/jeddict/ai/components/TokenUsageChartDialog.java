@@ -17,6 +17,9 @@ package io.github.jeddict.ai.components;
 
 import io.github.jeddict.ai.response.TokenGranularity;
 import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.util.ColorUtil;
+import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import javax.swing.*;
 import java.awt.*;
 import org.json.JSONObject;
@@ -29,23 +32,44 @@ public class TokenUsageChartDialog extends JDialog {
         super(owner, "Token Usage Charts", true);
         setLayout(new BorderLayout());
 
-        tabbedPane.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        boolean isDark = ColorUtil.isDarkColor(getBackgroundColorFromMimeType(MIME_PLAIN_TEXT));
+        // Common fonts and colors
+        Font font = new Font("SansSerif", Font.PLAIN, 14);
+        Color bgColor = isDark ? new Color(43, 43, 43) : Color.WHITE;
+        Color fgColor = isDark ? new Color(187, 187, 187) : Color.BLACK;
+        Color tabBgColor = isDark ? new Color(60, 63, 65) : Color.WHITE;
+        Color borderColor = isDark ? new Color(70, 70, 70) : Color.LIGHT_GRAY;
+
+        getContentPane().setBackground(bgColor);
+
+        tabbedPane.setFont(font);
+        tabbedPane.setBackground(tabBgColor);
+        tabbedPane.setForeground(fgColor);
         tabbedPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
-        
+        topPanel.setBackground(bgColor);
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        buttonPanel.setBackground(bgColor);
 
-        JComboBox<TokenGranularity> granularityComboBox = new JComboBox<>(TokenGranularity.values());
-        granularityComboBox.setSelectedItem(PreferencesManager.getInstance().getTokenGranularity());
-        granularityComboBox.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        buttonPanel.add(new JLabel("Timeframe:"));
-        buttonPanel.add(granularityComboBox);
+        JComboBox<TokenGranularity> timeframeComboBox = new JComboBox<>(TokenGranularity.values());
+        timeframeComboBox.setSelectedItem(PreferencesManager.getInstance().getTokenGranularity());
+        timeframeComboBox.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        timeframeComboBox.setBackground(isDark ? new Color(69, 73, 74) : Color.WHITE);
+        timeframeComboBox.setForeground(fgColor);
 
-        granularityComboBox.addActionListener(e -> {
-            TokenGranularity selected = (TokenGranularity) granularityComboBox.getSelectedItem();
+        JLabel label = new JLabel("Timeframe:");
+        label.setForeground(fgColor);
+        label.setFont(font);
+
+        buttonPanel.add(label);
+        buttonPanel.add(timeframeComboBox);
+
+        timeframeComboBox.addActionListener(e -> {
+            TokenGranularity selected = (TokenGranularity) timeframeComboBox.getSelectedItem();
             TokenGranularity current = PreferencesManager.getInstance().getTokenGranularity();
             if (!selected.equals(current)) {
                 int response = JOptionPane.showConfirmDialog(this,
@@ -62,7 +86,7 @@ public class TokenUsageChartDialog extends JDialog {
                     getContentPane().removeAll();
                     dispose();
                 } else {
-                    granularityComboBox.setSelectedItem(current);
+                    timeframeComboBox.setSelectedItem(current);
                 }
             }
         });

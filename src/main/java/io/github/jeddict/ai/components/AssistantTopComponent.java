@@ -44,21 +44,17 @@ import javax.swing.JPopupMenu;
 import javax.swing.text.EditorKit;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
-import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.MethodTree;
-import com.sun.source.util.SourcePositions;
-import com.sun.source.util.TreePathScanner;
-import com.sun.source.util.Trees;
-import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.util.ColorUtil;
+import static io.github.jeddict.ai.util.DiffUtil.diffAction;
+import static io.github.jeddict.ai.util.DiffUtil.diffActionWithSelected;
+import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.Icons.ICON_CANCEL;
 import static io.github.jeddict.ai.util.Icons.ICON_COPY;
 import static io.github.jeddict.ai.util.Icons.ICON_EDIT;
@@ -68,24 +64,18 @@ import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.SourceUtil;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
-import org.netbeans.api.diff.Diff;
-import org.netbeans.api.diff.DiffView;
-import org.netbeans.api.diff.StreamSource;
-import org.netbeans.modules.diff.builtin.SingleDiffPanel;
-import org.openide.util.Exceptions;
 
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.windows.TopComponent;
 import javax.swing.text.JTextComponent;
@@ -97,7 +87,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import javax.swing.BorderFactory;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -139,8 +131,8 @@ public class AssistantTopComponent extends TopComponent {
         menus.clear();
     }
 
-     private JButton copyButton,editButton,saveButton,cancelButton;
-     private JTextPane queryPane;
+    private JButton copyButton, editButton, saveButton, cancelButton;
+    private JTextPane queryPane;
 
     public void updateUserPaneButtons(boolean iconOnly) {
         if (copyButton != null) {
@@ -151,16 +143,7 @@ public class AssistantTopComponent extends TopComponent {
         }
     }
 
-    private JPanel createUserPaneButtons(Consumer<String> queryUpdate) {
-        Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
-        Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
-        Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
-        boolean isDark = ColorUtil.isDarkColor(backgroundColor);
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
-        buttonPanel.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
-        buttonPanel.setFont(newFont);
-        buttonPanel.setForeground(textColor);
-
+    private void createUserPaneButtons(BiConsumer<String, List<FileObject>> queryUpdate, List<FileObject> messageContext, JPanel buttonPanel) {
         copyButton = QueryPane.createIconButton(Labels.COPY, ICON_COPY);
         editButton = QueryPane.createIconButton(Labels.EDIT, ICON_EDIT);
         saveButton = QueryPane.createIconButton(Labels.SAVE, ICON_SEND);
@@ -175,18 +158,16 @@ public class AssistantTopComponent extends TopComponent {
         state.accept(true);
 
         saveButton.addActionListener(e -> {
-            // Handle save (e.g., persist or process content)
             queryPane.setEditable(false);
             state.accept(true);
 
             String question = queryPane.getText();
             if (!question.isEmpty()) {
-                queryUpdate.accept(question);
+                queryUpdate.accept(question, messageContext);
             }
         });
 
         cancelButton.addActionListener(e -> {
-            // Handle cancel (e.g., revert content)
             queryPane.setEditable(false);
             state.accept(true);
         });
@@ -202,30 +183,87 @@ public class AssistantTopComponent extends TopComponent {
             state.accept(false);
             queryPane.requestFocus();
         });
-        return buttonPanel;
     }
-     
 
-public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String content) {
-    queryPane = new JTextPane();
-    queryPane.setText(content);
-    queryPane.setEditable(false);
+    public JTextPane createUserQueryPane(BiConsumer<String, List<FileObject>> queryUpdate, String content, List<FileObject> messageContext) {
+        queryPane = new JTextPane();
+        queryPane.setText(content);
+        queryPane.setEditable(false);
 
-    Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
-    Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
-    Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
-    boolean isDark = ColorUtil.isDarkColor(backgroundColor);
-    queryPane.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
-    queryPane.setFont(newFont);
-    queryPane.setForeground(textColor);
+        Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
+        Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
+        Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+        boolean isDark = ColorUtil.isDarkColor(backgroundColor);
+        queryPane.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
+        queryPane.setFont(newFont);
+        queryPane.setForeground(textColor);
 
-    JPanel wrapper = new JPanel(new BorderLayout());
-    wrapper.add(queryPane, BorderLayout.CENTER);
-    wrapper.add( createUserPaneButtons(queryUpdate), BorderLayout.SOUTH);
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.add(queryPane, BorderLayout.CENTER);
 
-    parentPanel.add(wrapper);
-    return queryPane;
-}
+        JPanel bottomPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        bottomPanel.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
+        filePanel = new JPanel();
+        filePanelAdapter = new MessageContextComponentAdapter(filePanel);
+        bottomPanel.addComponentListener(filePanelAdapter);
+        filePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        filePanel.setBorder(BorderFactory.createEmptyBorder());
+        filePanel.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        buttonPanel.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
+        buttonPanel.setFont(newFont);
+        buttonPanel.setForeground(textColor);
+        createUserPaneButtons(queryUpdate, messageContext, buttonPanel);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.85;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.WEST;
+        bottomPanel.add(filePanel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.15;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.EAST;
+        bottomPanel.add(buttonPanel, gbc);
+
+        wrapper.add(bottomPanel, BorderLayout.SOUTH);
+
+        for (FileObject fileObject : messageContext) {
+            FileTab fileTab = new FileTab(fileObject, filePanel, f -> {
+                messageContext.remove(f);
+                filePanelAdapter.componentResized(null);
+            });
+            filePanel.add(fileTab);
+        }
+        filePanelAdapter.componentResized(null);
+        filePanel.revalidate();
+        filePanel.repaint();
+        Consumer<FileObject> callback = file -> {
+            if (!messageContext.contains(file)) {
+                messageContext.add(file);
+                FileTab fileTab = new FileTab(file, filePanel, f -> {
+                    messageContext.remove(f);
+                    filePanelAdapter.componentResized(null);
+                });
+                filePanel.add(fileTab);
+                filePanelAdapter.componentResized(null);
+                filePanel.revalidate();
+                filePanel.repaint();
+            }
+        };
+        FileTransferHandler.register(bottomPanel, callback);
+        FileTransferHandler.register(queryPane, callback);
+
+        parentPanel.add(wrapper);
+        return queryPane;
+    }
+
+    private JPanel filePanel;
+    private MessageContextComponentAdapter filePanelAdapter;
 
     public JEditorPane createHtmlPane(String content) {
         JEditorPane editorPane = MarkdownPane.createHtmlPane(content, this);
@@ -490,11 +528,14 @@ public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String conten
         return count;
     }
 
-    public int getParseCodeEditor(List<FileObject> fileObjects) {
+    public int getParseCodeEditor(List<FileObject> context) {
         StaticJavaParser.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
         Map<JEditorPane, Map<String, String>> editorMethodSignCache = new HashMap<>();
         Map<JEditorPane, Map<String, String>> editorMethodCache = new HashMap<>();
-        for (FileObject fileObject : fileObjects) {
+        for (FileObject fileObject : context) {
+            if (!fileObject.getExt().equalsIgnoreCase("java")) {
+                continue;
+            }
             try (InputStream stream = fileObject.getInputStream()) {
                 String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
                 CompilationUnit cu = StaticJavaParser.parse(content);
@@ -529,12 +570,12 @@ public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String conten
                                     methodSignatures.put(signature, editorPane.getText());
                                 } catch (Exception e) {
                                     try {
-                                        
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText() );
+
+                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
                                         edCu.findAll(ClassOrInterfaceDeclaration.class)
                                                 .forEach(classDecl -> {
                                                     classes.add(classDecl.getNameAsString());
-                                                     methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
+                                                    methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
                                                 });
 //                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
                                         List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
@@ -547,10 +588,10 @@ public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String conten
                                         }
                                     } catch (Exception e1) {
                                         CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                         edCu.findAll(ClassOrInterfaceDeclaration.class)
+                                        edCu.findAll(ClassOrInterfaceDeclaration.class)
                                                 .forEach(classDecl -> {
                                                     classes.add(classDecl.getNameAsString());
-                                                     methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
+                                                    methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
                                                 });
                                         if (edCu.getTypes().isNonEmpty()) {
                                             methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
@@ -569,7 +610,7 @@ public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String conten
                                 } catch (Exception e) {
                                     try {
 //                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText() );
+                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
                                         List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : edMethods) {
                                             String signature = edMethod.getNameAsString();
@@ -601,7 +642,7 @@ public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String conten
                                         }
                                     }
                                 }
-                                
+
                                 createEditorPaneMenus(fileObject, fileObject.getName(), -1, editorPane, cachedMethodSignatures);
                             } catch (Exception e) {
                                 System.out.println("Error parsing single method declaration from editor content: " + e.getMessage());
@@ -632,10 +673,10 @@ public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String conten
                                 if (focusedfile != null && !currentSelectedText.trim().isEmpty()) {
                                     diffActionWithSelected(currentSelectedText, focusedfile, editorPane);
                                 } else {
-                                    javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
+                                    JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
                                 }
                             } else {
-                                javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
+                                JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
                             }
                         });
                     });
@@ -707,156 +748,6 @@ public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String conten
             return true;
         }
         return false;
-    }
-
-    private void diffAction(boolean classSignature, FileObject fileObject, String signature, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
-        try {
-            String origin;
-            if (signature.equals(fileObject.getName())) {
-                origin = fileObject.asText();
-            } else {
-                origin = SourceUtil.findMethodSourceInFileObject(fileObject, signature);
-            }
-            JPanel editorParent = (JPanel) editorPane.getParent();
-            JPanel diffPanel = new JPanel();
-            diffPanel.setLayout(new BorderLayout());
-            FileObject source;
-            if (classSignature) {
-                source = createTempFileObject(fileObject.getName(), cachedMethodSignatures.get(signature));
-            } else {
-//                            StreamSource ss1 = StreamSource.createSource(
-//                                    "Source " + signature,
-//                                    fileObject.getNameExt() + (classSignature ? "" : ("#" + signature)),
-//                                    "text/java",
-//                                    new StringReader(origin.trim())
-//                            );
-//                            StreamSource ss2 = StreamSource.createSource(
-//                                    "Target " + signature,
-//                                    "AI Generated " + signature,
-//                                    "text/java",
-//                                    new StringReader(cachedMethodSignatures.get(signature))
-//                            );
-//                            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
-//                            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
-                source = createTempFileObject(fileObject.getName(), fileObject.asText());
-                SourceUtil.updateMethod(source, signature, cachedMethodSignatures.get(signature));
-            }
-            SingleDiffPanel sdp = new SingleDiffPanel(source, fileObject, null);
-            diffPanel.add(sdp, BorderLayout.CENTER);
-
-            JButton closeButton = new JButton("Hide Diff View");
-            closeButton.setPreferredSize(new Dimension(30, 30));
-            closeButton.setContentAreaFilled(false);
-
-            closeButton.addActionListener(e1 -> {
-                diffPanel.setVisible(false);
-                editorPane.setVisible(true);
-                editorParent.revalidate();
-                editorParent.repaint();
-            });
-            diffPanel.add(closeButton, BorderLayout.NORTH);
-            int index = editorParent.getComponentZOrder(editorPane);
-            editorParent.add(diffPanel, index + 1);
-            editorPane.setVisible(false);
-            editorParent.revalidate();
-            editorParent.repaint();
-        } catch (IOException ex) {
-            Exceptions.printStackTrace(ex);
-        }
-    }
-
-    private void diffActionWithSelected(String origin, FileObject fileObject, JEditorPane editorPane) {
-        try {
-            JPanel editorParent = (JPanel) editorPane.getParent();
-            JPanel diffPanel = new JPanel();
-            diffPanel.setLayout(new BorderLayout());
-
-            StreamSource ss1 = StreamSource.createSource(
-                    "Source",
-                    fileObject.getNameExt(),
-                    "text/java",
-                    new StringReader(origin.trim())
-            );
-            StreamSource ss2 = StreamSource.createSource(
-                    "Target",
-                    "AI Generated",
-                    "text/java",
-                    new StringReader(editorPane.getText())
-            );
-            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
-            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
-
-            JButton closeButton = new JButton("Hide Diff View");
-            closeButton.setPreferredSize(new Dimension(30, 30));
-            closeButton.setContentAreaFilled(false);
-
-            closeButton.addActionListener(e1 -> {
-                diffPanel.setVisible(false);
-                editorPane.setVisible(true);
-                editorParent.revalidate();
-                editorParent.repaint();
-            });
-            diffPanel.add(closeButton, BorderLayout.NORTH);
-            int index = editorParent.getComponentZOrder(editorPane);
-            editorParent.add(diffPanel, index + 1);
-            editorPane.setVisible(false);
-            editorParent.revalidate();
-            editorParent.repaint();
-        } catch (IOException ex) {
-            Exceptions.printStackTrace(ex);
-        }
-    }
-
-    public FileObject createTempFileObject(String name, String content) throws IOException {
-        File tempFile = File.createTempFile("GenAI-" + name, ".java");
-        tempFile.deleteOnExit();
-        try (FileWriter writer = new FileWriter(tempFile)) {
-            writer.write(content);
-        }
-        tempFile = FileUtil.normalizeFile(tempFile);
-        FileObject fileObject = FileUtil.toFileObject(tempFile);
-        return fileObject;
-    }
-
-    private String getMethodContentFromSource(FileObject fileObject, String sourceMethodSignature) {
-        JavaSource javaSource = JavaSource.forFileObject(fileObject);
-        final StringBuilder methodContent = new StringBuilder();
-
-        try {
-            javaSource.runUserActionTask(copy -> {
-                copy.toPhase(JavaSource.Phase.RESOLVED);
-                CompilationUnitTree cu = copy.getCompilationUnit();
-                Trees trees = copy.getTrees();
-                SourcePositions sourcePositions = trees.getSourcePositions();
-
-                new TreePathScanner<Void, Void>() {
-                    @Override
-                    public Void visitMethod(MethodTree methodTree, Void v) {
-                        String currentSignature = methodTree.getName().toString() + "("
-                                + methodTree.getParameters().stream()
-                                        .map(param -> param.getType().toString())
-                                        .collect(Collectors.joining(",")) + ")";
-
-                        if (currentSignature.equals(sourceMethodSignature)) {
-                            long start = sourcePositions.getStartPosition(cu, methodTree);
-                            long end = sourcePositions.getEndPosition(cu, methodTree);
-
-                            try {
-                                String fullText = copy.getText();
-                                methodContent.append(fullText.substring((int) start, (int) end));
-                            } catch (Exception e) {
-                                Exceptions.printStackTrace(e);
-                            }
-                        }
-                        return super.visitMethod(methodTree, v);
-                    }
-                }.scan(cu, null);
-            }, true);
-        } catch (IOException e) {
-            System.out.println("Error retrieving method " + sourceMethodSignature + " from file " + fileObject.getName() + ": " + e.getMessage());
-        }
-
-        return methodContent.toString();
     }
 
     public int getAllEditorCount() {
