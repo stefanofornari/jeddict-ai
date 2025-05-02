@@ -59,6 +59,11 @@ import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.util.ColorUtil;
+import static io.github.jeddict.ai.util.Icons.ICON_CANCEL;
+import static io.github.jeddict.ai.util.Icons.ICON_COPY;
+import static io.github.jeddict.ai.util.Icons.ICON_EDIT;
+import static io.github.jeddict.ai.util.Icons.ICON_SEND;
+import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.SourceUtil;
@@ -134,78 +139,92 @@ public class AssistantTopComponent extends TopComponent {
         menus.clear();
     }
 
-public JTextPane createUserPane(Consumer<String> queryUpdate, String content) {
-    JTextPane textPane = new JTextPane();
-    textPane.setText(content);
-    textPane.setEditable(false);
+     private JButton copyButton,editButton,saveButton,cancelButton;
+     private JTextPane queryPane;
 
-    // Set fonts/colors like before
+    public void updateUserPaneButtons(boolean iconOnly) {
+        if (copyButton != null) {
+            copyButton.setText(iconOnly ? ICON_COPY : Labels.COPY + " " + ICON_COPY);
+            editButton.setText(iconOnly ? ICON_EDIT : Labels.EDIT + " " + ICON_EDIT);
+            saveButton.setText(iconOnly ? ICON_SEND : Labels.SAVE + " " + ICON_SEND);
+            cancelButton.setText(iconOnly ? ICON_CANCEL : Labels.CANCEL + " " + ICON_CANCEL);
+        }
+    }
+
+    private JPanel createUserPaneButtons(Consumer<String> queryUpdate) {
+        Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
+        Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
+        Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+        boolean isDark = ColorUtil.isDarkColor(backgroundColor);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        buttonPanel.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
+        buttonPanel.setFont(newFont);
+        buttonPanel.setForeground(textColor);
+
+        copyButton = QueryPane.createIconButton(Labels.COPY, ICON_COPY);
+        editButton = QueryPane.createIconButton(Labels.EDIT, ICON_EDIT);
+        saveButton = QueryPane.createIconButton(Labels.SAVE, ICON_SEND);
+        cancelButton = QueryPane.createIconButton(Labels.CANCEL, ICON_CANCEL);
+
+        Consumer<Boolean> state = bool -> {
+            copyButton.setVisible(bool);
+            editButton.setVisible(bool);
+            saveButton.setVisible(!bool);
+            cancelButton.setVisible(!bool);
+        };
+        state.accept(true);
+
+        saveButton.addActionListener(e -> {
+            // Handle save (e.g., persist or process content)
+            queryPane.setEditable(false);
+            state.accept(true);
+
+            String question = queryPane.getText();
+            if (!question.isEmpty()) {
+                queryUpdate.accept(question);
+            }
+        });
+
+        cancelButton.addActionListener(e -> {
+            // Handle cancel (e.g., revert content)
+            queryPane.setEditable(false);
+            state.accept(true);
+        });
+
+        buttonPanel.add(copyButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(saveButton);
+
+        copyButton.addActionListener(e -> queryPane.copy());
+        editButton.addActionListener(e -> {
+            queryPane.setEditable(true);
+            state.accept(false);
+            queryPane.requestFocus();
+        });
+        return buttonPanel;
+    }
+     
+
+public JTextPane createUserQueryPane(Consumer<String> queryUpdate, String content) {
+    queryPane = new JTextPane();
+    queryPane.setText(content);
+    queryPane.setEditable(false);
+
     Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
     Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
     Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
-
     boolean isDark = ColorUtil.isDarkColor(backgroundColor);
-    textPane.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
-    textPane.setFont(newFont);
-    textPane.setForeground(textColor);
+    queryPane.setBackground(isDark ? backgroundColor.brighter() : ColorUtil.darken(backgroundColor, .05f));
+    queryPane.setFont(newFont);
+    queryPane.setForeground(textColor);
 
     JPanel wrapper = new JPanel(new BorderLayout());
-    wrapper.add(textPane, BorderLayout.CENTER);
-
-    JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
-    JButton saveButton = QueryPane.createIconButton("Send ", "\u25B6\uFE0F");
-    JButton cancelButton =QueryPane.createIconButton("Cancel", "\u274C"); 
-
-    saveButton.addActionListener(e -> {
-        // Handle save (e.g., persist or process content)
-        textPane.setEditable(false);
-        buttonPanel.setVisible(false);
-        
-        String question = textPane.getText();
-        if (!question.isEmpty()) {
-            queryUpdate.accept(question);
-        }
-    });
-
-    cancelButton.addActionListener(e -> {
-        // Handle cancel (e.g., revert content)
-        textPane.setEditable(false);
-        buttonPanel.setVisible(false);
-    });
-
-    buttonPanel.add(cancelButton);
-    buttonPanel.add(saveButton);
-    buttonPanel.setVisible(false);  // Initially hidden
-
-    wrapper.add(buttonPanel, BorderLayout.SOUTH);
-
-    // Context menu for edit
-    JPopupMenu popupMenu = new JPopupMenu();
-    JMenuItem copyItem = new JMenuItem("Copy");
-    JMenuItem editItem = new JMenuItem("Edit Message");
-
-    copyItem.addActionListener(e -> textPane.copy());
-    editItem.addActionListener(e -> {
-        textPane.setEditable(true);
-        buttonPanel.setVisible(true);
-        textPane.requestFocus();
-    });
-
-    popupMenu.add(copyItem);
-    popupMenu.add(editItem);
-
-    textPane.addMouseListener(new MouseAdapter() {
-        public void mousePressed(MouseEvent e) {
-            if (e.isPopupTrigger()) popupMenu.show(e.getComponent(), e.getX(), e.getY());
-        }
-
-        public void mouseReleased(MouseEvent e) {
-            if (e.isPopupTrigger()) popupMenu.show(e.getComponent(), e.getX(), e.getY());
-        }
-    });
+    wrapper.add(queryPane, BorderLayout.CENTER);
+    wrapper.add( createUserPaneButtons(queryUpdate), BorderLayout.SOUTH);
 
     parentPanel.add(wrapper);
-    return textPane;
+    return queryPane;
 }
 
     public JEditorPane createHtmlPane(String content) {

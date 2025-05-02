@@ -39,11 +39,10 @@ public class QueryPane {
         button.setOpaque(false);
         button.setBorderPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        button.setMargin(new Insets(4, 8, 4, 8)); // Small vertical/horizontal padding
         button.setFont(new Font("Monospaced", Font.BOLD, font.getSize()));
         Color newtextColor = isDark ? textColor.darker(): new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 98);
         button.setForeground(newtextColor);
+        button.setMargin(new Insets(4, 8, 4, 8));
         button.setBorder(new EmptyBorder(8, 16, 8, 16));
 
         button.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
@@ -53,16 +52,24 @@ public class QueryPane {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 AbstractButton button = (AbstractButton) c;
                 ButtonModel model = button.getModel();
-
-                if (model.isRollover()) {
-                    g2.setColor(new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 80));
-                    g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 40, 40);
+                
+                String text = button.getText();
+                boolean isOnlyEmoji = text != null && !text.isEmpty() && !Character.isLetter(text.codePointAt(0));
+                if (isOnlyEmoji) {
+                    if (model.isRollover()) {
+                        g2.setColor(new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 20));
+                        g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 40, 40);
+                    }
+                } else {
+                    if (model.isRollover()) {
+                        g2.setColor(new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 80));
+                        g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 40, 40);
+                    }
+                    
+                    g2.setColor(new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 60));
+                    g2.setStroke(new BasicStroke(1.0f));
+                    g2.drawRoundRect(0, 0, c.getWidth() - 1, c.getHeight() - 1, 40, 40);
                 }
-
-                g2.setColor(new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 60));
-                g2.setStroke(new BasicStroke(1.0f));
-                g2.drawRoundRect(0, 0, c.getWidth() - 1, c.getHeight() - 1, 40, 40);
-
                 g2.dispose();
                 super.paint(g, c);
             }
