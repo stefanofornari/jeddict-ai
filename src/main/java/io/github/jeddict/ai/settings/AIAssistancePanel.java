@@ -188,9 +188,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         classContextLabel1 = new javax.swing.JLabel();
         classContextHelp1 = new javax.swing.JLabel();
         classContextInlineHintComboBox = new javax.swing.JComboBox<>();
-        systemMessagePane = new javax.swing.JLayeredPane();
-        systemMessageScrollPane = new javax.swing.JScrollPane();
-        systemMessage = new javax.swing.JTextArea();
+        globalRulesPane = new javax.swing.JLayeredPane();
+        globalRulesScrollPane = new javax.swing.JScrollPane();
+        globalRules = new javax.swing.JTextArea();
         promptSettingsPane = new javax.swing.JLayeredPane();
         promptScrollPane = new javax.swing.JScrollPane();
         promptTable = new javax.swing.JTable();
@@ -793,15 +793,15 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.inlineHintPane.TabConstraints.tabTitle"), inlineHintPane); // NOI18N
 
-        systemMessagePane.setLayout(new java.awt.BorderLayout());
+        globalRulesPane.setLayout(new java.awt.BorderLayout());
 
-        systemMessage.setColumns(20);
-        systemMessage.setRows(5);
-        systemMessageScrollPane.setViewportView(systemMessage);
+        globalRules.setColumns(20);
+        globalRules.setRows(5);
+        globalRulesScrollPane.setViewportView(globalRules);
 
-        systemMessagePane.add(systemMessageScrollPane, java.awt.BorderLayout.CENTER);
+        globalRulesPane.add(globalRulesScrollPane, java.awt.BorderLayout.CENTER);
 
-        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.systemMessagePane.TabConstraints.tabTitle"), systemMessagePane); // NOI18N
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.globalRulesPane.TabConstraints.tabTitle"), globalRulesPane); // NOI18N
 
         promptSettingsPane.setLayout(new java.awt.BorderLayout());
 
@@ -1177,7 +1177,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
         defaultAIAssistantPlacement.setSelectedItem(preferencesManager.getChatPlacement());
-        systemMessage.setText(preferencesManager.getSystemMessage());
+        globalRules.setText(preferencesManager.getSystemMessage());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
@@ -1218,7 +1218,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setPrompts(getPromptModelValues());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
         preferencesManager.setChatPlacement((String)defaultAIAssistantPlacement.getSelectedItem());
-        preferencesManager.setSystemMessage(systemMessage.getText());
+        preferencesManager.setSystemMessage(globalRules.getText());
 
         if (!temperature.getText().isEmpty()) {
             preferencesManager.setTemperature(Double.parseDouble(temperature.getText()));
@@ -1613,6 +1613,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JTextField frequencyPenalty;
     private javax.swing.JLabel frequencyPenaltyLabel;
     private javax.swing.JLayeredPane frequencyPenaltyPane;
+    private javax.swing.JTextArea globalRules;
+    private javax.swing.JLayeredPane globalRulesPane;
+    private javax.swing.JScrollPane globalRulesScrollPane;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
     private javax.swing.JCheckBox includeCodeExecutionOutput;
@@ -1675,9 +1678,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane snippetPane;
     private javax.swing.JLayeredPane snippetPane1;
     private javax.swing.JCheckBox stream;
-    private javax.swing.JTextArea systemMessage;
-    private javax.swing.JLayeredPane systemMessagePane;
-    private javax.swing.JScrollPane systemMessageScrollPane;
     private javax.swing.JTextField temperature;
     private javax.swing.JLabel temperatureLabel;
     private javax.swing.JLayeredPane temperaturePane;

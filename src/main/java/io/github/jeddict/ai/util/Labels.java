@@ -30,7 +30,8 @@ public class Labels {
     public static final String NEW_CHAT = "New Chat";
     public static final String STATS = "Stats";
     public static final String SETTINGS = "Settings";
-    public static final String CONTEXT = "Context";
+    public static final String MESSAGE_CONTEXT = "Message Context";
+    public static final String SESSION_CONTEXT = "Session Context";
     public static final String SEND = "Send";
     public static final String EDIT = "Edit";
     public static final String CANCEL = "Cancel";

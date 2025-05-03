@@ -63,7 +63,9 @@ public class MarkdownPane extends JTabbedPane {
         editorPane.addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
                 try {
-                    Desktop.getDesktop().browse(e.getURL().toURI());
+                    if (e.getURL() != null) {
+                        Desktop.getDesktop().browse(e.getURL().toURI());
+                    }
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -74,7 +76,7 @@ public class MarkdownPane extends JTabbedPane {
         return editorPane;
     }
 
-    private static int getHtmlWrapWidth(JComponent component) {
+    public static int getHtmlWrapWidth(JComponent component) {
         int width = component.getWidth() / 70;
         Insets insets = component.getInsets();
         width -= insets.left + insets.right;
