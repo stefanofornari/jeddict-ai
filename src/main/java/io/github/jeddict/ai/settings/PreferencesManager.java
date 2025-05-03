@@ -45,6 +45,7 @@ public class PreferencesManager {
     private static final String PROVIDER_LOCATION_PREFERENCES = "provider_location";
     private static final String PROVIDER_PREFERENCE = "provider";
     private static final String MODEL_PREFERENCE = "model";
+    private static final String CHAT_MODEL_PREFERENCE = "chatModel";
     private static final String GLOBAL_RULES_PREFERENCE = "globalRules";
     private static final String PROJECT_RULES_PREFERENCE = "projectRules";
     private static final String SESSION_RULES_PREFERENCE = "sessionRules";
@@ -220,7 +221,11 @@ public class PreferencesManager {
     }
 
     public String getProviderLocation() {
-        return preferences.get(getProvider().name() + PROVIDER_LOCATION_PREFERENCES, null);
+        return getProviderLocation(getProvider());
+    }
+    
+     public String getProviderLocation(GenAIProvider provider) {
+        return preferences.get(provider.name() + PROVIDER_LOCATION_PREFERENCES, null);
     }
 
     public String getModelName() {
@@ -300,6 +305,16 @@ public class PreferencesManager {
     public void setModel(String model) {
         preferences.put(MODEL_PREFERENCE, model);
     }
+    
+    public String getChatModel() {
+        return preferences.get(CHAT_MODEL_PREFERENCE, getModel());
+    }
+
+    public void setChatModel(String model) {
+        preferences.put(CHAT_MODEL_PREFERENCE, model);
+    }
+    
+    
 
     public void setProvider(GenAIProvider provider) {
         if (provider != null) {

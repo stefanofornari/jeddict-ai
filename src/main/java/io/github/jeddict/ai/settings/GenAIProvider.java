@@ -15,6 +15,13 @@
  */
 package io.github.jeddict.ai.settings;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  *
  * Author: Shiwani Gupta
@@ -48,4 +55,41 @@ public enum GenAIProvider {
     public String getApiKeyUrl() {
         return apiKeyUrl;
     }
+    
+    public static List<GenAIProvider> getConfiguredGenAIProviders() {
+        PreferencesManager pm = PreferencesManager.getInstance();
+        List<GenAIProvider> providers = new ArrayList<>();
+        for (GenAIProvider value : GenAIProvider.values()) {
+            if(pm.getApiKey(value)  != null || pm.getProviderLocation(value)  != null) {
+                providers.add(value);
+            }
+        }
+        return providers;
+    }
+    
+    public static Map<String, GenAIProvider> getModelsByProvider() {
+        List<GenAIProvider> configuredProviders = GenAIProvider.getConfiguredGenAIProviders();
+        Map<String, GenAIProvider> modelsByProvider = new HashMap<>();
+
+        for (GenAIProvider provider : configuredProviders) {
+            for (Map.Entry<String, GenAIModel> entry : GenAIModel.MODELS.entrySet()) {
+                if (entry.getValue().getProvider() == provider) {
+                    modelsByProvider.put(entry.getKey(), provider);
+                }
+            }
+        }
+
+        return modelsByProvider;
+    }
+    
+    public static Set<String> getModelsByProvider(GenAIProvider provider) {
+        Set<String> models = new HashSet<>();
+        for (Map.Entry<String, GenAIModel> entry : GenAIModel.MODELS.entrySet()) {
+            if (entry.getValue().getProvider() == provider) {
+                models.add(entry.getKey());
+            }
+        }
+        return models;
+    }
+
 }

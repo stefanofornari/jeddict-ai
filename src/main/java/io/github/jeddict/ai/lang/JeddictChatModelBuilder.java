@@ -80,63 +80,67 @@ public class JeddictChatModelBuilder {
 
     private ChatLanguageModel model;
     private StreamingChatLanguageModel streamModel;
-    protected PreferencesManager preferencesManager = PreferencesManager.getInstance();
+    protected static PreferencesManager preferencesManager = PreferencesManager.getInstance();
     private StreamingResponseHandler handler;
 
     public JeddictChatModelBuilder() {
         this(null);
     }
-
+    
     public JeddictChatModelBuilder(StreamingResponseHandler handler) {
+        this(handler, preferencesManager.getModel());
+    }
+
+    public JeddictChatModelBuilder(StreamingResponseHandler handler, String modelName) {
         this.handler = handler;
 
-        if (null != preferencesManager.getModel()) {
+        if (null != modelName) {
             if (preferencesManager.isStreamEnabled() && handler != null) {
                 switch (preferencesManager.getProvider()) {
                     case GOOGLE -> {
-                        streamModel = buildModel(new GoogleStreamingBuilder());
+                        streamModel = buildModel(new GoogleStreamingBuilder(), modelName);
                     }
                     case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
-                        streamModel = buildModel(new OpenAiStreamingBuilder());
+                        streamModel = buildModel(new OpenAiStreamingBuilder(), modelName);
                     }
                     case MISTRAL -> {
-                        streamModel = buildModel(new MistralStreamingBuilder());
+                        streamModel = buildModel(new MistralStreamingBuilder(), modelName);
                     }
                     case ANTHROPIC -> {
-                        streamModel = buildModel(new AnthropicStreamingBuilder());
+                        streamModel = buildModel(new AnthropicStreamingBuilder(), modelName);
                     }
                     case OLLAMA -> {
-                        streamModel = buildModel(new OllamaStreamingBuilder());
+                        streamModel = buildModel(new OllamaStreamingBuilder(), modelName);
                     }
                     case LM_STUDIO -> {
-                        model = buildModel(new LMStudioBuilder());
+                        model = buildModel(new LMStudioBuilder(), modelName);
                     }
                     case GPT4ALL -> {
-                        streamModel = buildModel(new LocalAiStreamingBuilder());
+                        streamModel = buildModel(new LocalAiStreamingBuilder(), modelName);
                     }
                 }
             } else {
                 switch (preferencesManager.getProvider()) {
                     case GOOGLE -> {
-                        model = buildModel(new GoogleBuilder());
+                        model = buildModel(new GoogleBuilder(), modelName);
                     }
                     case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
-                        model = buildModel(new OpenAiBuilder());
+                        model = buildModel(new OpenAiBuilder(), modelName);
                     }
                     case MISTRAL -> {
-                        model = buildModel(new MistralBuilder());
+                        model = buildModel(new MistralBuilder(), modelName);
                     }
                     case ANTHROPIC -> {
-                        model = buildModel(new AnthropicBuilder());
+                        model = buildModel(new AnthropicBuilder(), modelName);
                     }
                     case OLLAMA -> {
-                        model = buildModel(new OllamaBuilder());
+                        model = buildModel(new OllamaBuilder(), modelName);
                     }
                     case LM_STUDIO -> {
-                        model = buildModel(new LMStudioBuilder());
+                        model = buildModel(new LMStudioBuilder(), modelName);
                     }
                     case GPT4ALL -> {
-                        model = buildModel(new LocalAiBuilder());
+                        model = buildModel(new LocalAiBuilder(), modelName);
                     }
                 }
             }
@@ -155,13 +159,13 @@ public class JeddictChatModelBuilder {
         }
     }
 
-    private <T> ChatModelBaseBuilder<T> builderModel(final ChatModelBaseBuilder<T> builder) {
+    private <T> ChatModelBaseBuilder<T> builderModel(final ChatModelBaseBuilder<T> builder, String modelName) {
         setIfPredicate(builder::baseUrl, preferencesManager.getProviderLocation(), String::isEmpty);
         setIfPredicate(builder::customHeaders, preferencesManager.getCustomHeaders(), Map::isEmpty);
         boolean headless = preferencesManager.getProviderLocation() != null;
         builder
                 .apiKey(preferencesManager.getApiKey(headless))
-                .modelName(preferencesManager.getModelName());
+                .modelName(modelName);
 
         setIfValid(builder::temperature, preferencesManager.getTemperature(), Double.MIN_VALUE);
         setIfValid(value -> builder.timeout(Duration.ofSeconds(value)), preferencesManager.getTimeout(), Integer.MIN_VALUE);
@@ -183,8 +187,8 @@ public class JeddictChatModelBuilder {
         return builder;
     }
 
-    private <T> T buildModel(final ChatModelBaseBuilder<T> builder) {
-        return builderModel(builder).build();
+    private <T> T buildModel(final ChatModelBaseBuilder<T> builder, String modelName) {
+        return builderModel(builder, modelName).build();
     }
 
     public String generate(final Project project, final String prompt) {
