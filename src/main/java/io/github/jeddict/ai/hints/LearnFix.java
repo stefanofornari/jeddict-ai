@@ -92,6 +92,7 @@ import static io.github.jeddict.ai.util.Icons.ICON_UPDATE;
 import static io.github.jeddict.ai.util.Icons.ICON_WEB;
 import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
+import io.github.jeddict.ai.util.RandomTweetSelector;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -357,7 +358,7 @@ public class LearnFix extends JavaFix {
             + "<a href='rules.html' style='text-decoration:none; color:#007bff;'>📘 Learn about context rules and scopes</a><br><br>"
             + "<a href='https://jeddict.github.io/page.html?l=tutorial/AI' style='text-decoration:none; color:#28a745;'>📄 View Documentation</a><br><br>"
             + "<a href='https://github.com/jeddict/jeddict-ai' style='text-decoration:none; color:#ff6600;'>⭐ Like it? Give us a star</a><br><br>"
-            + "<a href='https://twitter.com/intent/post?text=%F0%9F%8C%9F%20Code%20faster%20and%20smarter%20with%20Jeddict%20AI%20Assistant%20%E2%80%94%20your%20all-in-one%20solution%20for%20intelligent%20suggestions%2C%20autocompletions%2C%20and%20contextual%20insights.%0A%0A%40ImJeddict%0A%0A&url=https%3A%2F%2Fjeddict.github.io%2Fpage.html%3Fl%3Dtutorial%2FAI' style='text-decoration:none; color:#1DA1F2;'>🐦 Tweet about Jeddict AI</a>"
+            + "<a href='tweet' style='text-decoration:none; color:#1DA1F2;'>🐦 Tweet about Jeddict AI</a>"
             + "</div>"
             + "</div>";
 
@@ -388,6 +389,12 @@ public class LearnFix extends JavaFix {
                             String content = getHTMLContent(getHtmlWrapWidth(init), htmlContent.toString());
                             init.setText(content);
                         }
+                    } catch (Exception ex) {
+                        Exceptions.printStackTrace(ex);
+                    }
+                }else if ("tweet".equals(link)) {
+                    try {
+                        java.awt.Desktop.getDesktop().browse(java.net.URI.create(RandomTweetSelector.getRandomTweet()));
                     } catch (Exception ex) {
                         Exceptions.printStackTrace(ex);
                     }
