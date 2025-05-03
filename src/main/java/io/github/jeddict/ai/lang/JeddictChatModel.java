@@ -44,6 +44,10 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
     public JeddictChatModel(StreamingResponseHandler handler) {
         super(handler);
     }
+    
+    public JeddictChatModel(StreamingResponseHandler handler, String modelName) {
+        super(handler, modelName);
+    }
 
     public String generateJavadocForClass(Project project, String classContent) {
         String prompt

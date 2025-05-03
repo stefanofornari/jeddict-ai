@@ -66,7 +66,10 @@ import io.github.jeddict.ai.components.FileTab;
 import io.github.jeddict.ai.components.FileTransferHandler;
 import static io.github.jeddict.ai.components.MarkdownPane.getHtmlWrapWidth;
 import io.github.jeddict.ai.components.MessageContextComponentAdapter;
+import io.github.jeddict.ai.components.QueryPane;
+import io.github.jeddict.ai.components.QueryPane.RoundedBorder;
 import static io.github.jeddict.ai.components.QueryPane.createIconButton;
+import static io.github.jeddict.ai.components.QueryPane.createStyledComboBox;
 import io.github.jeddict.ai.components.TokenUsageChartDialog;
 import static io.github.jeddict.ai.util.ContextHelper.getFilesContextList;
 import static io.github.jeddict.ai.util.ContextHelper.getImageFilesContext;
@@ -75,8 +78,11 @@ import static io.github.jeddict.ai.util.ContextHelper.getTextFilesContext;
 import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
 import io.github.jeddict.ai.response.Response;
+import io.github.jeddict.ai.settings.GenAIProvider;
+import static io.github.jeddict.ai.settings.GenAIProvider.getModelsByProvider;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
 import static io.github.jeddict.ai.util.Icons.ICON_ATTACH;
 import static io.github.jeddict.ai.util.Icons.ICON_CONTEXT;
@@ -94,6 +100,7 @@ import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.RandomTweetSelector;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -110,8 +117,11 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import javax.swing.Box;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -134,6 +144,7 @@ public class LearnFix extends JavaFix {
     private final Action action;
     private SQLCompletion sqlCompletion;
     private ComponentAdapter buttonPanelAdapter;
+    private JComboBox<String> models;
     private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton;
     private AssistantTopComponent topComponent;
     private JEditorPane questionPane;
@@ -247,15 +258,15 @@ public class LearnFix extends JavaFix {
                     String response;
                     if (action == Action.TEST) {
                         if (leaf instanceof MethodTree) {
-                            response = new JeddictChatModel(handler).generateTestCase(getProject(), null, null, leaf.toString(), null, null);
+                            response = new JeddictChatModel(handler, getModelName()).generateTestCase(getProject(), null, null, leaf.toString(), null, null);
                         } else {
-                            response = new JeddictChatModel(handler).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, null, null);
+                            response = new JeddictChatModel(handler, getModelName()).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, null, null);
                         }
                     } else {
                         if (leaf instanceof MethodTree) {
-                            response = new JeddictChatModel(handler).assistJavaMethod(getProject(), leaf.toString());
+                            response = new JeddictChatModel(handler, getModelName()).assistJavaMethod(getProject(), leaf.toString());
                         } else {
-                            response = new JeddictChatModel(handler).assistJavaClass(getProject(), treePath.getCompilationUnit().toString());
+                            response = new JeddictChatModel(handler, getModelName()).assistJavaClass(getProject(), treePath.getCompilationUnit().toString());
                         }
                     }
                     if (response != null && !response.isEmpty()) {
@@ -287,7 +298,7 @@ public class LearnFix extends JavaFix {
                     LearnFix.this.commitChanges = commitChanges;
                 }
             };
-            String response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
+            String response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
             if (response != null && !response.isEmpty()) {
                 handler.onComplete(response);
             }
@@ -468,6 +479,19 @@ public class LearnFix extends JavaFix {
         openInBrowserButton.setVisible(topComponent.getAllEditorCount() > 0);
         leftButtonPanel.add(openInBrowserButton);
 
+        Set<String> modelsByProvider = getModelsByProvider(pm.getProvider()) ;
+        modelsByProvider.add(pm.getModelName());
+        models = createStyledComboBox(modelsByProvider.toArray(new String[0]));
+        models.setSelectedItem(pm.getChatModel() != null ? pm.getChatModel() : pm.getModel());
+        models.setToolTipText("AI Models");
+        models.addActionListener(e -> {
+            String selectedModel = (String) models.getSelectedItem();
+            if (selectedModel != null) {
+                pm.setChatModel(selectedModel);
+            }
+        });
+        leftButtonPanel.add(models);
+
         int javaEditorCount = topComponent.getAllCodeEditorCount();
 
         copyButton = createIconButton(Labels.COPY, ICON_COPY);
@@ -477,7 +501,7 @@ public class LearnFix extends JavaFix {
 
         saveButton = createIconButton(Labels.SAVE, ICON_SAVE);
         saveButton.setToolTipText("Save as");
-        saveButton.setVisible(javaEditorCount > 0);
+        saveButton.setVisible(javaEditorCount == 1);
         leftButtonPanel.add(saveButton);
 
         JButton saveToEditorButton = createIconButton(Labels.UPDATE + " " + fileName, ICON_UPDATE);
@@ -540,13 +564,16 @@ public class LearnFix extends JavaFix {
                 updateButton(messageContextButton, showOnlyIcons, ICON_ATTACH, Labels.MESSAGE_CONTEXT + " " + ICON_ATTACH);
                 updateButton(sessionContextButton, showOnlyIcons, ICON_CONTEXT, Labels.SESSION_CONTEXT + " " + ICON_CONTEXT);
                 updateButton(submitButton, showOnlyIcons, ICON_SEND, Labels.SEND + " " + ICON_SEND);
-
+                updateCombobox(models,  showOnlyIcons);
                 topComponent.updateUserPaneButtons(showOnlyIcons);
 
             }
 
             private void updateButton(JButton button, boolean iconOnly, String iconText, String fullText) {
                 button.setText(iconOnly ? iconText : fullText);
+            }
+            private void updateCombobox(JComboBox<String> comboBox, boolean iconOnly) {
+                comboBox.putClientProperty("minimal", iconOnly);
             }
         };
         buttonPanel.addComponentListener(buttonPanelAdapter);
@@ -781,11 +808,11 @@ public class LearnFix extends JavaFix {
                 };
                 String response;
                 if (sqlCompletion != null) {
-                    response = new JeddictChatModel(handler).assistDbMetadata(sqlCompletion.getMetaData(), question);
+                    response = new JeddictChatModel(handler, getModelName()).assistDbMetadata(sqlCompletion.getMetaData(), question);
                 } else if (commitChanges != null) {
-                    response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, question);
+                    response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(commitChanges, question);
                 } else if (project != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), getProjectContext(getProjectContextList()), null, null, prevChat, question);
+                    response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), getProjectContext(getProjectContextList()), null, null, prevChat, question);
                 } else if (threadContext != null) {
                     String threadScopeContent = getTextFilesContext(threadContext);
                     List<String> threadScopeImgages = getImageFilesContext(threadContext);
@@ -794,17 +821,17 @@ public class LearnFix extends JavaFix {
                     List<String> images = new ArrayList<>();
                     images.addAll(threadScopeImgages);
                     images.addAll(messageScopeImgages);
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChat, question);
+                    response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChat, question);
                 } else if (treePath == null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, null, null, prevChat, question);
+                    response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), null, null, null, prevChat, question);
                 } else if (action == Action.TEST) {
                     if (leaf instanceof MethodTree) {
-                        response = new JeddictChatModel(handler).generateTestCase(getProject(), null, null, leaf.toString(), prevChat, question);
+                        response = new JeddictChatModel(handler, getModelName()).generateTestCase(getProject(), null, null, leaf.toString(), prevChat, question);
                     } else {
-                        response = new JeddictChatModel(handler).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, prevChat, question);
+                        response = new JeddictChatModel(handler, getModelName()).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, prevChat, question);
                     }
                 } else {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, null, prevChat, question);
+                    response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, null, prevChat, question);
                 }
 
                 if (response != null && !response.isEmpty()) {
@@ -820,6 +847,14 @@ public class LearnFix extends JavaFix {
                 submitButton.setEnabled(true);
             }
         });
+    }
+    
+    private String getModelName() {
+        String modelName = (String)models.getSelectedItem();
+        if(modelName == null || modelName.isEmpty()) {
+            return pm.getModel();
+        }
+        return modelName;
     }
 
     private void updateButtons(JButton prevButton, JButton nextButton) {
