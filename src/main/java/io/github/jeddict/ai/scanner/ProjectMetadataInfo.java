@@ -42,7 +42,6 @@ public class ProjectMetadataInfo {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("\nProject Metadata:\n");
 
         // Append EE Version with appropriate label if importPrefix is "jakarta"
         if (cachedResult.getEeVersion() != null) {
@@ -59,6 +58,9 @@ public class ProjectMetadataInfo {
             sb.append("Java Version: ").append(cachedResult.getJdkVersion()).append("\n");
         }
 
+        if (!sb.isEmpty()) {
+            sb.insert(0, "Project Metadata:\n");
+        }
         return sb.toString();
     }
 
