@@ -1177,7 +1177,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         fileExtField.setText(preferencesManager.getFileExtensionToInclude());
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
         defaultAIAssistantPlacement.setSelectedItem(preferencesManager.getChatPlacement());
-        globalRules.setText(preferencesManager.getSystemMessage());
+        globalRules.setText(preferencesManager.getGlobalRules());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
         if (selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
@@ -1218,7 +1218,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setPrompts(getPromptModelValues());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
         preferencesManager.setChatPlacement((String)defaultAIAssistantPlacement.getSelectedItem());
-        preferencesManager.setSystemMessage(globalRules.getText());
+        preferencesManager.setGlobalRules(globalRules.getText());
 
         if (!temperature.getText().isEmpty()) {
             preferencesManager.setTemperature(Double.parseDouble(temperature.getText()));

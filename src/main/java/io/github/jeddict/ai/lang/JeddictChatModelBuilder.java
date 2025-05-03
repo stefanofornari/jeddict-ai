@@ -226,7 +226,17 @@ public class JeddictChatModelBuilder {
         if (project != null) {
             prompt = prompt + ProjectMetadataInfo.get(project);
         }
-        String systemMessage = PreferencesManager.getInstance().getSystemMessage();
+        String systemMessage = null;
+        String globalRules = PreferencesManager.getInstance().getGlobalRules();
+        if (globalRules != null) {
+            systemMessage = globalRules;
+        }
+        if (project != null) {
+            String projectRules = PreferencesManager.getInstance().getProjectRules(project);
+            if (projectRules != null) {
+                systemMessage = systemMessage + '\n' + projectRules;
+            }
+        }
         List<ChatMessage> messages = new ArrayList<>();
         if (systemMessage != null && !systemMessage.trim().isEmpty()) {
             messages.add(SystemMessage.from(systemMessage));

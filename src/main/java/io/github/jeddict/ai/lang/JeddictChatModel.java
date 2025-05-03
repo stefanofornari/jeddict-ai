@@ -759,7 +759,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         dbPrompt.append("Given the following database schema metadata:\n")
                 .append(dbMetadata);
 
-        String rules = preferencesManager.getCommonPromptRules();
+        String rules = preferencesManager.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             dbPrompt.append("\n\n")
                     .append(rules)
@@ -792,7 +792,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
             Project project, String classContent) {
         StringBuilder promptBuilder = new StringBuilder();
         promptBuilder.append("You are an API server that provides a description of the following class. ");
-        String rules = preferencesManager.getCommonPromptRules();
+        String rules = preferencesManager.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             promptBuilder.append("\n\n")
                     .append(rules)
@@ -811,7 +811,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
             Project project, String methodContent) {
         StringBuilder promptBuilder = new StringBuilder();
         promptBuilder.append("You are an API server that provides a description of the following Method. ");
-        String rules = preferencesManager.getCommonPromptRules();
+        String rules = preferencesManager.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             promptBuilder.append("\n\n")
                     .append(rules)
@@ -830,28 +830,22 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
             Project project, String source, String methodContent, List<String> images,
             Response previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
-        String promptExtend = "";
-
-        // Build the promptExtend based on the available content
-        if (methodContent != null) {
-            promptExtend = "Method Content:\n" + methodContent + "\n\n"
-                    + "Do not return complete Java Class, return only Method";
-        } else if (source != null) {
-            promptExtend = "Source:\n" + source + "\n\n";
-        }
-
-        // Initialize the prompt
-        prompt.append("You are an API server that provides an answer to a user's query. ");
-        String rules = preferencesManager.getCommonPromptRules();
+        String rules = preferencesManager.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
-            prompt.append("\n\n")
-                    .append(rules)
+            prompt.append(rules)
                     .append("\n\n");
         }
 
-        // Append the extended prompt content and user query
-        prompt.append(promptExtend)
-                .append("User Query:\n")
+        if (methodContent != null) {
+            prompt.append("Method Content:\n")
+                    .append(methodContent)
+                    .append("\n\nDo not return complete Java Class, return only Method");
+        } else if (source != null) {
+            prompt.append("Source:\n")
+                    .append(source)
+                    .append("\n\n");
+        }
+        prompt.append("User Query:\n")
                 .append(userQuery);
 
         // Generate the answer
@@ -938,7 +932,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         }
 
         promptBuilder.append("You are an API server that provides ");
-        String rules = preferencesManager.getCommonPromptRules();
+        String rules = preferencesManager.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             promptBuilder.append("\n\n")
                     .append(rules)

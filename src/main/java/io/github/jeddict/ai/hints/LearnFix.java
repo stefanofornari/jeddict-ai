@@ -602,6 +602,8 @@ public class LearnFix extends JavaFix {
             topComponent.repaint();
             initialMessage();
             responseHistory.clear();
+            questionPane.setText("");
+            clearFileTab();
             currentResponseIndex = -1;
             updateButtons(prevButton, nextButton);
         });
@@ -626,7 +628,7 @@ public class LearnFix extends JavaFix {
         ActionListener submitActionListener = e -> {
             String question = questionPane.getText();
             if (!question.isEmpty()) {
-                submitButton.setText("...️");
+                submitButton.setText("ooo");
                 submitButton.setEnabled(false);
                 handleQuestion(question, messageContext, submitButton, true);
             }
@@ -719,7 +721,7 @@ public class LearnFix extends JavaFix {
         }
 
         boolean enableRules = true;
-        String rules = pm.getCommonPromptRules();
+        String rules = pm.getSessionRules();
         if (commitChanges != null) {
             rules = commitChanges;
             enableRules = false;
@@ -732,7 +734,7 @@ public class LearnFix extends JavaFix {
         dialog.setLocationRelativeTo(SwingUtilities.windowForComponent(topComponent));
         dialog.setVisible(true);
         if (commitChanges == null) {
-            pm.setCommonPromptRules(dialog.getRules());
+            pm.setSessionRules(dialog.getRules());
         }
     }
 

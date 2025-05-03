@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
 import org.json.JSONObject;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.netbeans.api.project.Project;
 
 public class PreferencesManager {
 
@@ -44,7 +45,9 @@ public class PreferencesManager {
     private static final String PROVIDER_LOCATION_PREFERENCES = "provider_location";
     private static final String PROVIDER_PREFERENCE = "provider";
     private static final String MODEL_PREFERENCE = "model";
-    private static final String COMMON_PROMPT_RULES_PREFERENCE = "commonPromptRules";
+    private static final String GLOBAL_RULES_PREFERENCE = "globalRules";
+    private static final String PROJECT_RULES_PREFERENCE = "projectRules";
+    private static final String SESSION_RULES_PREFERENCE = "sessionRules";
     private static final String TEMPERATURE_PREFERENCE = "temperature";
     private static final String TOP_P_PREFERENCE = "topP";
     private static final String STREAM_PREFERENCE = "stream";
@@ -489,7 +492,6 @@ You are an API Server that generates a JAX-RS RESTful resource class for a given
 Ensure the implementation follows JAX-RS best practices and is compatible with Jakarta EE standards.
 """);
             promptMap.put("openapi", "Generate the MicroProfile OpenAPI annotations, Do not generate the method signature or implementation.");
-
         }
         return promptMap;
     }
@@ -502,21 +504,42 @@ Ensure the implementation follows JAX-RS best practices and is compatible with J
         promptMap = map;
     }
 
-    public String getSystemMessage() {
-        return preferences.get("systemMessage", null);
+    public String getGlobalRules() {
+        // First check for old key "systemMessage"
+        String oldValue = preferences.get("systemMessage", null);
+        if (oldValue != null) {
+            // Migrate value to "globalRules"
+            preferences.put(GLOBAL_RULES_PREFERENCE, oldValue);
+            preferences.remove("systemMessage");
+            return oldValue;
+        }
+        // Fallback to new key
+        return preferences.get(GLOBAL_RULES_PREFERENCE, null);
     }
 
-    public void setSystemMessage(String message) {
-        preferences.put("systemMessage", message);
+    public void setGlobalRules(String message) {
+        preferences.put(GLOBAL_RULES_PREFERENCE, message);
+        // Remove old key to avoid duplication
+        preferences.remove("systemMessage");
     }
 
-    public String getCommonPromptRules() {
-        return preferences.get(COMMON_PROMPT_RULES_PREFERENCE, "");
+    public String getProjectRules(Project project) {
+        return preferences.node(project.getProjectDirectory().getName())
+                .get(PROJECT_RULES_PREFERENCE, null);
     }
 
-    public void setCommonPromptRules(String rules) {
+    public void setProjectRules(Project project, String message) {
+        preferences.node(project.getProjectDirectory().getName())
+                .put(PROJECT_RULES_PREFERENCE, message);
+    }
+
+    public String getSessionRules() {
+        return preferences.get(SESSION_RULES_PREFERENCE, "");
+    }
+
+    public void setSessionRules(String rules) {
         if (rules != null) {
-            preferences.put(COMMON_PROMPT_RULES_PREFERENCE, rules.trim());
+            preferences.put(SESSION_RULES_PREFERENCE, rules.trim());
         }
     }
 
