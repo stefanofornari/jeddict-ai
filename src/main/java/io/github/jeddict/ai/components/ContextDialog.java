@@ -68,7 +68,7 @@ public final class ContextDialog extends javax.swing.JDialog {
         tableModel = new DefaultTableModel(
                 data,
                 new String[]{
-                    "Context Files", "Path"
+                    "Session Context Files", "Path"
                 }
         ) {
         };

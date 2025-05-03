@@ -271,7 +271,7 @@ public class EditorUtil {
         Font newFont = getFontFromMimeType("text/html");
         java.awt.Color textColor = getTextColorFromMimeType("text/html"); // Get text color
         java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/html"); // Get background color
-
+        boolean isDark = ColorUtil.isDarkColor(backgroundColor);
         String newContent = """
     <html>
       <head>
@@ -333,6 +333,27 @@ public class EditorUtil {
               padding: 0;
               background: none;
             }
+            ul {
+                list-style-type: none;
+                padding: 0;
+            }
+            li {
+                margin-bottom: 10px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            th, td {
+                border: 1px solid NB_HEADER_BACKGROUND_COLOR;
+            }
+            th {
+                background-color: NB_HEADER_BACKGROUND_COLOR;
+            }
+            .highlight {
+                color: #007bff;
+            }     
         </style>
       </head>
       <body>
@@ -347,9 +368,14 @@ public class EditorUtil {
         if (textColor != null) {
             newContent = newContent.replace("NB_FONT_COLOR", "#" + Integer.toHexString(textColor.getRGB()).substring(2).toUpperCase());
         }
-        if (backgroundColor != null) {
-            newContent = newContent.replace("NB_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
-        }
+         if (backgroundColor != null) {
+             newContent = newContent.replace("NB_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
+             if (isDark) {
+                 newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.brighter().getRGB()).substring(2).toUpperCase());
+             } else {
+                 newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.darker().getRGB()).substring(2).toUpperCase());
+             }
+         }
         return newContent;
     }
 

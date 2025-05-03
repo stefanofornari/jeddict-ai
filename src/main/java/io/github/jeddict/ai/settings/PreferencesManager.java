@@ -66,6 +66,7 @@ public class PreferencesManager {
     private static final String DAILY_INPUT_TOKEN_STATS_KEY = "dailyInputTokenStats";
     private static final String DAILY_OUTPUT_TOKEN_STATS_KEY = "dailyOutputTokenStats";
     private static final String TOKEN_GRANULARITY_KEY = "tokenGranularity";
+    private static final String LAST_BROWSE_DIRECTORY_PREFERENCE = "lastBrowseDirectory";
 
     private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
             // Test Resources
@@ -698,6 +699,14 @@ Ensure the implementation follows JAX-RS best practices and is compatible with J
     public void setTokenGranularity(TokenGranularity granularity) {
         this.tokenGranularity = granularity;
         preferences.put(TOKEN_GRANULARITY_KEY, granularity.name());
+    }
+    
+    public String getLastBrowseDirectory() {
+        return preferences.get(LAST_BROWSE_DIRECTORY_PREFERENCE, "");
+    }
+
+    public void setLastBrowseDirectory(String directory) {
+        preferences.put(LAST_BROWSE_DIRECTORY_PREFERENCE, directory);
     }
 
 }

@@ -1,0 +1,141 @@
+<a href="home.html" style="display:inline-block; padding:10px 20px; margin-top:20px; text-decoration:none; border-radius:5px;">⬅ Back</a>
+
+<h1>AI Assistant: Prompt, Rule Scopes, and Code Context Analysis</h1>
+
+<p>
+    This document explains the different levels of prompts, rules, and attachment scoping used in the AI assistant
+    to customize responses based on different contexts within the IDE, project, session, and message levels.
+    Additionally, it introduces the feature <strong>Code Context Analysis</strong>, 
+    which enhances the way code is sent based on the user's selection.
+</p>
+
+<br/><br/>
+<h2>Context Rule Levels</h2>
+<p>The following table defines the different levels of prompts and rules that are applied to the AI assistant queries.</p>
+
+<table>
+    <tr>
+        <th>Scope</th>
+        <th>Name</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td>IDE-wide</td>
+        <td><span class="highlight">Global Rules</span></td>
+        <td>These rules are applied across the entire IDE environment and will be sent with every chat query regardless of context.</td>
+    </tr>
+    <tr>
+        <td>Project-wide</td>
+        <td><span class="highlight">Project Rules</span></td>
+        <td>These rules apply at the project level and will be sent with chat queries when a file is included in the chat context, affecting responses relevant to the project.</td>
+    </tr>
+    <tr>
+        <td>Chat session</td>
+        <td><span class="highlight">Session Rules</span></td>
+        <td>These rules are specific to the current chat session. They are applied to every query sent during the session, providing context for ongoing interactions.</td>
+    </tr>
+    <tr>
+        <td>Message-only</td>
+        <td><span class="highlight">Message Rules</span></td>
+        <td>These rules are applied only to the specific message/query being sent by the user, ensuring that the response is tailored to the immediate context of the query.</td>
+    </tr>
+</table>
+
+<br/><br/>
+<h2>Context Scopes</h2>
+<p>The following table defines the different levels at which attachments can be applied during a chat session with the AI assistant.</p>
+
+<table>
+    <tr>
+        <th>Scope</th>
+        <th>Name</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td>Chat session</td>
+        <td><span class="highlight">Session Context Files</span></td>
+        <td>These files are attached during the chat session and are available throughout the duration of the session.</td>
+    </tr>
+    <tr>
+        <td>Message-only</td>
+        <td><span class="highlight">Message Context Files</span></td>
+        <td>These files are attached specifically to the current message or query sent by the user, providing context for that particular interaction.</td>
+    </tr>
+</table>
+
+<br/><br/>
+<h3>Session vs Message Context Files</h3>
+<p><strong>Session Context Files</strong> are automatically determined when you start a chat and <strong>cannot be added or removed</strong> once the chat begins. They are based on where you initiate the chat:</p>
+<ul>
+   <li><strong>From a Java class</strong>: The class you selected is automatically part of the session.</li>
+   <li><strong>From a package</strong>: All files in the selected package become part of the session.</li>
+   <li><strong>From the project tree (multi-selection)</strong>: All selected Java classes are included in the session.</li>
+</ul>
+<p><strong>Importance:</strong> These files are crucial because they ensure the assistant has the full context of your ongoing work. They are kept active throughout the session and are important for consistent, context-aware interactions during the chat.</p>
+<p><strong>Message Context Files</strong> are specific to a single message and <strong>won't carry over to future queries</strong>. You can manually attach them as needed:</p>
+<ul>
+   <li>Drag and drop files into the message input area.</li>
+   <li>Click the <strong>Message Context</strong> button to browse and select files.</li>
+</ul>
+<p><strong>Importance:</strong> Message context files are valuable for tailoring responses to the specifics of a single query. They allow you to provide focused context for each interaction, without affecting the session's broader context.</p>
+
+<br/><br/>
+<h2>Code Context Analysis</h2>
+<p>With <strong>Code Context Analysis</strong>, you can choose how much context is included when sending a Java class as part of the conversation. The following options are available:</p>
+
+<table>
+    <tr>
+        <th>Option</th>
+        <th>What It Includes</th>
+        <th>What Is Sent</th>
+        <th>Scope</th>
+    </tr>
+    <tr>
+        <td><span class="highlight">Current Class</span></td>
+        <td>Only the attached Java class</td>
+        <td>Full source of the current class</td>
+        <td>Session Files</td>
+    </tr>
+    <tr>
+        <td><span class="highlight">Referenced Classes</span></td>
+        <td>Attached Java class + all referenced attribute classes</td>
+        <td>Full source of current class + public method signatures from referenced classes</td>
+        <td>Session Files</td>
+    </tr>
+    <tr>
+        <td><span class="highlight">Current Package</span></td>
+        <td>Attached Java class + referenced attribute classes + all classes in the same package</td>
+        <td>Full source of current class + public method signatures from referenced and package classes</td>
+        <td>Session Files</td>
+    </tr>
+    <tr>
+        <td><span class="highlight">Entire Project</span></td>
+        <td>All classes in the project</td>
+        <td>Only public method signatures from all classes in the project</td>
+        <td>Session Files</td>
+    </tr>
+</table>
+
+<h3>Note:</h3>
+<p><strong>Code Context Analysis</strong> is applicable only for <strong>session-level attachments</strong>. The analysis will focus on the selected option, and the public method signatures (where applicable) will be sent based on the chosen context (Current Class, Referenced Classes, Current Package, or Entire Project).</p>
+
+<h2>How It Works</h2>
+<p>Each scope level and the options available in the <strong>Code Context Analysis</strong> feature help you tailor the AI assistant's behavior to provide the most relevant and accurate responses based on the context of your current work. For instance:</p>
+<ul>
+    <li><strong>Global Rules</strong> ensure that basic, overarching instructions are followed for every interaction within the IDE.</li>
+    <li><strong>Project Rules</strong> are helpful when working with project-specific files, where context-related rules need to be applied.</li>
+    <li><strong>Session Rules</strong> help tailor the assistant’s responses to the ongoing conversation, adjusting to the flow of the interaction.</li>
+    <li><strong>Message Rules</strong> ensure the assistant responds in a way that is specific to the current query or message.</li>
+    <li><strong>Code Context Analysis</strong> allows you to control the level of detail sent when attaching a Java class, providing just the necessary information to make the interaction more efficient.</li>
+</ul>
+
+<h3>Example</h3>
+<p>If you're working on a Java class and attach it for review:</p>
+<ul>
+    <li>The assistant might just send the full class if you choose <strong>Current Class</strong>.</li>
+    <li>If you're working with referenced classes, you might choose <strong>Referenced Classes</strong>, and the assistant will send just the method signatures from the referenced classes along with the full class.</li>
+    <li>For a more thorough review, you could choose <strong>Current Package</strong>, which includes both the referenced classes and the current package context.</li>
+    <li>To get a comprehensive overview of the project, <strong>Entire Project</strong> will send method signatures of all classes in the project.</li>
+</ul>
+
+<a href="home.html" style="display:inline-block; padding:10px 20px; margin-top:20px; text-decoration:none; border-radius:5px;">⬅ Back</a>
