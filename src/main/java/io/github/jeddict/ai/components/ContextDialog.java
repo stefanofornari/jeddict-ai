@@ -15,6 +15,10 @@
  */
 package io.github.jeddict.ai.components;
 
+import io.github.jeddict.ai.util.ColorUtil;
+import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
+import java.awt.Color;
 import java.util.List;
 import javax.swing.table.DefaultTableModel;
 import org.openide.filesystems.FileObject;
@@ -31,14 +35,20 @@ public final class ContextDialog extends javax.swing.JDialog {
     /**
      * Creates new form ContextDialog
      */
-    public ContextDialog(java.awt.Frame parent, 
-           boolean enableRules, String rules, 
-            String projectRootDir,  List<FileObject> fileObjects) {
+    public ContextDialog(java.awt.Frame parent,
+            boolean enableRules, String rules,
+            String projectRootDir, List<FileObject> fileObjects) {
         super(parent, true);
         this.projectRootDir = projectRootDir;
         this.fileObjects = fileObjects;
         initComponents();
         setRules(enableRules, rules);
+
+        Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+        boolean isDark = ColorUtil.isDarkColor(bgColor);
+        if (isDark) {
+            applyDarkTheme();
+        }
     }
 
     private DefaultTableModel tableModel;
@@ -72,6 +82,34 @@ public final class ContextDialog extends javax.swing.JDialog {
     public void setRules(boolean enableRules, String rules) {
         rulesTextArea.setEditable(enableRules);
         rulesTextArea.setText(rules);
+    }
+
+    private void applyDarkTheme() {
+        java.awt.Color background = new java.awt.Color(43, 43, 43); // Dark gray
+        java.awt.Color foreground = new java.awt.Color(187, 187, 187); // Light gray
+
+        contextLabel.setForeground(foreground);
+
+        rulesTextArea.setBackground(background);
+        rulesTextArea.setForeground(foreground);
+        rulesTextArea.setCaretColor(foreground);
+
+        filesTable.setBackground(background);
+        filesTable.setForeground(foreground);
+        filesTable.setGridColor(foreground);
+        filesTable.setSelectionBackground(new java.awt.Color(60, 63, 65));
+        filesTable.setSelectionForeground(foreground);
+
+        javax.swing.table.JTableHeader header = filesTable.getTableHeader();
+        header.setBackground(new java.awt.Color(60, 63, 65)); // #3C3F41
+        header.setForeground(new java.awt.Color(187, 187, 187)); // #BBBBBB
+        header.setOpaque(true);
+
+        contextLayeredPane.setBackground(background);
+        filesScrollPane.getViewport().setBackground(background);
+        rulesScrollPane.getViewport().setBackground(background);
+        getContentPane().setBackground(background);
+
     }
 
     /**

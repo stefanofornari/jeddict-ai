@@ -31,18 +31,14 @@ import io.github.jeddict.ai.components.AssistantTopComponent;
 import static io.github.jeddict.ai.components.AssistantTopComponent.createEditorKit;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.ProjectUtil.getSourceFiles;
-import static io.github.jeddict.ai.util.SourceUtil.removeJavadoc;
 import io.github.jeddict.ai.util.StringUtil;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
-import java.awt.Insets;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.prefs.Preferences;
-import java.util.stream.Collectors;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
@@ -57,23 +53,23 @@ import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.spi.java.hints.JavaFix;
-import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-//import static io.github.jeddict.ai.components.AssistantTopComponent.newEditorIcon;
-//import static io.github.jeddict.ai.components.AssistantTopComponent.saveToEditorIcon;
-//import static io.github.jeddict.ai.components.AssistantTopComponent.settingsIcon;
 import io.github.jeddict.ai.components.ContextDialog;
 import io.github.jeddict.ai.components.CustomScrollBarUI;
+import io.github.jeddict.ai.components.FileTab;
+import io.github.jeddict.ai.components.FileTransferHandler;
+import io.github.jeddict.ai.components.MessageContextComponentAdapter;
 import static io.github.jeddict.ai.components.QueryPane.createIconButton;
 import io.github.jeddict.ai.components.TokenUsageChartDialog;
+import static io.github.jeddict.ai.util.ContextHelper.getFilesContextList;
+import static io.github.jeddict.ai.util.ContextHelper.getImageFilesContext;
+import static io.github.jeddict.ai.util.ContextHelper.getProjectContext;
+import static io.github.jeddict.ai.util.ContextHelper.getTextFilesContext;
 import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
 import io.github.jeddict.ai.response.Response;
@@ -95,29 +91,22 @@ import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.TransferHandler;
-import javax.swing.TransferHandler.TransferSupport;
 import org.netbeans.api.options.OptionsDisplayer;
 import java.io.File;
 import java.util.List;
-import javax.swing.JComponent;
+import java.util.function.BiConsumer;
+import javax.swing.Box;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import org.openide.loaders.DataObject;
 import org.openide.filesystems.FileObject;
-import org.openide.nodes.Node;
-import org.openide.filesystems.FileUtil;
 import org.openide.windows.WindowManager;
 
 /**
@@ -140,7 +129,8 @@ public class LearnFix extends JavaFix {
     private int currentResponseIndex = -1;
     private String sourceCode = null;
     private Project project;
-    private List<FileObject> selectedFileObjects = new ArrayList<>();
+    private final List<FileObject> threadContext = new ArrayList<>();
+    private final List<FileObject> messageContext = new ArrayList<>();
     private FileObject fileObject;
     private String commitChanges;
     private final PreferencesManager pm = PreferencesManager.getInstance();
@@ -149,8 +139,8 @@ public class LearnFix extends JavaFix {
     private Project getProject() {
         if (project != null) {
             return project;
-        } else if (selectedFileObjects != null && !selectedFileObjects.isEmpty()) {
-            return FileOwnerQuery.getOwner(selectedFileObjects.toArray(FileObject[]::new)[0]);
+        } else if (threadContext != null && !threadContext.isEmpty()) {
+            return FileOwnerQuery.getOwner(threadContext.toArray(FileObject[]::new)[0]);
         } else if (fileObject != null) {
             return FileOwnerQuery.getOwner(fileObject);
         } else {
@@ -184,13 +174,13 @@ public class LearnFix extends JavaFix {
     public LearnFix(Action action, List<FileObject> selectedFileObjects) {
         super(null);
         this.action = action;
-        this.selectedFileObjects = selectedFileObjects;
+        this.threadContext.addAll(selectedFileObjects);
     }
 
     public LearnFix(Action action, FileObject selectedFileObject) {
         super(null);
         this.action = action;
-        this.selectedFileObjects.add(selectedFileObject);
+        this.threadContext.add(selectedFileObject);
     }
 
     @Override
@@ -229,13 +219,13 @@ public class LearnFix extends JavaFix {
                     name = ((ClassTree) leaf).getSimpleName().toString();
                 }
                 String fileName = fileObject != null ? fileObject.getName() : null;
-
+                List<FileObject> messageContextCopy = new ArrayList<>(messageContext);
                 SwingUtilities.invokeLater(() -> {
                     displayHtmlContent(fileName, name + " AI Assistant");
                     JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                         @Override
                         public void onComplete(String textResponse) {
-                            Response response = new Response(null, textResponse);
+                            Response response = new Response(null, textResponse, messageContextCopy);
                             sourceCode = EditorUtil.updateEditors(null, topComponent, response, getContextFiles());
                             responseHistory.add(response);
                             currentResponseIndex = responseHistory.size() - 1;
@@ -268,96 +258,17 @@ public class LearnFix extends JavaFix {
         return getSourceFiles(project);
     }
 
-    private String getProjectContext() {
-        StringBuilder inputForAI = new StringBuilder();
-        for (FileObject file : getProjectContextList()) {
-            try {
-                String text = file.asText();
-                if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                    text = removeJavadoc(text);
-                }
-                inputForAI.append(text);
-                inputForAI.append("\n");
-            } catch (Exception ex) {
-                Exceptions.printStackTrace(ex);
-            }
-        }
-
-        return inputForAI.toString();
-    }
-
-    public String getFilesContext() {
-        StringBuilder inputForAI = new StringBuilder();
-        for (FileObject file : getFilesContextList()) {
-            try {
-                String text = file.asText();
-                if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                    text = removeJavadoc(text);
-                }
-                inputForAI.append(text);
-                inputForAI.append("\n");
-            } catch (Exception ex) {
-                Exceptions.printStackTrace(ex);
-            }
-        }
-        return inputForAI.toString();
-    }
-
-    public List<FileObject> getFilesContextList() {
-        List<FileObject> sourceFiles = new ArrayList<>();
-        boolean includeNestedFiles = selectedFileObjects.stream()
-                .anyMatch(fo -> fo.getPath().contains("src/main/webapp")
-                || fo.getPath().endsWith("src/main")
-                );
-        // Function to collect files recursively
-        if (includeNestedFiles) {
-            for (FileObject selectedFile : selectedFileObjects) {
-                if (selectedFile.isFolder()) {
-                    collectNestedFiles(selectedFile, sourceFiles);
-                } else if (selectedFile.isData() && pm.getFileExtensionListToInclude().contains(selectedFile.getExt())) {
-                    sourceFiles.add(selectedFile);
-                }
-            }
-        } else {
-            // Collect only immediate children files
-            sourceFiles.addAll(selectedFileObjects.stream()
-                    .filter(FileObject::isFolder)
-                    .flatMap(packageFolder -> Arrays.stream(packageFolder.getChildren())
-                    .filter(FileObject::isData)
-                    .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt())))
-                    .collect(Collectors.toList()));
-
-            sourceFiles.addAll(selectedFileObjects.stream()
-                    .filter(FileObject::isData)
-                    .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
-                    .collect(Collectors.toList()));
-        }
-
-        return sourceFiles;
-    }
-
-    private void collectNestedFiles(FileObject folder, List<FileObject> sourceFiles) {
-        // Collect immediate data files
-        Arrays.stream(folder.getChildren())
-                .filter(FileObject::isData)
-                .filter(file -> pm.getFileExtensionListToInclude().contains(file.getExt()))
-                .forEach(sourceFiles::add);
-
-        // Recursively collect from subfolders
-        Arrays.stream(folder.getChildren())
-                .filter(FileObject::isFolder)
-                .forEach(subFolder -> collectNestedFiles(subFolder, sourceFiles));
-    }
 
     public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
         ProjectInformation info = ProjectUtils.getInformation(project);
         String projectName = info.getDisplayName();
+        List<FileObject> messageContextCopy = new ArrayList<>(messageContext);
         SwingUtilities.invokeLater(() -> {
             displayHtmlContent(null, projectName + " GenAI Commit");
             JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                 @Override
                 public void onComplete(String textResponse) {
-                    Response response = new Response(null, textResponse);
+                    Response response = new Response(null, textResponse, messageContextCopy);
                     sourceCode = EditorUtil.updateEditors(null, topComponent, response, getContextFiles());
                     responseHistory.add(response);
                     currentResponseIndex = responseHistory.size() - 1;
@@ -440,10 +351,42 @@ public class LearnFix extends JavaFix {
         EventQueue.invokeLater(() -> questionPane.requestFocusInWindow());
     }
 
+    private JPanel filePanel;
+    private MessageContextComponentAdapter filePanelAdapter;
+
+    public void addFileTab(FileObject file) {
+        if (!messageContext.contains(file)) {
+            messageContext.add(file);
+            FileTab fileTab = new FileTab(file, filePanel, f -> {
+                messageContext.remove(f);
+                filePanelAdapter.componentResized(null);
+            });
+            filePanel.add(fileTab);
+            filePanelAdapter.componentResized(null);
+            filePanel.revalidate();
+            filePanel.repaint();
+        }
+    }
+
+    public void clearFileTab() {
+        messageContext.clear();
+        filePanel.removeAll();
+        filePanelAdapter.componentResized(null);
+        filePanel.revalidate();
+        filePanel.repaint();
+    }
+
     private JPanel createBottomPanel(String type, String fileName, Consumer<String> action) {
         JPanel bottomPanel = new JPanel(new BorderLayout());
 
         Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+        filePanel = new JPanel();
+        filePanelAdapter = new MessageContextComponentAdapter(filePanel);
+        filePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        filePanel.setBackground(backgroundColor);
+        filePanel.setBorder(BorderFactory.createEmptyBorder());
+        filePanel.addComponentListener(filePanelAdapter);
+
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.setBackground(backgroundColor);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder());
@@ -625,14 +568,14 @@ public class LearnFix extends JavaFix {
             if (!question.isEmpty()) {
                 submitButton.setText("...️");
                 submitButton.setEnabled(false);
-                handleQuestion(question, submitButton, true);
+                handleQuestion(question, messageContext, submitButton, true);
             }
         };
 
         submitButton.addActionListener(submitActionListener);
 
-        Consumer<String> queryUpdate = newQuery -> {
-            handleQuestion(newQuery, submitButton, false);
+        BiConsumer<String, List<FileObject>> queryUpdate = (newQuery, messageContext) -> {
+            handleQuestion(newQuery, messageContext, submitButton, false);
         };
         prevButton.addActionListener(e -> {
             if (currentResponseIndex > 0) {
@@ -654,71 +597,15 @@ public class LearnFix extends JavaFix {
 
         updateButtons(prevButton, nextButton);
 
-        TransferHandler defaultHandler = questionPane.getTransferHandler();
-        questionPane.setTransferHandler(new TransferHandler() {
-            @Override
-            public boolean canImport(TransferSupport support) {
-                try {
-                    Transferable t = support.getTransferable();
-                    for (DataFlavor flavor : t.getTransferDataFlavors()) {
-                        if (flavor.isFlavorJavaFileListType()
-                                || DataObject[].class.equals(flavor.getRepresentationClass())
-                                || Node.class.isAssignableFrom(flavor.getRepresentationClass())) {
-                            return true;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return defaultHandler.canImport(support);
-            }
-
-            @Override
-            public boolean importData(TransferSupport support) {
-                try {
-                    Transferable t = support.getTransferable();
-                    for (DataFlavor flavor : t.getTransferDataFlavors()) {
-                        if (flavor.isFlavorJavaFileListType()) {
-                            List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
-                            for (File file : files) {
-                                selectedFileObjects.add(FileUtil.toFileObject(file));
-                            }
-                            return true;
-                        }
-                        if (DataObject[].class.equals(flavor.getRepresentationClass())) {
-                            DataObject[] dataObjects = (DataObject[]) t.getTransferData(flavor);
-                            for (DataObject dobj : dataObjects) {
-                                if (dobj != null) {
-                                    selectedFileObjects.add(dobj.getPrimaryFile());
-                                }
-                            }
-                            return true;
-                        }
-                        if (Node.class.isAssignableFrom(flavor.getRepresentationClass())) {
-                            Node node = (Node) t.getTransferData(flavor);
-                            DataObject dobj = node.getLookup().lookup(DataObject.class);
-                            if (dobj != null) {
-                                selectedFileObjects.add(dobj.getPrimaryFile());
-                            }
-                            return true;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return defaultHandler.importData(support);
-            }
-
-            @Override
-            public void exportToClipboard(JComponent comp, Clipboard clipboard, int action) throws IllegalStateException {
-                defaultHandler.exportToClipboard(comp, clipboard, action);
-            }
-        });
+        FileTransferHandler.register(bottomPanel, this::addFileTab);
+        FileTransferHandler.register(questionPane, this::addFileTab);
 
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
-        bottomPanel.add(questionScrollPane);       // Will honor max height
-        bottomPanel.add(javax.swing.Box.createVerticalStrut(0)); // spacing
-        bottomPanel.add(buttonPanel);      // Compact button row
+        bottomPanel.add(filePanel);
+        bottomPanel.add(Box.createVerticalStrut(0));
+        bottomPanel.add(questionScrollPane);
+        bottomPanel.add(Box.createVerticalStrut(0));
+        bottomPanel.add(buttonPanel);
 
         return bottomPanel;
     }
@@ -742,14 +629,13 @@ public class LearnFix extends JavaFix {
     }
 
     private List<FileObject> getContextFiles() {
-        List<FileObject> fileObjects;
+        List<FileObject> fileObjects = new ArrayList<>();
         if (project != null) {
-            fileObjects = getProjectContextList();
-        } else if (selectedFileObjects != null) {
-            fileObjects = getFilesContextList();
-        } else {
-            fileObjects = Collections.EMPTY_LIST;
-        }
+            fileObjects.addAll(getProjectContextList());
+        } 
+        if (threadContext != null) {
+            fileObjects.addAll(getFilesContextList(threadContext));
+        } 
         return fileObjects;
     }
 
@@ -780,37 +666,7 @@ public class LearnFix extends JavaFix {
         }
     }
 
-    private JButton createButton(ImageIcon icon) {
-        JButton button = new JButton(icon);
-        // Set button preferred size to match the icon's size (24x24)
-        button.setPreferredSize(new Dimension(icon.getIconWidth(), icon.getIconHeight()));
-
-        // Remove button text and focus painting for a cleaner look
-        button.setText(null);
-        button.setFocusPainted(false);
-
-        // Set margin to zero for no extra space around the icon
-        button.setMargin(new Insets(0, 0, 0, 0));
-
-        // Optional: Remove the button's border if you want a borderless icon
-        button.setBorder(BorderFactory.createEmptyBorder());
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                // Show border on hover
-                button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                // Remove border when not hovering
-                button.setBorder(BorderFactory.createEmptyBorder());
-            }
-        });
-        return button;
-    }
-
-    private void handleQuestion(String question, JButton submitButton, boolean newQuery) {
+    private void handleQuestion(String question, List<FileObject> messageContext, JButton submitButton, boolean newQuery) {
         executorService.submit(() -> {
             try {
                 if (currentResponseIndex >= 0
@@ -830,21 +686,19 @@ public class LearnFix extends JavaFix {
                 if (prevChat != null) {
                     prevChat = responseHistory.get(currentResponseIndex);
                 }
-                questionPane.setText("");
-                updateHeight();
+                List<FileObject> messageContextCopy = new ArrayList<>(messageContext);
                 JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                     @Override
                     public void onComplete(String textResponse) {
-                        Response response = new Response(question, textResponse);
+                        Response response = new Response(question, textResponse, messageContextCopy);
                         if (responseHistory.isEmpty() || !textResponse.equals(responseHistory.get(responseHistory.size() - 1))) {
                             responseHistory.add(response);
                             currentResponseIndex = responseHistory.size() - 1;
                         }
                         SwingUtilities.invokeLater(() -> {
-                            Consumer<String> queryUpdate = newQuery -> {
-                                handleQuestion(newQuery, submitButton, false);
+                            BiConsumer<String, List<FileObject>> queryUpdate = (newQuery, messageContext) -> {
+                                handleQuestion(newQuery, messageContext, submitButton, false);
                             };
-
                             sourceCode = EditorUtil.updateEditors(queryUpdate, topComponent, response, getContextFiles());
                             buttonPanelAdapter.componentResized(null);
                             submitButton.setEnabled(true);
@@ -859,11 +713,18 @@ public class LearnFix extends JavaFix {
                 } else if (commitChanges != null) {
                     response = new JeddictChatModel(handler).generateCommitMessageSuggestions(commitChanges, question);
                 } else if (project != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), getProjectContext(), null, prevChat, question);
-                } else if (selectedFileObjects != null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), getFilesContext(), null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), getProjectContext(getProjectContextList()), null, null, prevChat, question);
+                } else if (threadContext != null) {
+                    String threadScopeContent =  getTextFilesContext(threadContext);
+                    List<String> threadScopeImgages =  getImageFilesContext(threadContext);
+                    String messageScopeContent =  getTextFilesContext(messageContext);
+                    List<String> messageScopeImgages =  getImageFilesContext(messageContext);
+                    List<String> images = new ArrayList<>();
+                    images.addAll(threadScopeImgages);
+                    images.addAll(messageScopeImgages);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChat, question);
                 } else if (treePath == null) {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), null, null, null, prevChat, question);
                 } else if (action == Action.TEST) {
                     if (leaf instanceof MethodTree) {
                         response = new JeddictChatModel(handler).generateTestCase(getProject(), null, null, leaf.toString(), prevChat, question);
@@ -871,13 +732,16 @@ public class LearnFix extends JavaFix {
                         response = new JeddictChatModel(handler).generateTestCase(getProject(), null, treePath.getCompilationUnit().toString(), null, prevChat, question);
                     }
                 } else {
-                    response = new JeddictChatModel(handler).generateDescription(getProject(), treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, prevChat, question);
+                    response = new JeddictChatModel(handler).generateDescription(getProject(), treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, null, prevChat, question);
                 }
 
                 if (response != null && !response.isEmpty()) {
-//                    response = removeCodeBlockMarkers(response);
                     handler.onComplete(response);
                 }
+                
+                questionPane.setText("");
+                updateHeight();
+                clearFileTab();
             } catch (Exception e) {
                 e.printStackTrace();
                 buttonPanelAdapter.componentResized(null);

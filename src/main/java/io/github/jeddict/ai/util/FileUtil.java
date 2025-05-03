@@ -15,7 +15,11 @@
  */
 package io.github.jeddict.ai.util;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import org.openide.cookies.SaveCookie;
+import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.windows.TopComponent;
 
@@ -44,6 +48,18 @@ public class FileUtil {
                 }
             }
         }
+    }
+    
+    
+    public static FileObject createTempFileObject(String name, String content) throws IOException {
+        File tempFile = File.createTempFile("GenAI-" + name, ".java");
+        tempFile.deleteOnExit();
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write(content);
+        }
+        tempFile = org.openide.filesystems.FileUtil.normalizeFile(tempFile);
+        FileObject fileObject = org.openide.filesystems.FileUtil.toFileObject(tempFile);
+        return fileObject;
     }
 
 }

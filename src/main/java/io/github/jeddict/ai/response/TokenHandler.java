@@ -40,7 +40,7 @@ public class TokenHandler {
         for (ChatMessage msg : messages) {
             serialized.append(msg.type().name().toLowerCase())
                       .append(": ")
-                      .append(msg.text())
+                      .append(msg.toString())
                       .append("\n");
         }
 

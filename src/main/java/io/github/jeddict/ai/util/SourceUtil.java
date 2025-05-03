@@ -27,7 +27,9 @@ import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -427,5 +429,47 @@ public class SourceUtil {
                 (ExpressionTree) mt.getDefaultValue()
         );
     }
+    
+    private String getMethodContentFromSource(FileObject fileObject, String sourceMethodSignature) {
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        final StringBuilder methodContent = new StringBuilder();
+
+        try {
+            javaSource.runUserActionTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
+                CompilationUnitTree cu = copy.getCompilationUnit();
+                Trees trees = copy.getTrees();
+                SourcePositions sourcePositions = trees.getSourcePositions();
+
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitMethod(MethodTree methodTree, Void v) {
+                        String currentSignature = methodTree.getName().toString() + "("
+                                + methodTree.getParameters().stream()
+                                        .map(param -> param.getType().toString())
+                                        .collect(Collectors.joining(",")) + ")";
+
+                        if (currentSignature.equals(sourceMethodSignature)) {
+                            long start = sourcePositions.getStartPosition(cu, methodTree);
+                            long end = sourcePositions.getEndPosition(cu, methodTree);
+
+                            try {
+                                String fullText = copy.getText();
+                                methodContent.append(fullText.substring((int) start, (int) end));
+                            } catch (Exception e) {
+                                Exceptions.printStackTrace(e);
+                            }
+                        }
+                        return super.visitMethod(methodTree, v);
+                    }
+                }.scan(cu, null);
+            }, true);
+        } catch (IOException e) {
+            System.out.println("Error retrieving method " + sourceMethodSignature + " from file " + fileObject.getName() + ": " + e.getMessage());
+        }
+
+        return methodContent.toString();
+    }
+
 
 }

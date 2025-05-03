@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.openide.filesystems.FileObject;
 
 /**
  *
@@ -29,10 +30,12 @@ public class Response {
 
     private final String query;
     private List<Block> blocks;
+    private  List<FileObject> messageContext;
 
-    public Response(String query, String response) {
+    public Response(String query, String response,  List<FileObject> messageContext) {
         this.query = query;
         this.blocks = parseMarkdown(response);
+        this.messageContext = messageContext;
     }
 
     public String getQuery() {
@@ -45,6 +48,10 @@ public class Response {
 
     public void setBlocks(List<Block> blocks) {
         this.blocks = blocks;
+    }
+
+    public List<FileObject> getMessageContext() {
+        return messageContext;
     }
 
     private List<Block> parseMarkdown(String text) {

@@ -474,6 +474,21 @@ public class PreferencesManager {
         }
         if (promptMap.isEmpty()) {
             promptMap.put("test", "Generate JUnit Test");
+            promptMap.put("getset", "Generate getters, setters, no-arg constructor, equals(), hashCode(), and toString() methods.");
+            promptMap.put("rest", """
+You are an API Server that generates a JAX-RS RESTful resource class for a given POJO class.Generate only the REST resource class without any additional descriptions or comments. The endpoint must include:
+- Full CRUD operations (Create, Read, Update, Delete).
+- Methods for counting total records.
+- A search function that allows filtering based on relevant fields.
+- Pagination support for listing records.
+- Sorting functionality for query results.
+- Proper usage of HTTP status codes.
+- Path and query parameters for flexible querying.
+- JSON request and response handling using Jakarta JSON-B.
+Ensure the implementation follows JAX-RS best practices and is compatible with Jakarta EE standards.
+""");
+            promptMap.put("openapi", "Generate the MicroProfile OpenAPI annotations, Do not generate the method signature or implementation.");
+
         }
         return promptMap;
     }

@@ -50,38 +50,25 @@ public class GenAIModel {
 
 
                // Existing models
+        MODELS.put("gpt-4.1-nano", new GenAIModel(OPEN_AI, "gpt-4.1-nano",
+                "Fastest, most cost-effective GPT-4.1 model",
+                0.10, 0.40));
         MODELS.put("gpt-4o-mini", new GenAIModel(OPEN_AI, "gpt-4o-mini",
-                "Highly recommended for its excellent balance of performance and cost.",
+                "Fast, affordable small model for focused tasks.",
                 0.150, 0.600));
-
+        MODELS.put("gpt-4.1-mini", new GenAIModel(OPEN_AI, "gpt-4.1-mini",
+                "Balanced for intelligence, speed, and cost.",
+                0.40, 1.60));
+        MODELS.put("o3-mini", new GenAIModel(OPEN_AI, "o3-mini",
+                "A small model alternative to o3.",
+                1.10, 4.40));
         MODELS.put("o1-mini", new GenAIModel(OPEN_AI, "o1-mini",
                 "A compact model for diverse tasks.",
-                3.00, 12.00));
-
-        MODELS.put("o1-preview", new GenAIModel(OPEN_AI, "o1-preview",
-                "A preview version of the O1 model, designed for early testing and feedback.",
-                0.300, 1.200));
-
-        MODELS.put("chatgpt-4o-latest", new GenAIModel(OPEN_AI, "chatgpt-4o-latest",
-                "Latest ChatGPT model offering powerful capabilities.",
-                5.00, 15.00));
-
+                1.10, 4.40));
         MODELS.put("gpt-4o", new GenAIModel(OPEN_AI, "gpt-4o",
-                "The premium choice for complex tasks requiring deep analysis and understanding.",
+                "Fast, intelligent, flexible GPT model.",
                 2.50, 10.00));
 
-        // Newly added models
-        MODELS.put("o3-mini", new GenAIModel(OPEN_AI, "o3-mini",
-                "A compact and efficient model designed for lightweight AI tasks.",
-                0.250, 1.000));
-
-        MODELS.put("o1", new GenAIModel(OPEN_AI, "o1",
-                "A powerful model for diverse applications with improved efficiency.",
-                1.10, 4.40));
-
-        MODELS.put("gpt-4.5", new GenAIModel(OPEN_AI, "gpt-4.5",
-                "An advanced model with enhanced reasoning and generative abilities.",
-                3.00, 12.00));  // Hypothetical pricing, update when confirmed.
 
         MODELS.put("claude-3-5-sonnet-20240620", new GenAIModel(ANTHROPIC, "claude-3-5-sonnet-20240620", "A sonnet model offering refined conversational capabilities.", 3.00, 15.00));
         MODELS.put("claude-3-haiku-20240307", new GenAIModel(ANTHROPIC, "claude-3-haiku-20240307", "A haiku model designed for concise and creative expression.", 0.25, 1.25));
