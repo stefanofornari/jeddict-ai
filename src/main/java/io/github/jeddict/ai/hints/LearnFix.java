@@ -24,6 +24,7 @@ import static com.sun.source.tree.Tree.Kind.INTERFACE;
 import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
+import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.lang.JeddictChatModel;
 import io.github.jeddict.ai.completion.SQLCompletion;
@@ -114,6 +115,7 @@ import javax.swing.JFileChooser;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
+import javax.swing.text.Document;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Exceptions;
@@ -544,6 +546,9 @@ public class LearnFix extends JavaFix {
 
         questionPane = new JEditorPane();
         questionPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
+        Document doc = questionPane.getDocument();
+        doc.putProperty(JEDDICT_EDITOR_CALLBACK, (Consumer<FileObject>) this::addFileTab);
+
         questionScrollPane = new JScrollPane(questionPane);
         questionScrollPane.setBorder(BorderFactory.createEmptyBorder());
         questionScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);

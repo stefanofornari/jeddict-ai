@@ -155,6 +155,10 @@
                             <id>org.netbeans.modules:org-netbeans-modules-maven-embedder</id>
                             <type>impl</type>
                         </dependency>
+                        <dependency>
+                            <id>org.netbeans.api:org-netbeans-api-java-classpath</id>
+                            <type>impl</type>
+                        </dependency>
                     </moduleDependencies>
                     <publicPackages>
                         <publicPackage>io.github.jeddict.ai</publicPackage>
@@ -344,6 +348,16 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-options-api</artifactId>
+            <version>RELEASE250</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-api-java-classpath</artifactId>
+            <version>RELEASE250</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-projectuiapi-base</artifactId>
             <version>RELEASE250</version>
         </dependency>
         <dependency>
