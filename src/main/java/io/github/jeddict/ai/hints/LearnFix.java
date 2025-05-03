@@ -655,7 +655,7 @@ public class LearnFix extends JavaFix {
         ActionListener submitActionListener = e -> {
             String question = questionPane.getText();
             if (!question.isEmpty()) {
-                submitButton.setText("ooo");
+                submitButton.setText("...");
                 submitButton.setEnabled(false);
                 handleQuestion(question, messageContext, submitButton, true);
             }
