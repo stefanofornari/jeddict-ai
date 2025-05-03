@@ -48,6 +48,7 @@ import org.netbeans.api.project.Project;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.response.Block;
@@ -93,6 +94,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
 
 /**
  *
@@ -132,7 +134,7 @@ public class AssistantTopComponent extends TopComponent {
     }
 
     private JButton copyButton, editButton, saveButton, cancelButton;
-    private JTextPane queryPane;
+    private JEditorPane queryPane;
 
     public void updateUserPaneButtons(boolean iconOnly) {
         if (copyButton != null) {
@@ -185,10 +187,28 @@ public class AssistantTopComponent extends TopComponent {
         });
     }
 
-    public JTextPane createUserQueryPane(BiConsumer<String, List<FileObject>> queryUpdate, String content, List<FileObject> messageContext) {
-        queryPane = new JTextPane();
+    public JEditorPane createUserQueryPane(BiConsumer<String, List<FileObject>> queryUpdate, String content, List<FileObject> messageContext) {
+        
+        Consumer<FileObject> callback = file -> {
+            if (!messageContext.contains(file)) {
+                messageContext.add(file);
+                FileTab fileTab = new FileTab(file, filePanel, f -> {
+                    messageContext.remove(f);
+                    filePanelAdapter.componentResized(null);
+                });
+                filePanel.add(fileTab);
+                filePanelAdapter.componentResized(null);
+                filePanel.revalidate();
+                filePanel.repaint();
+            }
+        };
+        
+        queryPane = new JEditorPane();
+        queryPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
         queryPane.setText(content);
         queryPane.setEditable(false);
+        Document doc = queryPane.getDocument();
+        doc.putProperty(JEDDICT_EDITOR_CALLBACK, (Consumer<FileObject>) callback);
 
         Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
         Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
@@ -242,19 +262,6 @@ public class AssistantTopComponent extends TopComponent {
         filePanelAdapter.componentResized(null);
         filePanel.revalidate();
         filePanel.repaint();
-        Consumer<FileObject> callback = file -> {
-            if (!messageContext.contains(file)) {
-                messageContext.add(file);
-                FileTab fileTab = new FileTab(file, filePanel, f -> {
-                    messageContext.remove(f);
-                    filePanelAdapter.componentResized(null);
-                });
-                filePanel.add(fileTab);
-                filePanelAdapter.componentResized(null);
-                filePanel.revalidate();
-                filePanel.repaint();
-            }
-        };
         FileTransferHandler.register(bottomPanel, callback);
         FileTransferHandler.register(queryPane, callback);
 
