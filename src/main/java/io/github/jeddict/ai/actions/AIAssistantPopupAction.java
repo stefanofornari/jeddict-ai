@@ -69,10 +69,8 @@ public final class AIAssistantPopupAction extends AbstractAction implements Acti
         if (selectedText == null || selectedText.isEmpty()) {
             selectionStartPosition = -1;
             selectedText = "";
-            learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, file);
-        } else {
-            learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY);
         }
+        learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, file);
         final String text = selectedText;
         final int startLocation = selectionStartPosition;
         learnFix.openChat(null, selectedText, file.getName(), "Chat with AI", content -> {
