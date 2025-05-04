@@ -28,6 +28,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.function.Consumer;
 import javax.swing.border.Border;
+import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileObject;
 
 public class FileTab extends JPanel {
@@ -82,6 +83,23 @@ public class FileTab extends JPanel {
         roundedPanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         Border border = new EmptyBorder(1, 2, 1, 2);
         roundedPanel.setBorder(border);
+        roundedPanel.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openFileInEditor();
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                roundedPanel.setBackground(isDark ? new Color(255, 255, 255, 30) : new Color(0, 0, 0, 30));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                roundedPanel.setBackground(tabBackground);
+            }
+        });
 
         JLabel label = new JLabel(file.getNameExt());
         label.setFont(font);
@@ -143,5 +161,13 @@ public class FileTab extends JPanel {
 
     public FileObject getFile() {
         return file;
+    }
+
+    private void openFileInEditor() {
+        // Use the EditorCookie to open the file in the editor
+        EditorCookie editorCookie = file.getLookup().lookup(EditorCookie.class);
+        if (editorCookie != null) {
+            editorCookie.open();
+        }
     }
 }

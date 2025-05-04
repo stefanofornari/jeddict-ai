@@ -48,10 +48,12 @@ import org.netbeans.api.project.Project;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import io.github.jeddict.ai.response.Block;
+import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.DiffUtil.diffAction;
 import static io.github.jeddict.ai.util.DiffUtil.diffActionWithSelected;
@@ -87,11 +89,11 @@ import org.netbeans.modules.editor.NbEditorUtilities;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
-import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
@@ -113,6 +115,7 @@ public class AssistantTopComponent extends TopComponent {
     private final Map<JEditorPane, List<JMenuItem>> menuItems = new HashMap<>();
     private final Map<JEditorPane, List<JMenuItem>> submenuItems = new HashMap<>();
     private String type = "java";
+    private static PreferencesManager pm = PreferencesManager.getInstance();
 
     public AssistantTopComponent(String name, String type, Project project) {
         setName(name);
@@ -381,7 +384,7 @@ public class AssistantTopComponent extends TopComponent {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save As");
 
-        if (mimeType == null || mimeType.equals(JAVA_MIME)) {
+        if (mimeType != null && mimeType.equals(JAVA_MIME)) {
             fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Java Files", "java"));
             String className = extractClassName(content);
             String packageName = extractPackageName(content);
@@ -415,6 +418,8 @@ public class AssistantTopComponent extends TopComponent {
                     filePath = Paths.get(filePath, "src/main/webapp").toString();
                 }
                 fileChooser.setCurrentDirectory(new File(filePath));
+            } else {
+                fileChooser.setCurrentDirectory(new File(pm.getLastBrowseDirectory()));
             }
             String fileExtension = getExtension(mimeType);
             if (fileExtension != null) {
@@ -431,7 +436,7 @@ public class AssistantTopComponent extends TopComponent {
                     && fileExtension != null) {
                 file = new File(file.getAbsolutePath() + "." + fileExtension);
             }
-
+            pm.setLastBrowseDirectory(file.getParent());
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write(content);
             } catch (IOException ex) {
@@ -547,19 +552,27 @@ public class AssistantTopComponent extends TopComponent {
                 String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
                 CompilationUnit cu = StaticJavaParser.parse(content);
                 List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
-                Map<String, Integer> fileMethodSignatures = cu.findAll(MethodDeclaration.class).stream()
-                        .collect(Collectors.toMap(
-                                method -> method.getNameAsString() + "("
-                                + method.getParameters().stream()
-                                        .map(param -> param.getType().asString())
-                                        .collect(Collectors.joining(",")) + ")",
-                                method -> method.toString().length()
-                        ));
-                Map<String, Long> fileMethods = methods.stream()
-                        .collect(Collectors.groupingBy(
-                                method -> method.getNameAsString(),
-                                Collectors.counting()
-                        ));
+
+                Map<String, Integer> fileMethodSignatures = new HashMap<>();
+                for (MethodDeclaration method : cu.findAll(MethodDeclaration.class)) {
+                    if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
+                        continue; // Skip anonymous inner class method
+                    }
+                    String signature = method.getNameAsString() + "("
+                            + method.getParameters().stream()
+                                    .map(param -> param.getType().asString())
+                                    .collect(Collectors.joining(",")) + ")";
+                    fileMethodSignatures.put(signature, method.toString().length());
+                }
+
+                Map<String, Long> fileMethods = new HashMap<>();
+                for (MethodDeclaration method : methods) {
+                    if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
+                        continue; // Skip anonymous inner class method
+                    }
+                    String methodName = method.getNameAsString();
+                    fileMethods.put(methodName, fileMethods.getOrDefault(methodName, 0L) + 1);
+                }
 
                 for (int i = 0; i < parentPanel.getComponentCount(); i++) {
                     if (parentPanel.getComponent(i) instanceof JEditorPane) {

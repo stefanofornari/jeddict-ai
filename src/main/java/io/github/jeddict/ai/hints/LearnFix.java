@@ -366,8 +366,8 @@ public class LearnFix extends JavaFix {
             + "👋 <strong>Welcome!</strong><br><br>"
             + "I'm here to assist you with any questions you have.<br>"
             + "Feel free to ask anything!<br><br><br><br><br>"
-            + "<a href='rules.html' style='text-decoration:none; color:#007bff;'>📘 Learn about context rules and scopes</a><br><br>"
             + "<a href='https://jeddict.github.io/page.html?l=tutorial/AI' style='text-decoration:none; color:#28a745;'>📄 View Documentation</a><br><br>"
+            + "<a href='https://jeddict.github.io/page.html?l=tutorial/AIContext' style='text-decoration:none; color:#007bff;'>📘 Learn about context rules and scopes</a><br><br>"
             + "<a href='https://github.com/jeddict/jeddict-ai' style='text-decoration:none; color:#ff6600;'>⭐ Like it? Give us a star</a><br><br>"
             + "<a href='tweet' style='text-decoration:none; color:#1DA1F2;'>🐦 Tweet about Jeddict AI</a>"
             + "</div>"
@@ -383,23 +383,6 @@ public class LearnFix extends JavaFix {
                     try {
                         String content = getHTMLContent(getHtmlWrapWidth(init), HOME_PAGE);
                         init.setText(content);
-                    } catch (Exception ex) {
-                        Exceptions.printStackTrace(ex);
-                    }
-                } else if ("rules.html".equals(link)) {
-                    try {
-                        InputStream inputStream = getClass().getResourceAsStream("/io/github/jeddict/ai/learn/rules.html");
-                        if (inputStream != null) {
-                            StringBuilder htmlContent = new StringBuilder();
-                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-                                String line;
-                                while ((line = reader.readLine()) != null) {
-                                    htmlContent.append(line).append("\n");
-                                }
-                            }
-                            String content = getHTMLContent(getHtmlWrapWidth(init), htmlContent.toString());
-                            init.setText(content);
-                        }
                     } catch (Exception ex) {
                         Exceptions.printStackTrace(ex);
                     }
