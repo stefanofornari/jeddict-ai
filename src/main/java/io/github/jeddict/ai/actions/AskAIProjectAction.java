@@ -72,7 +72,7 @@ public final class AskAIProjectAction extends AbstractAction implements ContextA
         public void actionPerformed(ActionEvent evt) {
             LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, project);
             String projectName = ProjectUtils.getInformation(project).getDisplayName();
-            learnFix.openChat(null, "", null, projectName + " AI Assistant", null);
+            learnFix.openChat(null, "", null, projectName, null);
         }
 
     }
