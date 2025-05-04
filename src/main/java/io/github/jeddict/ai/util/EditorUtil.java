@@ -328,7 +328,9 @@ public class EditorUtil {
               color: #007bff;
               text-decoration: none;
             }
-
+            code a {
+              color: #007bff;
+            }
             a:hover {
               text-decoration: underline;
             }
@@ -342,6 +344,7 @@ public class EditorUtil {
               font-family: monospace;
               padding: 2px 4px;
               border-radius: 3px;
+              color: #ff6600;
             }
 
             pre {
@@ -430,7 +433,7 @@ public class EditorUtil {
                 return (java.awt.Color) defaultSet.getAttribute(javax.swing.text.StyleConstants.Foreground);
             }
         }
-        return null; // Default color if not found
+        return null;
     }
 
     public static java.awt.Color getBackgroundColorFromMimeType(String mimeType) {
@@ -443,12 +446,11 @@ public class EditorUtil {
                 return (java.awt.Color) defaultSet.getAttribute(javax.swing.text.StyleConstants.Background);
             }
         }
-        return null; // Default background color if not found
+        return null;
     }
 
     /**
-     * Wraps Java class names inside backticks with <a></a> tags. Skips methods
-     * (ending with ()) and fields (starting lowercase).
+     * Wraps Java class names inside <code></code> with <a></a> tags.
      */
     public static String wrapClassNamesWithAnchor(String input) {
         input = input.replaceAll("(\\b\\w+\\.java\\b)", "<a href=\"$1\">$1</a>");
