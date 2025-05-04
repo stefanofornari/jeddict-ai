@@ -111,7 +111,7 @@ public class QueryPane {
         comboBox.setUI(new BasicComboBoxUI() {
             @Override
             protected JButton createArrowButton() {
-                JButton arrowButton = new JButton("▼");
+                JButton arrowButton = new JButton("\u25bc");
                 arrowButton.setFont(new Font("Monospaced", Font.BOLD, font.getSize()));
                 arrowButton.setForeground(foreground);
                 arrowButton.setOpaque(false);
@@ -149,7 +149,6 @@ public class QueryPane {
                 return label;
             }
         });
-
         return comboBox;
     }
 

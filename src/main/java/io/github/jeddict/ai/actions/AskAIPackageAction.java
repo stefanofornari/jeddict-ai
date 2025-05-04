@@ -89,7 +89,7 @@ public final class AskAIPackageAction extends AbstractAction implements ContextA
             if (selectedPackagesIterator.hasNext()) {
                 Project project = FileOwnerQuery.getOwner(selectedPackagesIterator.next());
                 String projectName = ProjectUtils.getInformation(project).getDisplayName();
-                learnFix.openChat(null, "", null, projectName + "* AI Assistant", null);
+                learnFix.openChat(null, "", null, projectName, null);
             }
         }
 

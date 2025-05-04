@@ -44,9 +44,13 @@ import javax.lang.model.element.Name;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import org.json.JSONArray;
+import org.netbeans.api.java.classpath.ClassPath;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectUtils;
+import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.awt.StatusDisplayer;
 import org.openide.cookies.EditorCookie;
@@ -149,7 +153,7 @@ public class SourceUtil {
     public static String removeJavadoc(String content) {
         return content.replaceAll("/\\*{1,2}[\\s\\S]*?\\*/|//.*|^\\s*///.*$", "");
     }
-    
+
     public static void updateMethodInSource(FileObject fileObject, String sourceMethodSignature, String methodContent) {
         JavaSource javaSource = JavaSource.forFileObject(fileObject);
         try {
@@ -270,7 +274,6 @@ public class SourceUtil {
         return methodSource.toString(); // Return the method source code
     }
 
-    
     public static void openFileInEditor(FileObject fileObject) {
         try {
             // Get the DataObject associated with the FileObject
@@ -309,22 +312,21 @@ public class SourceUtil {
         }
     }
 
-    
     public static void updateMethod(FileObject javaFile, String methodSignature, String newMethodText) {
         try {
             JavaSource javaSource = JavaSource.forFileObject(javaFile);
             javaSource.runModificationTask(copy -> {
                 copy.toPhase(JavaSource.Phase.RESOLVED);
-                
+
                 CompilationUnitTree cut = copy.getCompilationUnit();
                 TreeMaker maker = copy.getTreeMaker();
                 ClassTree classTree = (ClassTree) cut.getTypeDecls().get(0); // First class
-                
+
                 MethodTree newMethodTree = parseMethodTree(copy, methodSignature, newMethodText);
                 if (newMethodTree == null) {
                     return;
                 }
-                
+
                 for (Tree member : classTree.getMembers()) {
                     if (member instanceof MethodTree method) {
                         String sig = method.getName() + method.getParameters().stream()
@@ -362,7 +364,7 @@ public class SourceUtil {
                             String sig = method.getName() + method.getParameters().stream()
                                     .map(p -> p.getType().toString())
                                     .collect(java.util.stream.Collectors.joining(",", "(", ")"));
-                            
+
                             if (sig.equals(expectedSignature)) {
                                 result[0] = method;
                                 return;
@@ -429,7 +431,7 @@ public class SourceUtil {
                 (ExpressionTree) mt.getDefaultValue()
         );
     }
-    
+
     private String getMethodContentFromSource(FileObject fileObject, String sourceMethodSignature) {
         JavaSource javaSource = JavaSource.forFileObject(fileObject);
         final StringBuilder methodContent = new StringBuilder();
@@ -471,5 +473,73 @@ public class SourceUtil {
         return methodContent.toString();
     }
 
+    /**
+     * Searches all open projects' source classpaths for a class with the given
+     * simple name or fully qualified.
+     *
+     * @param className simple class name to search for (without package)
+     * @return full path
+     */
+    public static FileObject findClassInSourcePath(String className, boolean searchSourcePath) {
+        boolean isFullyQualified = className.contains(".");
+        String relativePath = null;
+
+        if (isFullyQualified) {
+            // Convert fully qualified class name to relative path
+            // e.g. com.example.MyClass -> com/example/MyClass.java
+            relativePath = className.replace('.', '/') + ".java";
+        }
+
+        for (Project project : OpenProjects.getDefault().getOpenProjects()) {
+            for (var sourceGroup : ProjectUtils.getSources(project).getSourceGroups("java")) {
+                ClassPath classPath = ClassPath.getClassPath(sourceGroup.getRootFolder(), searchSourcePath ? ClassPath.SOURCE : ClassPath.BOOT);
+                if (classPath != null) {
+                    for (ClassPath.Entry entry : classPath.entries()) {
+                        FileObject root = entry.getRoot();
+                        if (root != null) {
+                            if (isFullyQualified) {
+                                // Directly look up the relative path
+                                FileObject file = root.getFileObject(relativePath);
+                                if (file != null && "java".equals(file.getExt()) && file.getName().equals(getSimpleName(className))) {
+                                    return file;
+                                }
+                            } else {
+                                // Fallback to recursive search by simple class name
+                                FileObject found = findClassFile(root, className, "");
+                                if (found != null) {
+                                    return found;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String getSimpleName(String className) {
+        int lastDot = className.lastIndexOf('.');
+        if (lastDot >= 0) {
+            return className.substring(lastDot + 1);
+        }
+        return className;
+    }
+
+    private static FileObject findClassFile(FileObject file, String className, String relativePath) {
+        if (file.isFolder()) {
+            for (FileObject child : file.getChildren()) {
+                FileObject found = findClassFile(child, className, relativePath.isEmpty() ? child.getName() : relativePath + "/" + child.getName());
+                if (found != null) {
+                    return found;
+                }
+            }
+        } else if ("java".equals(file.getExt())) {
+            if (file.getName().equals(className)) {
+                return file;
+            }
+        }
+        return null;
+    }
 
 }

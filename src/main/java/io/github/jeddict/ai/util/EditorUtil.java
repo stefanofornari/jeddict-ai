@@ -22,6 +22,8 @@ import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_MARKDOWN;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PUML;
+import static io.github.jeddict.ai.util.SourceUtil.findClassInSourcePath;
+import static io.github.jeddict.ai.util.SourceUtil.openFileInEditor;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,8 +35,11 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.AttributeSet;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
@@ -50,21 +55,42 @@ public class EditorUtil {
 
     public static String updateEditors(BiConsumer<String, List<FileObject>> queryUpdate, AssistantTopComponent topComponent, Response response, List<FileObject> threadContext) {
         StringBuilder code = new StringBuilder();
-        
+
         topComponent.clear();
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
-        
+
         if (response.getQuery() != null && !response.getQuery().isEmpty()) {
             topComponent.createUserQueryPane(queryUpdate, response.getQuery(), response.getMessageContext());
         }
-        
+
         JComponent firstPane = null;
         for (Block block : response.getBlocks()) {
             JComponent pane;
             if (block.getType().equals("text")) {
                 String html = renderer.render(parser.parse(block.getContent()));
-                pane = topComponent.createHtmlPane(html);
+                html = wrapClassNamesWithAnchor(html);
+                JEditorPane htmlPane = topComponent.createHtmlPane(html);
+                pane = htmlPane;
+                htmlPane.addHyperlinkListener(e -> {
+                    if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                        String fileName = e.getDescription();
+                        if (fileName.endsWith(".java")) {
+                            String javaClass = fileName.substring(0, fileName.length() - 5);
+                            FileObject path = findClassInSourcePath(javaClass, true);
+                            if (path != null) {
+                                openFileInEditor(path);
+                            }
+                        }
+                        if (fileName.startsWith("#")) {
+                            String javaClass = fileName.substring(1);
+                            FileObject path = findClassInSourcePath(javaClass, true);
+                            if (path != null) {
+                                openFileInEditor(path);
+                            }
+                        }
+                    }
+                });
             } else {
                 code.append('\n').append(block.getContent()).append('\n');
                 String mimeType = getMimeType(block.getType());
@@ -73,14 +99,14 @@ public class EditorUtil {
                 } else if (MIME_MARKDOWN.equals(mimeType)) {
                     pane = topComponent.createMarkdownPane(block);
                 } else {
-                   pane = topComponent.createCodePane(mimeType, block);
+                    pane = topComponent.createCodePane(mimeType, block);
                 }
             }
-            if(firstPane == null) {
+            if (firstPane == null) {
                 firstPane = pane;
             }
         }
-        
+
         if (firstPane != null) {
             firstPane.scrollRectToVisible(firstPane.getBounds());
         }
@@ -96,7 +122,7 @@ public class EditorUtil {
         topComponent.getParseCodeEditor(context);
         return code.toString();
     }
-    
+
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
         String[] lines = markdown.split("\n");
         StringBuilder formattedMarkdown = new StringBuilder();
@@ -232,7 +258,7 @@ public class EditorUtil {
 
     // Method to get the NetBeans MIME type for a given ChatGPT code block type
     public static String getMimeType(String chatGptType) {
-         if (chatGptType == null) {
+        if (chatGptType == null) {
             return MIME_PLAIN_TEXT;
         }
         return OPENAI_NETBEANS_EDITOR_MAP.getOrDefault(chatGptType, MIME_PLAIN_TEXT); // Default to binary if not found
@@ -264,10 +290,8 @@ public class EditorUtil {
         // Check if the MIME type is allowed for web applications
         return allowedMimeTypes.contains(mimeType);
     }
-    
-  
 
-     public static String getHTMLContent(int wrapWidth, String bodyContent) {
+    public static String getHTMLContent(int wrapWidth, String bodyContent) {
         Font newFont = getFontFromMimeType("text/html");
         java.awt.Color textColor = getTextColorFromMimeType("text/html"); // Get text color
         java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/html"); // Get background color
@@ -368,14 +392,14 @@ public class EditorUtil {
         if (textColor != null) {
             newContent = newContent.replace("NB_FONT_COLOR", "#" + Integer.toHexString(textColor.getRGB()).substring(2).toUpperCase());
         }
-         if (backgroundColor != null) {
-             newContent = newContent.replace("NB_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
-             if (isDark) {
-                 newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.brighter().getRGB()).substring(2).toUpperCase());
-             } else {
-                 newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.darker().getRGB()).substring(2).toUpperCase());
-             }
-         }
+        if (backgroundColor != null) {
+            newContent = newContent.replace("NB_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
+            if (isDark) {
+                newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.brighter().getRGB()).substring(2).toUpperCase());
+            } else {
+                newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.darker().getRGB()).substring(2).toUpperCase());
+            }
+        }
         return newContent;
     }
 
@@ -420,5 +444,33 @@ public class EditorUtil {
             }
         }
         return null; // Default background color if not found
+    }
+
+    /**
+     * Wraps Java class names inside backticks with <a></a> tags. Skips methods
+     * (ending with ()) and fields (starting lowercase).
+     */
+    public static String wrapClassNamesWithAnchor(String input) {
+        input = input.replaceAll("(\\b\\w+\\.java\\b)", "<a href=\"$1\">$1</a>");
+        Pattern pattern = Pattern.compile("<code>([^<]+)</code>");
+        Matcher matcher = pattern.matcher(input);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String token = matcher.group(1);
+            if (!token.matches("[\\w\\.]+")) {
+                matcher.appendReplacement(sb, matcher.group());
+                continue;
+            }
+            String lastSegment = token.contains(".") ? token.substring(token.lastIndexOf('.') + 1) : token;
+            if (lastSegment.length() > 0 && Character.isUpperCase(lastSegment.charAt(0))) {
+                String replacement = "<a href=\"#" + token + "\">" + token + "</a>";
+                replacement = Matcher.quoteReplacement(replacement);
+                matcher.appendReplacement(sb, replacement);
+            } else {
+                matcher.appendReplacement(sb, matcher.group());
+            }
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 }

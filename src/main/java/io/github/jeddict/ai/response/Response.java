@@ -30,7 +30,7 @@ public class Response {
 
     private final String query;
     private List<Block> blocks;
-    private  List<FileObject> messageContext;
+    private final List<FileObject> messageContext;
 
     public Response(String query, String response,  List<FileObject> messageContext) {
         this.query = query;
