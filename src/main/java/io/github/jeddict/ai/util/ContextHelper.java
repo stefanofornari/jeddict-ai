@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
@@ -34,7 +35,7 @@ public class ContextHelper {
 
     private final static PreferencesManager pm = PreferencesManager.getInstance();
 
-    public static String getProjectContext(List<FileObject> projectContext) {
+    public static String getProjectContext(Set<FileObject> projectContext) {
         StringBuilder inputForAI = new StringBuilder();
         for (FileObject file : projectContext) {
             try {
@@ -42,6 +43,7 @@ public class ContextHelper {
                 if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
                     text = removeJavadoc(text);
                 }
+                inputForAI.append("File: ").append(file.getNameExt()).append("\n");
                 inputForAI.append(text);
                 inputForAI.append("\n");
             } catch (Exception ex) {
@@ -52,7 +54,7 @@ public class ContextHelper {
         return inputForAI.toString();
     }
     
-    public static String getTextFilesContext(List<FileObject> scope) {
+    public static String getTextFilesContext(Set<FileObject> scope) {
         StringBuilder inputForAI = new StringBuilder();
         for (FileObject file : getFilesContextList(scope)) {
             if (!file.getMIMEType().startsWith("image")) {
@@ -72,7 +74,7 @@ public class ContextHelper {
         return inputForAI.toString();
     }
 
-    public static List<String> getImageFilesContext(List<FileObject> scope) {
+    public static List<String> getImageFilesContext(Set<FileObject> scope) {
         List<String> base64ImageUrls = new ArrayList<>();
         for (FileObject file : getFilesContextList(scope)) {
             if (file.getMIMEType().startsWith("image")) {
@@ -90,7 +92,7 @@ public class ContextHelper {
         return base64ImageUrls;
     }
 
-    public static List<FileObject> getFilesContextList(List<FileObject> scope) {
+    public static List<FileObject> getFilesContextList(Set<FileObject> scope) {
         List<FileObject> sourceFiles = new ArrayList<>();
         boolean includeNestedFiles = scope.stream()
                 .anyMatch(fo -> fo.getPath().contains("src/main/webapp")

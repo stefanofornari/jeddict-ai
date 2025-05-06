@@ -26,6 +26,7 @@ public class MimeUtil {
 
     public static final String JAVA_MIME = "text/x-java";
     public static final String MIME_PUML = "text/x-puml";
+    public static final String MIME_MERMAID = "text/x-mermaid";
     public static final String MIME_MARKDOWN = "text/x-markdown";
     public static final String MIME_HTML = "text/html";
     public static final String MIME_CSS = "text/css";

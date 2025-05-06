@@ -28,8 +28,8 @@ import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.lang.JeddictChatModel;
 import io.github.jeddict.ai.completion.SQLCompletion;
-import io.github.jeddict.ai.components.AssistantTopComponent;
-import static io.github.jeddict.ai.components.AssistantTopComponent.createEditorKit;
+import io.github.jeddict.ai.components.AssistantChat;
+import static io.github.jeddict.ai.components.AssistantChat.createEditorKit;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.ProjectUtil.getSourceFiles;
 import io.github.jeddict.ai.util.StringUtil;
@@ -66,8 +66,6 @@ import io.github.jeddict.ai.components.FileTab;
 import io.github.jeddict.ai.components.FileTransferHandler;
 import static io.github.jeddict.ai.components.MarkdownPane.getHtmlWrapWidth;
 import io.github.jeddict.ai.components.MessageContextComponentAdapter;
-import io.github.jeddict.ai.components.QueryPane;
-import io.github.jeddict.ai.components.QueryPane.RoundedBorder;
 import static io.github.jeddict.ai.components.QueryPane.createIconButton;
 import static io.github.jeddict.ai.components.QueryPane.createStyledComboBox;
 import io.github.jeddict.ai.components.TokenUsageChartDialog;
@@ -78,11 +76,9 @@ import static io.github.jeddict.ai.util.ContextHelper.getTextFilesContext;
 import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
 import io.github.jeddict.ai.response.Response;
-import io.github.jeddict.ai.settings.GenAIProvider;
 import static io.github.jeddict.ai.settings.GenAIProvider.getModelsByProvider;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
-import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
 import static io.github.jeddict.ai.util.Icons.ICON_ATTACH;
 import static io.github.jeddict.ai.util.Icons.ICON_CONTEXT;
@@ -100,33 +96,32 @@ import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.RandomTweetSelector;
 import java.awt.EventQueue;
-import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.BufferedReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import org.netbeans.api.options.OptionsDisplayer;
 import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import javax.swing.Box;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.Document;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Exceptions;
@@ -136,7 +131,7 @@ import org.openide.windows.WindowManager;
  *
  * @author Shiwani Gupta
  */
-public class LearnFix extends JavaFix {
+public class AssistantChatManager extends JavaFix {
 
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -145,16 +140,17 @@ public class LearnFix extends JavaFix {
     private SQLCompletion sqlCompletion;
     private ComponentAdapter buttonPanelAdapter;
     private JComboBox<String> models;
-    private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton;
-    private AssistantTopComponent topComponent;
+    private Timer timer;
+    private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton, submitButton;
+    private AssistantChat topComponent;
     private JEditorPane questionPane;
     private JScrollPane questionScrollPane;
     private final List<Response> responseHistory = new ArrayList<>();
     private int currentResponseIndex = -1;
     private String sourceCode = null;
     private Project project;
-    private final List<FileObject> threadContext = new ArrayList<>();
-    private final List<FileObject> messageContext = new ArrayList<>();
+    private final Set<FileObject> threadContext = new HashSet<>();
+    private final Set<FileObject> messageContext = new HashSet<>();
     private FileObject fileObject;
     private String commitChanges;
     private final PreferencesManager pm = PreferencesManager.getInstance();
@@ -172,36 +168,36 @@ public class LearnFix extends JavaFix {
         }
     }
 
-    public LearnFix(TreePathHandle tpHandle, Action action, TreePath treePath) {
+    public AssistantChatManager(TreePathHandle tpHandle, Action action, TreePath treePath) {
         super(tpHandle);
         this.treePath = treePath;
         this.action = action;
     }
 
-    public LearnFix(Action action) {
+    public AssistantChatManager(Action action) {
         super(null);
         this.action = action;
     }
 
-    public LearnFix(Action action, SQLCompletion sqlCompletion) {
+    public AssistantChatManager(Action action, SQLCompletion sqlCompletion) {
         super(null);
         this.action = action;
         this.sqlCompletion = sqlCompletion;
     }
 
-    public LearnFix(Action action, Project project) {
+    public AssistantChatManager(Action action, Project project) {
         super(null);
         this.action = action;
         this.project = project;
     }
 
-    public LearnFix(Action action, List<FileObject> selectedFileObjects) {
+    public AssistantChatManager(Action action, List<FileObject> selectedFileObjects) {
         super(null);
         this.action = action;
         this.threadContext.addAll(selectedFileObjects);
     }
 
-    public LearnFix(Action action, FileObject selectedFileObject) {
+    public AssistantChatManager(Action action, FileObject selectedFileObject) {
         super(null);
         this.action = action;
         this.threadContext.add(selectedFileObject);
@@ -243,7 +239,7 @@ public class LearnFix extends JavaFix {
                     name = ((ClassTree) leaf).getSimpleName().toString();
                 }
                 String fileName = fileObject != null ? fileObject.getName() : null;
-                List<FileObject> messageContextCopy = new ArrayList<>(messageContext);
+                Set<FileObject> messageContextCopy = new HashSet<>(messageContext);
                 SwingUtilities.invokeLater(() -> {
                     displayHtmlContent(fileName, name + " AI Assistant");
                     JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
@@ -278,37 +274,22 @@ public class LearnFix extends JavaFix {
         }
     }
 
-    private List<FileObject> getProjectContextList() {
+    private Set<FileObject> getProjectContextList() {
         return getSourceFiles(project);
     }
 
     public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
         ProjectInformation info = ProjectUtils.getInformation(project);
         String projectName = info.getDisplayName();
-        List<FileObject> messageContextCopy = new ArrayList<>(messageContext);
-        SwingUtilities.invokeLater(() -> {
-            displayHtmlContent(null, projectName + " GenAI Commit");
-            JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
-                @Override
-                public void onComplete(String textResponse) {
-                    Response response = new Response(null, textResponse, messageContextCopy);
-                    sourceCode = EditorUtil.updateEditors(null, topComponent, response, getContextFiles());
-                    responseHistory.add(response);
-                    currentResponseIndex = responseHistory.size() - 1;
-                    LearnFix.this.commitChanges = commitChanges;
-                }
-            };
-            String response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(commitChanges, intitalCommitMessage);
-            if (response != null && !response.isEmpty()) {
-                handler.onComplete(response);
-            }
-        });
+        displayHtmlContent(null, projectName + " GenAI Commit");
+        this.commitChanges = commitChanges;
+        handleQuestion(intitalCommitMessage, messageContext, true);
     }
 
     public void displayHtmlContent(String filename, String title) {
-        Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
-        prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-        topComponent = new AssistantTopComponent(title, null, getProject());
+        Preferences prefs = Preferences.userNodeForPackage(AssistantChat.class);
+        prefs.putBoolean(AssistantChat.PREFERENCE_KEY, true);
+        topComponent = new AssistantChat(title, null, getProject());
         JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
         topComponent.add(scrollPane, BorderLayout.CENTER);
         topComponent.add(createBottomPanel(null, filename, null), BorderLayout.SOUTH);
@@ -326,9 +307,9 @@ public class LearnFix extends JavaFix {
     public void openChat(String type, final String query, String fileName, String title, Consumer<String> action) {
         SwingUtilities.invokeLater(() -> {
             new JeddictUpdateManager().checkForJeddictUpdate();
-            Preferences prefs = Preferences.userNodeForPackage(AssistantTopComponent.class);
-            prefs.putBoolean(AssistantTopComponent.PREFERENCE_KEY, true);
-            topComponent = new AssistantTopComponent(title, type, getProject());
+            Preferences prefs = Preferences.userNodeForPackage(AssistantChat.class);
+            prefs.putBoolean(AssistantChat.PREFERENCE_KEY, true);
+            topComponent = new AssistantChat(title, type, getProject());
             topComponent.setLayout(new BorderLayout());
             JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
             Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
@@ -517,7 +498,7 @@ public class LearnFix extends JavaFix {
         newChatButton.setToolTipText("Start a new chat");
         leftButtonPanel.add(newChatButton);
 
-        JButton submitButton = createIconButton(Labels.SEND, ICON_SEND);
+        submitButton = createIconButton(Labels.SEND, ICON_SEND);
         submitButton.setToolTipText("Ask a question");
         rightButtonPanel.add(submitButton);
 
@@ -618,7 +599,6 @@ public class LearnFix extends JavaFix {
             updateButtons(prevButton, nextButton);
         });
 
-        // Action for upButton
         openInBrowserButton.addActionListener(e -> {
             try {
                 File latestTempFile = File.createTempFile("gen-ai", ".html");
@@ -634,20 +614,33 @@ public class LearnFix extends JavaFix {
             }
         });
 
-        // Create a common action listener method
-        ActionListener submitActionListener = e -> {
-            String question = questionPane.getText();
-            if (!question.isEmpty()) {
-                submitButton.setText("...");
-                submitButton.setEnabled(false);
-                handleQuestion(question, messageContext, submitButton, true);
+        submitButton.addActionListener(e -> {
+            if (result != null && !result.isDone()) {
+                NotifyDescriptor.Confirmation confirmDialog = new NotifyDescriptor.Confirmation(
+                        "The AI Assistant is still processing the request. Do you want to cancel it?",
+                        "Interrupt AI Assistant",
+                        NotifyDescriptor.YES_NO_OPTION
+                );
+                Object answer = DialogDisplayer.getDefault().notify(confirmDialog);
+                if (NotifyDescriptor.YES_OPTION.equals(answer)) {
+                    result.cancel(true);
+                    if (handler.getProgressHandle() != null) {
+                        handler.getProgressHandle().finish();
+                    }
+                    result = null;
+                    stopLoading();
+                }
+            } else {
+                result = null;
+                String question = questionPane.getText();
+                if (!question.isEmpty()) {
+                    handleQuestion(question, messageContext, true);
+                }
             }
-        };
+        });
 
-        submitButton.addActionListener(submitActionListener);
-
-        BiConsumer<String, List<FileObject>> queryUpdate = (newQuery, messageContext) -> {
-            handleQuestion(newQuery, messageContext, submitButton, false);
+        BiConsumer<String, Set<FileObject>> queryUpdate = (newQuery, messageContext) -> {
+            handleQuestion(newQuery, messageContext, false);
         };
         prevButton.addActionListener(e -> {
             if (currentResponseIndex > 0) {
@@ -692,6 +685,22 @@ public class LearnFix extends JavaFix {
         return bottomPanel;
     }
 
+    private void startLoading() {
+//        submitButton.setEnabled(false);
+        final String[] spinnerFrames = {"◐", "◓", "◑", "◒"};
+        final int[] frameIndex = {0};
+        timer = new Timer(200, e -> {
+            submitButton.setText(spinnerFrames[frameIndex[0]]);
+            frameIndex[0] = (frameIndex[0] + 1) % spinnerFrames.length;
+        });
+        timer.start();
+    }
+
+    private void stopLoading() {
+//        submitButton.setEnabled(true);
+        timer.stop();
+    }
+    
     private void updateHeight() {
         int lineHeight = questionPane.getFontMetrics(questionPane.getFont()).getHeight();
         String text = questionPane.getText().trim();
@@ -710,8 +719,8 @@ public class LearnFix extends JavaFix {
         questionScrollPane.revalidate();
     }
 
-    private List<FileObject> getContextFiles() {
-        List<FileObject> fileObjects = new ArrayList<>();
+    private Set<FileObject> getContextFiles() {
+        Set<FileObject> fileObjects = new HashSet<>();
         if (project != null) {
             fileObjects.addAll(getProjectContextList());
         }
@@ -722,12 +731,12 @@ public class LearnFix extends JavaFix {
     }
 
     private void showFilePathPopup() {
-        List<FileObject> fileObjects = getContextFiles();
+        Set<FileObject> fileObjects = getContextFiles();
         String projectRootDir = null;
         if (project != null) {
             projectRootDir = project.getProjectDirectory().getPath();
         } else if (!fileObjects.isEmpty()) {
-            projectRootDir = FileOwnerQuery.getOwner(fileObjects.get(0)).getProjectDirectory().getPath();
+            projectRootDir = FileOwnerQuery.getOwner(fileObjects.iterator().next()).getProjectDirectory().getPath();
         }
 
         boolean enableRules = true;
@@ -748,9 +757,12 @@ public class LearnFix extends JavaFix {
         }
     }
 
-    private void handleQuestion(String question, List<FileObject> messageContext, JButton submitButton, boolean newQuery) {
-        executorService.submit(() -> {
+    private Future result;
+    private JeddictStreamHandler handler;
+    private void handleQuestion(String question, Set<FileObject> messageContext, boolean newQuery) {
+        result = executorService.submit(() -> {
             try {
+                startLoading();
                 if (currentResponseIndex >= 0
                         && currentResponseIndex + 1 < responseHistory.size()) {
                     responseHistory.subList(currentResponseIndex + 1, responseHistory.size()).clear();
@@ -768,8 +780,8 @@ public class LearnFix extends JavaFix {
                 if (prevChat != null) {
                     prevChat = responseHistory.get(currentResponseIndex);
                 }
-                List<FileObject> messageContextCopy = new ArrayList<>(messageContext);
-                JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
+                Set<FileObject> messageContextCopy = new HashSet<>(messageContext);
+                handler = new JeddictStreamHandler(topComponent) {
                     @Override
                     public void onComplete(String textResponse) {
                         Response response = new Response(question, textResponse, messageContextCopy);
@@ -778,29 +790,53 @@ public class LearnFix extends JavaFix {
                             currentResponseIndex = responseHistory.size() - 1;
                         }
                         SwingUtilities.invokeLater(() -> {
-                            BiConsumer<String, List<FileObject>> queryUpdate = (newQuery, messageContext) -> {
-                                handleQuestion(newQuery, messageContext, submitButton, false);
+                            BiConsumer<String, Set<FileObject>> queryUpdate = (newQuery, messageContext) -> {
+                                handleQuestion(newQuery, messageContext, false);
                             };
+//                            parser.flush();
+//                            parser.shutdown();
+//                            topComponent.lastRemove();
                             sourceCode = EditorUtil.updateEditors(queryUpdate, topComponent, response, getContextFiles());
-                            buttonPanelAdapter.componentResized(null);
-                            submitButton.setEnabled(true);
+                            stopLoading();
                             saveButton.setVisible(sourceCode != null);
                             updateButtons(prevButton, nextButton);
+                            buttonPanelAdapter.componentResized(null);
                         });
                     }
                 };
                 String response;
                 if (sqlCompletion != null) {
-                    response = new JeddictChatModel(handler, getModelName()).assistDbMetadata(sqlCompletion.getMetaData(), question);
-                } else if (commitChanges != null) {
-                    response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(commitChanges, question);
-                } else if (project != null) {
-                    response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), getProjectContext(getProjectContextList()), null, null, prevChat, question);
-                } else if (threadContext != null) {
-                    String threadScopeContent = getTextFilesContext(threadContext);
-                    List<String> threadScopeImgages = getImageFilesContext(threadContext);
+                    String context = sqlCompletion.getMetaData();
                     String messageScopeContent = getTextFilesContext(messageContext);
+                    if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
+                        context = context + "\n\n Files:\n" + messageScopeContent;
+                    }
                     List<String> messageScopeImgages = getImageFilesContext(messageContext);
+                    response = new JeddictChatModel(handler, getModelName()).assistDbMetadata(context, question, messageScopeImgages, prevChat);
+                } else if (commitChanges != null) {
+                    String context = commitChanges;
+                    String messageScopeContent = getTextFilesContext(messageContext);
+                    if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
+                        context = context + "\n\n Files:\n" + messageScopeContent;
+                    }
+                    List<String> messageScopeImgages = getImageFilesContext(messageContext);
+                    response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(context, question, messageScopeImgages, prevChat);
+                } else if (project != null || threadContext != null) {
+                    Set<FileObject> mainThreadContext;
+                    String threadScopeContent;
+                    if (project != null) {
+                        mainThreadContext = getProjectContextList();
+                        threadScopeContent = getProjectContext(mainThreadContext);
+                    } else {
+                        mainThreadContext = this.threadContext;
+                        threadScopeContent = getTextFilesContext(mainThreadContext);
+                    }
+                    List<String> threadScopeImgages = getImageFilesContext(mainThreadContext);
+
+                    Set<FileObject> fitleredMessageContext = new HashSet<>(messageContext);
+                    fitleredMessageContext.removeAll(mainThreadContext);
+                    String messageScopeContent = getTextFilesContext(fitleredMessageContext);
+                    List<String> messageScopeImgages = getImageFilesContext(fitleredMessageContext);
                     List<String> images = new ArrayList<>();
                     images.addAll(threadScopeImgages);
                     images.addAll(messageScopeImgages);
@@ -827,7 +863,7 @@ public class LearnFix extends JavaFix {
             } catch (Exception e) {
                 e.printStackTrace();
                 buttonPanelAdapter.componentResized(null);
-                submitButton.setEnabled(true);
+//                submitButton.setEnabled(true);
             }
         });
     }

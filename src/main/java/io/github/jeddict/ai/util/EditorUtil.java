@@ -17,9 +17,10 @@ package io.github.jeddict.ai.util;
 
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.response.Block;
-import io.github.jeddict.ai.components.AssistantTopComponent;
+import io.github.jeddict.ai.components.AssistantChat;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_MARKDOWN;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_MERMAID;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PUML;
 import static io.github.jeddict.ai.util.SourceUtil.findClassInSourcePath;
@@ -52,13 +53,14 @@ import org.openide.filesystems.FileObject;
  * @author Shiwani Gupta
  */
 public class EditorUtil {
+    
+    private static final Parser parser = Parser.builder().build();
+    private static final HtmlRenderer renderer = HtmlRenderer.builder().build();
 
-    public static String updateEditors(BiConsumer<String, List<FileObject>> queryUpdate, AssistantTopComponent topComponent, Response response, List<FileObject> threadContext) {
+    public static String updateEditors(BiConsumer<String, Set<FileObject>> queryUpdate, AssistantChat topComponent, Response response, Set<FileObject> threadContext) {
         StringBuilder code = new StringBuilder();
 
         topComponent.clear();
-        Parser parser = Parser.builder().build();
-        HtmlRenderer renderer = HtmlRenderer.builder().build();
 
         if (response.getQuery() != null && !response.getQuery().isEmpty()) {
             topComponent.createUserQueryPane(queryUpdate, response.getQuery(), response.getMessageContext());
@@ -66,7 +68,30 @@ public class EditorUtil {
 
         JComponent firstPane = null;
         for (Block block : response.getBlocks()) {
-            JComponent pane;
+            JComponent pane = printBlock(code, block, topComponent);
+            if (firstPane == null) {
+                firstPane = pane;
+            }
+        }
+
+        if (firstPane != null) {
+            firstPane.scrollRectToVisible(firstPane.getBounds());
+        }
+        topComponent.revalidate();
+        topComponent.repaint();
+        List<FileObject> context = new ArrayList<>();
+        if (threadContext != null && !threadContext.isEmpty()) {
+            context.addAll(threadContext);
+        }
+        if (response.getMessageContext() != null && !response.getMessageContext().isEmpty()) {
+            context.addAll(response.getMessageContext());
+        }
+        topComponent.getParseCodeEditor(context);
+        return code.toString();
+    }
+    
+    public static JComponent printBlock(StringBuilder code, Block block, AssistantChat topComponent) {
+        JComponent pane;
             if (block.getType().equals("text")) {
                 String html = renderer.render(parser.parse(block.getContent()));
                 html = wrapClassNamesWithAnchor(html);
@@ -98,29 +123,13 @@ public class EditorUtil {
                     pane = topComponent.createSVGPane(block);
                 } else if (MIME_MARKDOWN.equals(mimeType)) {
                     pane = topComponent.createMarkdownPane(block);
+                } else if (MIME_MERMAID.equals(mimeType)) {
+                    pane = topComponent.createMermaidPane(block);
                 } else {
                     pane = topComponent.createCodePane(mimeType, block);
                 }
             }
-            if (firstPane == null) {
-                firstPane = pane;
-            }
-        }
-
-        if (firstPane != null) {
-            firstPane.scrollRectToVisible(firstPane.getBounds());
-        }
-        topComponent.revalidate();
-        topComponent.repaint();
-        List<FileObject> context = new ArrayList<>();
-        if (threadContext != null && !threadContext.isEmpty()) {
-            context.addAll(threadContext);
-        }
-        if (response.getMessageContext() != null && !response.getMessageContext().isEmpty()) {
-            context.addAll(response.getMessageContext());
-        }
-        topComponent.getParseCodeEditor(context);
-        return code.toString();
+            return pane;
     }
 
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
@@ -163,6 +172,7 @@ public class EditorUtil {
         OPENAI_NETBEANS_EDITOR_MAP.put("java", JAVA_MIME);
         OPENAI_NETBEANS_EDITOR_MAP.put("puml", "text/x-puml");
         OPENAI_NETBEANS_EDITOR_MAP.put("plantuml", "text/x-puml");
+        OPENAI_NETBEANS_EDITOR_MAP.put("mermaid", "text/x-mermaid");
         OPENAI_NETBEANS_EDITOR_MAP.put("md", "text/x-markdown");
         OPENAI_NETBEANS_EDITOR_MAP.put("markdown", "text/x-markdown");
         OPENAI_NETBEANS_EDITOR_MAP.put("xml", "text/xml");

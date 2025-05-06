@@ -18,6 +18,7 @@ package io.github.jeddict.ai.response;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.openide.filesystems.FileObject;
@@ -30,9 +31,9 @@ public class Response {
 
     private final String query;
     private List<Block> blocks;
-    private final List<FileObject> messageContext;
+    private final Set<FileObject> messageContext;
 
-    public Response(String query, String response,  List<FileObject> messageContext) {
+    public Response(String query, String response,  Set<FileObject> messageContext) {
         this.query = query;
         this.blocks = parseMarkdown(response);
         this.messageContext = messageContext;
@@ -50,7 +51,7 @@ public class Response {
         this.blocks = blocks;
     }
 
-    public List<FileObject> getMessageContext() {
+    public Set<FileObject> getMessageContext() {
         return messageContext;
     }
 

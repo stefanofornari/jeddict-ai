@@ -22,9 +22,9 @@ import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.lang.impl.AnthropicBuilder;
 import io.github.jeddict.ai.lang.impl.AnthropicStreamingBuilder;
 import io.github.jeddict.ai.lang.impl.GoogleBuilder;
@@ -57,6 +57,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import javax.swing.Box;
@@ -76,22 +77,20 @@ import org.openide.util.NbBundle;
  */
 public class JeddictChatModelBuilder {
 
-    private static final String HANDLE = NbBundle.getMessage(JeddictChatModel.class, "ProgressHandle");
-
     private ChatLanguageModel model;
     private StreamingChatLanguageModel streamModel;
     protected static PreferencesManager preferencesManager = PreferencesManager.getInstance();
-    private StreamingResponseHandler handler;
+    private JeddictStreamHandler handler;
 
     public JeddictChatModelBuilder() {
         this(null);
     }
     
-    public JeddictChatModelBuilder(StreamingResponseHandler handler) {
+    public JeddictChatModelBuilder(JeddictStreamHandler handler) {
         this(handler, preferencesManager.getModel());
     }
 
-    public JeddictChatModelBuilder(StreamingResponseHandler handler, String modelName) {
+    public JeddictChatModelBuilder(JeddictStreamHandler handler, String modelName) {
         this.handler = handler;
 
         if (null != modelName) {
@@ -192,17 +191,11 @@ public class JeddictChatModelBuilder {
     }
 
     public String generate(final Project project, final String prompt) {
-        try (final ProgressHandle handle = ProgressHandle.createHandle(HANDLE)) {
-            handle.start();
-            return generateInternal(project, prompt, null, null);
-        }
+        return generateInternal(project, prompt, null, null);
     }
 
     public String generate(final Project project, final String prompt, List<String> images, Response prevRes) {
-        try (final ProgressHandle handle = ProgressHandle.createHandle(HANDLE)) {
-            handle.start();
-            return generateInternal(project, prompt, images, prevRes);
-        }
+        return generateInternal(project, prompt, images, prevRes);
     }
 
     public UserMessage buildUserMessage(String prompt, List<String> imageBase64Urls) {
@@ -254,14 +247,19 @@ public class JeddictChatModelBuilder {
         } else {
             messages.add(UserMessage.from(prompt));
         }
+        int tokenCount = TokenHandler.saveInputToken(messages);
+        String handleMessage = NbBundle.getMessage(JeddictUpdateManager.class, "ProgressHandle", tokenCount);
+        ProgressHandle handle = ProgressHandle.createHandle(handleMessage);
+        handle.start();
 
-        TokenHandler.saveInputToken(messages);
         try {
             if (streamModel != null) {
+                handler.setHandle(handle);
                 streamModel.generate(messages, handler);
             } else {
                 String response = model.generate(messages).content().text();
-                TokenHandler.saveOutputToken(response);
+                CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
+                handle.finish();
                 return response;
             }
         } catch (Exception e) {

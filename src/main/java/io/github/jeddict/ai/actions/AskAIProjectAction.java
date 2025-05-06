@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.actions;
 
-import io.github.jeddict.ai.hints.LearnFix;
+import io.github.jeddict.ai.hints.AssistantChatManager;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
@@ -70,7 +70,7 @@ public final class AskAIProjectAction extends AbstractAction implements ContextA
 
         @Override
         public void actionPerformed(ActionEvent evt) {
-            LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, project);
+            AssistantChatManager learnFix = new AssistantChatManager(io.github.jeddict.ai.completion.Action.QUERY, project);
             String projectName = ProjectUtils.getInformation(project).getDisplayName();
             learnFix.openChat(null, "", null, projectName, null);
         }
