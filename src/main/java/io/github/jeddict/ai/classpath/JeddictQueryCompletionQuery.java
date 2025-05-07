@@ -17,11 +17,9 @@ package io.github.jeddict.ai.classpath;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
-
 import org.netbeans.api.java.classpath.ClassPath;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;

@@ -1,0 +1,1 @@
+Generate getters, setters, no-arg constructor, equals(), hashCode(), and toString() methods.

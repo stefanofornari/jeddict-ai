@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.Name;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import org.json.JSONArray;
 import org.netbeans.api.java.classpath.ClassPath;
 import org.netbeans.api.java.source.JavaSource;
@@ -51,12 +52,15 @@ import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.api.project.ui.OpenProjects;
+import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.awt.StatusDisplayer;
 import org.openide.cookies.EditorCookie;
+import org.openide.cookies.LineCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.text.Line;
 import org.openide.util.Exceptions;
 
 /**
@@ -293,6 +297,42 @@ public class SourceUtil {
             e.printStackTrace();
         }
     }
+    
+public static void openFileInEditorAtLine(FileObject fileObject, int lineNumber) {
+    try {
+        // Find DataObject for the file
+        DataObject dataObject = DataObject.find(fileObject);
+
+        // Lookup for EditorCookie
+        EditorCookie editorCookie = dataObject.getLookup().lookup(EditorCookie.class);
+
+        if (editorCookie != null) {
+            // Open the file in editor
+            editorCookie.open();
+
+            // Lookup for LineCookie to access lines of the file
+            LineCookie lineCookie = dataObject.getLookup().lookup(LineCookie.class);
+            if (lineCookie != null) {
+                Line.Set lineSet = lineCookie.getLineSet();
+                if (lineNumber >= 1 && lineNumber <= lineSet.getLines().size()) {
+                    Line line = lineSet.getCurrent(lineNumber - 1); // lines are zero-based internally
+
+                    // Show and focus on the line
+                    line.show(Line.ShowOpenType.REUSE, Line.ShowVisibilityType.FOCUS);
+                } else {
+                    // Invalid line number, just show status
+                    StatusDisplayer.getDefault().setStatusText("Invalid line number: " + lineNumber);
+                }
+            } else {
+                StatusDisplayer.getDefault().setStatusText("Failed to find LineCookie for file: " + fileObject.getNameExt());
+            }
+        } else {
+            StatusDisplayer.getDefault().setStatusText("Failed to find EditorCookie for file: " + fileObject.getNameExt());
+        }
+    } catch (DataObjectNotFoundException e) {
+        Exceptions.printStackTrace(e);
+    }
+}
 
     private static void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
         try {
@@ -538,6 +578,18 @@ public class SourceUtil {
             if (file.getName().equals(className)) {
                 return file;
             }
+        }
+        return null;
+    }
+    
+    private String getFilePathFromEditor(JTextComponent editor) {
+        try {
+            org.openide.loaders.DataObject dobj = NbEditorUtilities.getDataObject(editor.getDocument());
+            if (dobj != null) {
+                return dobj.getPrimaryFile().getPath();
+            }
+        } catch (Exception ex) {
+            // Handle exception
         }
         return null;
     }

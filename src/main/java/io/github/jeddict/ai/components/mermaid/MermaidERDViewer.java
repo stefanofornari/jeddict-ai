@@ -4,22 +4,19 @@ import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeTyp
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
-
-import org.netbeans.api.visual.anchor.AnchorFactory;
-import org.netbeans.api.visual.widget.*;
-
-import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import javax.swing.*;
+import javax.swing.border.Border;
 import org.netbeans.api.visual.action.ActionFactory;
+import org.netbeans.api.visual.anchor.AnchorFactory;
 import org.netbeans.api.visual.anchor.AnchorShape;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.router.RouterFactory;
+import org.netbeans.api.visual.widget.*;
 
 public class MermaidERDViewer extends MermaidViewer {
 
@@ -361,7 +358,7 @@ public class MermaidERDViewer extends MermaidViewer {
         }
     };
 
-    private static AnchorShape oneOrMoreShape = new AnchorShape() {
+    private static final AnchorShape oneOrMoreShape = new AnchorShape() {
         @Override
         public void paint(Graphics2D g, boolean source) {
             g.setColor(textColor);

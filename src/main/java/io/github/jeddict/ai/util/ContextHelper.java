@@ -16,6 +16,7 @@
 package io.github.jeddict.ai.util;
 
 import io.github.jeddict.ai.settings.PreferencesManager;
+import static io.github.jeddict.ai.util.FileUtil.getLatestContent;
 import static io.github.jeddict.ai.util.SourceUtil.removeJavadoc;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -39,13 +40,15 @@ public class ContextHelper {
         StringBuilder inputForAI = new StringBuilder();
         for (FileObject file : projectContext) {
             try {
-                String text = file.asText();
-                if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                    text = removeJavadoc(text);
+                String text = getLatestContent(file);
+                if (text != null) {
+                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                        text = removeJavadoc(text);
+                    }
+                    inputForAI.append("File: ").append(file.getNameExt()).append("\n");
+                    inputForAI.append(text);
+                    inputForAI.append("\n");
                 }
-                inputForAI.append("File: ").append(file.getNameExt()).append("\n");
-                inputForAI.append(text);
-                inputForAI.append("\n");
             } catch (Exception ex) {
                 Exceptions.printStackTrace(ex);
             }
@@ -59,13 +62,17 @@ public class ContextHelper {
         for (FileObject file : getFilesContextList(scope)) {
             if (!file.getMIMEType().startsWith("image")) {
                 try {
-                    String text = file.asText();
-                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                        text = removeJavadoc(text);
+                    String text = getLatestContent(file);
+                    if (text != null) {
+                        if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                            text = removeJavadoc(text);
+                        }
+                        inputForAI.append("File: ")
+                                .append(file.getNameExt())
+                                .append("\n")
+                                .append(text)
+                                .append("\n\n");
                     }
-                    inputForAI.append("File: ").append(file.getNameExt()).append("\n");
-                    inputForAI.append(text);
-                    inputForAI.append("\n\n");
                 } catch (Exception ex) {
                     Exceptions.printStackTrace(ex);
                 }

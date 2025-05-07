@@ -79,7 +79,7 @@ public class JeddictChatModelBuilder {
 
     private ChatLanguageModel model;
     private StreamingChatLanguageModel streamModel;
-    protected static PreferencesManager preferencesManager = PreferencesManager.getInstance();
+    protected static PreferencesManager pm = PreferencesManager.getInstance();
     private JeddictStreamHandler handler;
 
     public JeddictChatModelBuilder() {
@@ -87,15 +87,16 @@ public class JeddictChatModelBuilder {
     }
     
     public JeddictChatModelBuilder(JeddictStreamHandler handler) {
-        this(handler, preferencesManager.getModel());
+        this(handler, pm.getModel());
     }
 
     public JeddictChatModelBuilder(JeddictStreamHandler handler, String modelName) {
         this.handler = handler;
 
         if (null != modelName) {
-            if (preferencesManager.isStreamEnabled() && handler != null) {
-                switch (preferencesManager.getProvider()) {
+            if (pm.isStreamEnabled() && handler != null) {
+                switch (pm.getProvider()) {
+
                     case GOOGLE -> {
                         streamModel = buildModel(new GoogleStreamingBuilder(), modelName);
                     }
@@ -119,7 +120,8 @@ public class JeddictChatModelBuilder {
                     }
                 }
             } else {
-                switch (preferencesManager.getProvider()) {
+                switch (pm.getProvider()) {
+
                     case GOOGLE -> {
                         model = buildModel(new GoogleBuilder(), modelName);
                     }
@@ -159,29 +161,29 @@ public class JeddictChatModelBuilder {
     }
 
     private <T> ChatModelBaseBuilder<T> builderModel(final ChatModelBaseBuilder<T> builder, String modelName) {
-        setIfPredicate(builder::baseUrl, preferencesManager.getProviderLocation(), String::isEmpty);
-        setIfPredicate(builder::customHeaders, preferencesManager.getCustomHeaders(), Map::isEmpty);
-        boolean headless = preferencesManager.getProviderLocation() != null;
+        setIfPredicate(builder::baseUrl, pm.getProviderLocation(), String::isEmpty);
+        setIfPredicate(builder::customHeaders, pm.getCustomHeaders(), Map::isEmpty);
+        boolean headless = pm.getProviderLocation() != null;
         builder
-                .apiKey(preferencesManager.getApiKey(headless))
+                .apiKey(pm.getApiKey(headless))
                 .modelName(modelName);
 
-        setIfValid(builder::temperature, preferencesManager.getTemperature(), Double.MIN_VALUE);
-        setIfValid(value -> builder.timeout(Duration.ofSeconds(value)), preferencesManager.getTimeout(), Integer.MIN_VALUE);
-        setIfValid(builder::maxRetries, preferencesManager.getMaxRetries(), Integer.MIN_VALUE);
-        setIfValid(builder::maxOutputTokens, preferencesManager.getMaxOutputTokens(), Integer.MIN_VALUE);
-        setIfValid(builder::repeatPenalty, preferencesManager.getRepeatPenalty(), Double.MIN_VALUE);
-        setIfValid(builder::seed, preferencesManager.getSeed(), Integer.MIN_VALUE);
-        setIfValid(builder::maxTokens, preferencesManager.getMaxTokens(), Integer.MIN_VALUE);
-        setIfValid(builder::maxCompletionTokens, preferencesManager.getMaxCompletionTokens(), Integer.MIN_VALUE);
-        setIfValid(builder::topK, preferencesManager.getTopK(), Integer.MIN_VALUE);
-        setIfValid(builder::presencePenalty, preferencesManager.getPresencePenalty(), Double.MIN_VALUE);
-        setIfValid(builder::frequencyPenalty, preferencesManager.getFrequencyPenalty(), Double.MIN_VALUE);
-        setIfPredicate(builder::organizationId, preferencesManager.getOrganizationId(), String::isEmpty);
+        setIfValid(builder::temperature, pm.getTemperature(), Double.MIN_VALUE);
+        setIfValid(value -> builder.timeout(Duration.ofSeconds(value)), pm.getTimeout(), Integer.MIN_VALUE);
+        setIfValid(builder::maxRetries, pm.getMaxRetries(), Integer.MIN_VALUE);
+        setIfValid(builder::maxOutputTokens, pm.getMaxOutputTokens(), Integer.MIN_VALUE);
+        setIfValid(builder::repeatPenalty, pm.getRepeatPenalty(), Double.MIN_VALUE);
+        setIfValid(builder::seed, pm.getSeed(), Integer.MIN_VALUE);
+        setIfValid(builder::maxTokens, pm.getMaxTokens(), Integer.MIN_VALUE);
+        setIfValid(builder::maxCompletionTokens, pm.getMaxCompletionTokens(), Integer.MIN_VALUE);
+        setIfValid(builder::topK, pm.getTopK(), Integer.MIN_VALUE);
+        setIfValid(builder::presencePenalty, pm.getPresencePenalty(), Double.MIN_VALUE);
+        setIfValid(builder::frequencyPenalty, pm.getFrequencyPenalty(), Double.MIN_VALUE);
+        setIfPredicate(builder::organizationId, pm.getOrganizationId(), String::isEmpty);
 
-        builder.logRequestsResponses(preferencesManager.isLogRequestsEnabled(), preferencesManager.isLogResponsesEnabled())
-                .includeCodeExecutionOutput(preferencesManager.isIncludeCodeExecutionOutput())
-                .allowCodeExecution(preferencesManager.isAllowCodeExecution());
+        builder.logRequestsResponses(pm.isLogRequestsEnabled(), pm.isLogResponsesEnabled())
+                .includeCodeExecutionOutput(pm.isIncludeCodeExecutionOutput())
+                .allowCodeExecution(pm.isAllowCodeExecution());
 
         return builder;
     }
@@ -282,9 +284,9 @@ public class JeddictChatModelBuilder {
                 panel.add(apiKeyField);
 
                 int option = JOptionPane.showConfirmDialog(null, panel,
-                        preferencesManager.getProvider().name() + " API Key Required", JOptionPane.OK_CANCEL_OPTION);
+                        pm.getProvider().name() + " API Key Required", JOptionPane.OK_CANCEL_OPTION);
                 if (option == JOptionPane.OK_OPTION) {
-                    preferencesManager.setApiKey(apiKeyField.getText().trim());
+                    pm.setApiKey(apiKeyField.getText().trim());
                 }
             } else {
                 JOptionPane.showMessageDialog(null,

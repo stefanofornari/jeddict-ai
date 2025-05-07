@@ -16,10 +16,10 @@
 package io.github.jeddict.ai.components;
 
 import static io.github.jeddict.ai.components.AssistantChat.createEditorKit;
+import io.github.jeddict.ai.response.Block;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
-import io.github.jeddict.ai.response.Block;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.Color;

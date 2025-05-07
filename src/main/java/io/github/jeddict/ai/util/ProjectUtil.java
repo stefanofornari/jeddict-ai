@@ -29,15 +29,15 @@ import java.util.logging.Logger;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import static org.netbeans.api.java.project.JavaProjectConstants.SOURCES_HINT_TEST;
 import static org.netbeans.api.java.project.JavaProjectConstants.SOURCES_TYPE_JAVA;
+import org.netbeans.api.java.queries.UnitTestForSourceQuery;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.SourceGroupModifier;
 import org.openide.filesystems.FileObject;
-import org.openide.util.Parameters;
-import org.netbeans.api.java.queries.UnitTestForSourceQuery;
-import org.netbeans.api.project.FileOwnerQuery;
 import org.openide.filesystems.URLMapper;
+import org.openide.util.Parameters;
 
 /**
  *
@@ -50,7 +50,7 @@ public class ProjectUtil {
         Set<FileObject> sourceFiles = new HashSet<>();
         collectFiles(project.getProjectDirectory(), project.getProjectDirectory(), sourceFiles,
                 new HashSet<>(PreferencesManager.getInstance().getFileExtensionListToInclude()),
-                new HashSet<>(PreferencesManager.getInstance().getExcludeDirList()));
+                new HashSet<>(PreferencesManager.getInstance().getExcludeDirs()));
         return sourceFiles;
     }
 

@@ -18,11 +18,10 @@ package io.github.jeddict.ai.response;
 import com.knuddels.jtokkit.Encodings;
 import dev.langchain4j.data.message.ChatMessage;
 import io.github.jeddict.ai.settings.PreferencesManager;
-import org.json.JSONObject;
-
+import io.github.jeddict.ai.settings.ReportManager;
 import java.util.Iterator;
 import java.util.List;
-import org.netbeans.api.progress.ProgressHandle;
+import org.json.JSONObject;
 
 /**
  * Tracks and manages token usage for input and output prompts with configurable granularity.
@@ -31,6 +30,7 @@ import org.netbeans.api.progress.ProgressHandle;
 public class TokenHandler {
 
     private static final PreferencesManager preferencesManager = PreferencesManager.getInstance();
+    private static final ReportManager reportManager = ReportManager.getInstance();
 
     public static int saveInputToken(List<ChatMessage> messages) {
         if (messages == null || messages.isEmpty()) {
@@ -47,7 +47,7 @@ public class TokenHandler {
 
         String content = serialized.toString();
         int tokenCount = countTokens(content);
-        saveTokenUsage(preferencesManager.getDailyInputTokenStats(), tokenCount, true);
+        saveTokenUsage(reportManager.getDailyInputTokenStats(), tokenCount, true);
         return tokenCount;
     }
 
@@ -57,7 +57,7 @@ public class TokenHandler {
         }
 
         int tokenCount = countTokens(response);
-        saveTokenUsage(preferencesManager.getDailyOutputTokenStats(), tokenCount, false);
+        saveTokenUsage(reportManager.getDailyOutputTokenStats(), tokenCount, false);
     }
 
     private static int countTokens(String text) {
@@ -73,18 +73,18 @@ public class TokenHandler {
         usage.put(key, usage.optInt(key, 0) + tokens);
 
         if (isInput) {
-            preferencesManager.setDailyInputTokenStats(usage);
+            reportManager.setDailyInputTokenStats(usage);
         } else {
-            preferencesManager.setDailyOutputTokenStats(usage);
+            reportManager.setDailyOutputTokenStats(usage);
         }
     }
 
     public static int getLastNInputUsage(int n) {
-        return getLastNUsage(preferencesManager.getDailyInputTokenStats(), n);
+        return getLastNUsage(reportManager.getDailyInputTokenStats(), n);
     }
 
     public static int getLastNOutputUsage(int n) {
-        return getLastNUsage(preferencesManager.getDailyOutputTokenStats(), n);
+        return getLastNUsage(reportManager.getDailyOutputTokenStats(), n);
     }
 
     private static int getLastNUsage(JSONObject usage, int n) {
@@ -101,11 +101,11 @@ public class TokenHandler {
     }
 
     public static void cleanOldInputEntries() {
-        cleanOldEntries(preferencesManager.getDailyInputTokenStats(), true);
+        cleanOldEntries(reportManager.getDailyInputTokenStats(), true);
     }
 
     public static void cleanOldOutputEntries() {
-        cleanOldEntries(preferencesManager.getDailyOutputTokenStats(), false);
+        cleanOldEntries(reportManager.getDailyOutputTokenStats(), false);
     }
 
     private static void cleanOldEntries(JSONObject usage, boolean isInput) {
@@ -124,9 +124,9 @@ public class TokenHandler {
         }
 
         if (isInput) {
-            preferencesManager.setDailyInputTokenStats(usage);
+            reportManager.setDailyInputTokenStats(usage);
         } else {
-            preferencesManager.setDailyOutputTokenStats(usage);
+            reportManager.setDailyOutputTokenStats(usage);
         }
     }
 }

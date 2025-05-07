@@ -30,7 +30,7 @@ final class GenerateFilePanel implements WizardDescriptor.Panel, WizardDescripto
 
     private WizardDescriptor wizardDescriptor;
     private GenerateFilePanelVisual component;
-    private Project project;
+    private final Project project;
 
     /**
      * Create the wizard panel descriptor.

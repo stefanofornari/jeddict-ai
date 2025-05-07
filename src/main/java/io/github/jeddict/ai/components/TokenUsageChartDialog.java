@@ -17,11 +17,12 @@ package io.github.jeddict.ai.components;
 
 import io.github.jeddict.ai.response.TokenGranularity;
 import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.settings.ReportManager;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 import org.json.JSONObject;
 
 public class TokenUsageChartDialog extends JDialog {
@@ -78,11 +79,9 @@ public class TokenUsageChartDialog extends JDialog {
                         JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
                 if (response == JOptionPane.YES_OPTION) {
-                    PreferencesManager.getInstance().setDailyInputTokenStats(new JSONObject());
-                    PreferencesManager.getInstance().setDailyOutputTokenStats(new JSONObject());
-
+                    ReportManager.getInstance().setDailyInputTokenStats(new JSONObject());
+                    ReportManager.getInstance().setDailyOutputTokenStats(new JSONObject());
                     PreferencesManager.getInstance().setTokenGranularity(selected);
-
                     getContentPane().removeAll();
                     dispose();
                 } else {

@@ -15,50 +15,25 @@
  */
 package io.github.jeddict.ai.components;
 
-import io.github.jeddict.ai.components.mermaid.MermaidPane;
 import com.github.javaparser.ParserConfiguration;
-import com.github.javaparser.ast.CompilationUnit;
-import static io.github.jeddict.ai.util.EditorUtil.getExtension;
-import static io.github.jeddict.ai.util.EditorUtil.isSuitableForWebAppDirectory;
-import static io.github.jeddict.ai.util.StringUtil.convertToCapitalized;
-import java.awt.BorderLayout;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FileWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.prefs.Preferences;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JEditorPane;
-import javax.swing.JFileChooser;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.text.EditorKit;
-import org.netbeans.api.editor.mimelookup.MimeLookup;
-import org.netbeans.api.editor.mimelookup.MimePath;
-import org.netbeans.api.project.Project;
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
-import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
-import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
+import io.github.jeddict.ai.components.mermaid.MermaidPane;
 import io.github.jeddict.ai.response.Block;
+import io.github.jeddict.ai.review.Review;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.DiffUtil.diffAction;
 import static io.github.jeddict.ai.util.DiffUtil.diffActionWithSelected;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.getExtension;
+import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.isSuitableForWebAppDirectory;
 import static io.github.jeddict.ai.util.Icons.ICON_CANCEL;
 import static io.github.jeddict.ai.util.Icons.ICON_COPY;
 import static io.github.jeddict.ai.util.Icons.ICON_EDIT;
@@ -67,46 +42,71 @@ import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.SourceUtil;
+import static io.github.jeddict.ai.util.StringUtil.convertToCapitalized;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.io.InputStream;
-import java.util.ArrayList;
-import javax.swing.JButton;
-import javax.swing.SwingUtilities;
-
-import org.openide.filesystems.FileObject;
-import org.openide.loaders.DataObject;
-import org.openide.windows.TopComponent;
-import javax.swing.text.JTextComponent;
-import javax.swing.text.StyledDocument;
-import org.netbeans.api.editor.EditorRegistry;
-import org.netbeans.modules.editor.NbEditorUtilities;
-
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.prefs.Preferences;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyledDocument;
+import org.netbeans.api.editor.EditorRegistry;
+import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.project.Project;
+import org.netbeans.modules.editor.NbEditorUtilities;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.windows.TopComponent;
 
 /**
  *
  * @author Shiwani Gupta
  */
 public class AssistantChat extends TopComponent {
-
+    
+    private List<Review> reviews;
     public static final ImageIcon icon = new ImageIcon(AssistantChat.class.getResource("/icons/logo16.png"));
     public static final ImageIcon logoIcon = new ImageIcon(AssistantChat.class.getResource("/icons/logo28.png"));
 
@@ -118,7 +118,7 @@ public class AssistantChat extends TopComponent {
     private final Map<JEditorPane, List<JMenuItem>> menuItems = new HashMap<>();
     private final Map<JEditorPane, List<JMenuItem>> submenuItems = new HashMap<>();
     private String type = "java";
-    private static PreferencesManager pm = PreferencesManager.getInstance();
+    private static final PreferencesManager pm = PreferencesManager.getInstance();
 
     public AssistantChat(String name, String type, Project project) {
         setName(name);
@@ -820,6 +820,15 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
             }
         }
         return count;
+    }
+
+    
+    public List<Review> getReviews() {
+        return reviews;
+    }
+    
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
     }
 
 }

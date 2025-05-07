@@ -16,11 +16,10 @@
 package io.github.jeddict.ai.actions;
 
 import io.github.jeddict.ai.hints.AssistantChatManager;
-import static javax.swing.Action.NAME;
-import org.openide.util.NbBundle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.AbstractAction;
+import static javax.swing.Action.NAME;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.StyledDocument;
@@ -35,6 +34,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.text.NbDocument;
 import org.openide.util.Exceptions;
+import org.openide.util.NbBundle;
 
 @ActionID(
         category = "Edit/Chat",

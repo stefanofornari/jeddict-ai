@@ -15,11 +15,11 @@
  */
 package io.github.jeddict.ai.file;
 
-import io.github.jeddict.ai.util.SourceGroupUISupport;
+import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.ProjectUtil.getFolderSourceGroup;
 import static io.github.jeddict.ai.util.ProjectUtil.getJavaSourceGroups;
 import static io.github.jeddict.ai.util.ProjectUtil.getPackageForFolder;
-import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.util.SourceGroupUISupport;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

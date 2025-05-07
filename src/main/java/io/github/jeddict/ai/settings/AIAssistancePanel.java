@@ -19,13 +19,16 @@ import static io.github.jeddict.ai.models.Constant.DEEPINFRA_URL;
 import static io.github.jeddict.ai.models.Constant.DEEPSEEK_URL;
 import io.github.jeddict.ai.models.GPT4AllModelFetcher;
 import io.github.jeddict.ai.models.GroqModelFetcher;
-import io.github.jeddict.ai.models.OllamaModelFetcher;
 import io.github.jeddict.ai.models.LMStudioModelFetcher;
+import io.github.jeddict.ai.models.OllamaModelFetcher;
 import io.github.jeddict.ai.scanner.ProjectClassScanner;
-import java.util.List;
-import java.util.stream.Collectors;
-import javax.swing.JOptionPane;
 import static io.github.jeddict.ai.settings.GenAIModel.MODELS;
+import io.github.jeddict.ai.util.ColorUtil;
+import static io.github.jeddict.ai.util.ColorUtil.darken;
+import static io.github.jeddict.ai.util.ColorUtil.lighten;
+import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -34,15 +37,20 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
@@ -58,6 +66,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     AIAssistancePanel(AIAssistanceOptionsPanelController controller) {
         this.controller = controller;
         initComponents();
+        int index = jTabbedPane1.indexOfComponent(backupPane);
+        if (index != -1) {
+            jTabbedPane1.removeTabAt(index);
+        }
     }
 
     /**
@@ -194,6 +206,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         promptSettingsPane = new javax.swing.JLayeredPane();
         promptScrollPane = new javax.swing.JScrollPane();
         promptTable = new javax.swing.JTable();
+        backupPane = new javax.swing.JLayeredPane();
+        jPanel1 = new javax.swing.JPanel();
+        importButton = new javax.swing.JButton();
+        exportButton = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
 
         providersPane.setLayout(new java.awt.GridLayout(6, 1));
 
@@ -813,6 +831,61 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.promptSettingsPane.TabConstraints.tabTitle"), promptSettingsPane); // NOI18N
 
+        backupPane.setLayout(new java.awt.BorderLayout());
+
+        org.openide.awt.Mnemonics.setLocalizedText(importButton, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.importButton.text")); // NOI18N
+        importButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                importButtonActionPerformed(evt);
+            }
+        });
+
+        org.openide.awt.Mnemonics.setLocalizedText(exportButton, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.exportButton.text")); // NOI18N
+        exportButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportButtonActionPerformed(evt);
+            }
+        });
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.jLabel2.text")); // NOI18N
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.jLabel3.text")); // NOI18N
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(22, 22, 22)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(exportButton))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(importButton)))
+                .addContainerGap(78, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(22, 22, 22)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(exportButton))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(importButton)
+                    .addComponent(jLabel3))
+                .addContainerGap(684, Short.MAX_VALUE))
+        );
+
+        backupPane.add(jPanel1, java.awt.BorderLayout.CENTER);
+
+        jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.backupPane.TabConstraints.tabTitle"), backupPane); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -1060,6 +1133,41 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_allowCodeExecutionActionPerformed
 
+    private void importButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importButtonActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Import Preferences");
+        int userSelection = fileChooser.showOpenDialog(this);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileToImport = fileChooser.getSelectedFile();
+            try {
+                preferencesManager.importPreferences(fileToImport.getAbsolutePath());
+                JOptionPane.showMessageDialog(this, "Preferences imported successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                load();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Failed to import preferences:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        }
+    }//GEN-LAST:event_importButtonActionPerformed
+
+    private void exportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportButtonActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        FileNameExtensionFilter xmlFilter = new FileNameExtensionFilter("XML files", "xml");
+        fileChooser.setFileFilter(xmlFilter);
+        fileChooser.setDialogTitle("Export Preferences");
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileToSave = fileChooser.getSelectedFile();
+            try {
+                preferencesManager.exportPreferences(fileToSave.getAbsolutePath());
+                JOptionPane.showMessageDialog(this, "Preferences exported successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Failed to export preferences:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        }
+    }//GEN-LAST:event_exportButtonActionPerformed
+
     private void updateModelComboBox(GenAIProvider selectedProvider) {
         modelComboBox.removeAllItems();
         for (String model : getModelList(selectedProvider)) {
@@ -1174,7 +1282,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         ctrlSpaceRadioButton.setSelected(!preferencesManager.isCompletionAllQueryType());
         ctrlAltSpaceRadioButton.setSelected(preferencesManager.isCompletionAllQueryType());
         showDescriptionCheckBox.setSelected(preferencesManager.isDescriptionEnabled());
-        fileExtField.setText(preferencesManager.getFileExtensionToInclude());
+        fileExtField.setText(String.join(", ", preferencesManager.getFileExtensionListToInclude()));
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
         defaultAIAssistantPlacement.setSelectedItem(preferencesManager.getChatPlacement());
         globalRules.setText(preferencesManager.getGlobalRules());
@@ -1312,7 +1420,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
     private DefaultTableModel getExcludeTableModel() {
         excludeDirTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
-        List<String> excludeDirList = preferencesManager.getExcludeDirList();
+        List<String> excludeDirList = preferencesManager.getExcludeDirs();
         Object[][] excludeDirArray = new Object[excludeDirList.size()][1];
 
         for (int i = 0; i < excludeDirList.size(); i++) {
@@ -1384,7 +1492,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         return customHeadersTableModel;
     }
 
-// Function to add a right-click delete context menu
     private void addContextMenuToTable(JTable table) {
         JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem deleteItem = new JMenuItem("Delete");
@@ -1432,7 +1539,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     }
 
     private DefaultTableModel getPromptTableModel() {
-        promptTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        promptTable.setDefaultRenderer(Object.class, new CustomTableCellRenderer(true));
 
         Map<String, String> promptMap = preferencesManager.getPrompts();
         Object[][] headerKeyValueArray = new Object[promptMap.size() + 1][2]; // +1 for adding an empty row
@@ -1499,14 +1606,17 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
     private void openTextEditorPopup(String promptName, int row, int column) {
         String currentValue = (String) promptTable.getValueAt(row, column);
-
         JTextArea textArea = new JTextArea(currentValue, 30, 90);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
-
+        String title = "Edit " + promptName + " Prompt Value";
+        Map<String, String> systemPrompts = preferencesManager.getSystemPrompts();
+        if (systemPrompts != null && systemPrompts.containsKey(promptName)) {
+            title = " - System Prompt";
+        }
         JScrollPane scrollPane = new JScrollPane(textArea);
         int option = JOptionPane.showConfirmDialog(
-                null, scrollPane, "Edit " + promptName + " Prompt Value",
+                null, scrollPane, title,
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (option == JOptionPane.OK_OPTION) {
@@ -1543,6 +1653,20 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     }
 
     static class CustomTableCellRenderer extends DefaultTableCellRenderer {
+        
+        private boolean highLightPrompts;
+
+        public CustomTableCellRenderer() {
+        }
+
+        public CustomTableCellRenderer(boolean highLightPrompts) {
+            this.highLightPrompts = highLightPrompts;
+        }
+
+        private final PreferencesManager preferencesManager = PreferencesManager.getInstance();
+        private final Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+        private final Color fgColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
+        boolean isDark = ColorUtil.isDarkColor(bgColor);
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
@@ -1550,15 +1674,26 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             // Get the default component
             Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-            // Set the custom border color
-            if (cell instanceof JComponent) {
-                JComponent jComponent = (JComponent) cell;
-
-                // Set a border with a custom color
-                jComponent.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(225, 225, 225)));  // Red border as an example
+            if (cell != null) {
+                if (cell instanceof JComponent) {
+                    JComponent jComponent = (JComponent) cell;
+                    jComponent.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(225, 225, 225)));  // Red border as an example
+                }
+                if (highLightPrompts && !isSelected) {
+                    cell.setBackground(bgColor);
+                    cell.setForeground(fgColor);
+                    if (table.getModel() instanceof DefaultTableModel) {
+                        Object firstColumnValue = table.getModel().getValueAt(row, 0);
+                        if (firstColumnValue != null) {
+                            Map<String, String> systemPrompts = preferencesManager.getSystemPrompts();
+                            if (column == 0 && systemPrompts != null && systemPrompts.containsKey(firstColumnValue.toString())) {
+                                cell.setBackground(isDark ? lighten(bgColor, .1f) : darken(bgColor, .1f));
+                                cell.setForeground(isDark ? darken(fgColor, .1f) : lighten(fgColor, .1f));
+                            }
+                        }
+                    }
+                }
             }
-
-            // Return the cell component
             return cell;
         }
     }
@@ -1580,6 +1715,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane apiKeyLabelPane;
     private javax.swing.JLayeredPane apiKeyPane;
     private javax.swing.JLayeredPane askAIPane;
+    private javax.swing.JLayeredPane backupPane;
     private javax.swing.JLayeredPane cachePane;
     private javax.swing.JComboBox<AIClassContext> classContextComboBox;
     private javax.swing.JLabel classContextHelp;
@@ -1607,6 +1743,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JCheckBox enableSmartCodeCheckBox;
     private javax.swing.JTable excludeDirTable;
     private javax.swing.JCheckBox excludeJavadocCommentsCheckBox;
+    private javax.swing.JButton exportButton;
     private javax.swing.JTextArea fileExtField;
     private javax.swing.JLabel fileExtLabel;
     private javax.swing.JLayeredPane fileFilterationPane;
@@ -1618,12 +1755,16 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JScrollPane globalRulesScrollPane;
     private javax.swing.JLabel gptModelHelp;
     private javax.swing.JLabel gptModelLabel;
+    private javax.swing.JButton importButton;
     private javax.swing.JCheckBox includeCodeExecutionOutput;
     private javax.swing.JLayeredPane inlineCompletionPane;
     private javax.swing.JLayeredPane inlineHintPane;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JLayeredPane jLayeredPane2;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTabbedPane jTabbedPane1;

@@ -15,9 +15,9 @@
  */
 package io.github.jeddict.ai.util;
 
-import io.github.jeddict.ai.response.Response;
-import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.components.AssistantChat;
+import io.github.jeddict.ai.response.Block;
+import io.github.jeddict.ai.response.Response;
 import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_MARKDOWN;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_MERMAID;
@@ -25,37 +25,47 @@ import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PUML;
 import static io.github.jeddict.ai.util.SourceUtil.findClassInSourcePath;
 import static io.github.jeddict.ai.util.SourceUtil.openFileInEditor;
+import static io.github.jeddict.ai.util.SourceUtil.openFileInEditorAtLine;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
-import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.View;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+import org.netbeans.api.editor.document.LineDocumentUtils;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.FontColorNames;
 import org.netbeans.api.editor.settings.FontColorSettings;
+import org.netbeans.editor.BaseDocument;
 import org.openide.filesystems.FileObject;
+import org.openide.util.Exceptions;
 
 /**
  *
  * @author Shiwani Gupta
  */
 public class EditorUtil {
-    
+
     private static final Parser parser = Parser.builder().build();
     private static final HtmlRenderer renderer = HtmlRenderer.builder().build();
+    private static final Logger LOGGER = Logger.getLogger(EditorUtil.class.getName());
 
     public static String updateEditors(BiConsumer<String, Set<FileObject>> queryUpdate, AssistantChat topComponent, Response response, Set<FileObject> threadContext) {
         StringBuilder code = new StringBuilder();
@@ -89,47 +99,62 @@ public class EditorUtil {
         topComponent.getParseCodeEditor(context);
         return code.toString();
     }
-    
+
     public static JComponent printBlock(StringBuilder code, Block block, AssistantChat topComponent) {
         JComponent pane;
+        if (block.getType().equals("text") || block.getType().equals("web")) {
+            String html;
             if (block.getType().equals("text")) {
-                String html = renderer.render(parser.parse(block.getContent()));
+                html = renderer.render(parser.parse(block.getContent()));
                 html = wrapClassNamesWithAnchor(html);
-                JEditorPane htmlPane = topComponent.createHtmlPane(html);
-                pane = htmlPane;
-                htmlPane.addHyperlinkListener(e -> {
-                    if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-                        String fileName = e.getDescription();
-                        if (fileName.endsWith(".java")) {
-                            String javaClass = fileName.substring(0, fileName.length() - 5);
-                            FileObject path = findClassInSourcePath(javaClass, true);
-                            if (path != null) {
-                                openFileInEditor(path);
-                            }
+            } else {
+                html = block.getContent();
+            }
+            JEditorPane htmlPane = topComponent.createHtmlPane(html);
+            pane = htmlPane;
+            htmlPane.addHyperlinkListener(e -> {
+                if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                    String fileName = e.getDescription();
+                    if (fileName.endsWith(".java")) {
+                        String javaClass = fileName.substring(0, fileName.length() - 5);
+                        FileObject path = findClassInSourcePath(javaClass, true);
+                        if (path != null) {
+                            openFileInEditor(path);
                         }
-                        if (fileName.startsWith("#")) {
-                            String javaClass = fileName.substring(1);
-                            FileObject path = findClassInSourcePath(javaClass, true);
-                            if (path != null) {
+                    }
+                    if (fileName.startsWith("#")) {
+                        int lineNumber = -1;
+                        String javaClass = fileName.substring(1);
+                        if (javaClass.contains("@")) {
+                            String[] javaClassLoc = javaClass.split("@");
+                            javaClass = javaClassLoc[0];
+                            lineNumber = Integer.parseInt(javaClassLoc[1]);
+                        }
+                        FileObject path = findClassInSourcePath(javaClass, true);
+                        if (path != null) {
+                            if (lineNumber < 0) {
                                 openFileInEditor(path);
+                            } else {
+                                openFileInEditorAtLine(path, lineNumber);
                             }
                         }
                     }
-                });
-            } else {
-                code.append('\n').append(block.getContent()).append('\n');
-                String mimeType = getMimeType(block.getType());
-                if (MIME_PUML.equals(mimeType)) {
-                    pane = topComponent.createSVGPane(block);
-                } else if (MIME_MARKDOWN.equals(mimeType)) {
-                    pane = topComponent.createMarkdownPane(block);
-                } else if (MIME_MERMAID.equals(mimeType)) {
-                    pane = topComponent.createMermaidPane(block);
-                } else {
-                    pane = topComponent.createCodePane(mimeType, block);
                 }
+            });
+        } else {
+            code.append('\n').append(block.getContent()).append('\n');
+            String mimeType = getMimeType(block.getType());
+            if (MIME_PUML.equals(mimeType)) {
+                pane = topComponent.createSVGPane(block);
+            } else if (MIME_MARKDOWN.equals(mimeType)) {
+                pane = topComponent.createMarkdownPane(block);
+            } else if (MIME_MERMAID.equals(mimeType)) {
+                pane = topComponent.createMermaidPane(block);
+            } else {
+                pane = topComponent.createCodePane(mimeType, block);
             }
-            return pane;
+        }
+        return pane;
     }
 
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
@@ -484,5 +509,46 @@ public class EditorUtil {
         }
         matcher.appendTail(sb);
         return sb.toString();
+    }
+
+    /**
+     * Get text for a specified line.
+     *
+     * @param document document
+     * @param line line number
+     * @return line text
+     */
+    public static String getLineText(BaseDocument document, int line) {
+        if (document == null || line < 0) {
+            return ""; // NOI18N
+        }
+        int startOffset = LineDocumentUtils.getLineStartFromIndex(document, line);
+        if (startOffset == -1) {
+            return ""; // NOI18N
+        }
+        try {
+            int endOffset = LineDocumentUtils.getLineEnd(document, startOffset);
+            if (endOffset == -1) {
+                return ""; // NOI18N
+            }
+            return document.getText(startOffset, endOffset - startOffset);
+        } catch (BadLocationException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return ""; // NOI18N
+    }
+
+    public static String getLineText(Document document, View view) {
+        if (document == null || view == null) {
+            return ""; // NOI18N
+        }
+        int startOffset = view.getStartOffset();
+        int endOffset = view.getEndOffset();
+        try {
+            return document.getText(startOffset, endOffset - startOffset);
+        } catch (BadLocationException ex) {
+            LOGGER.log(Level.WARNING, ex.getMessage());
+        }
+        return ""; // NOI18N
     }
 }

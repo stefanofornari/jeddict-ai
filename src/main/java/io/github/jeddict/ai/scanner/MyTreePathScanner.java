@@ -17,11 +17,10 @@ package io.github.jeddict.ai.scanner;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.tree.*;
+import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import com.sun.source.tree.ExportsTree;
-import com.sun.source.util.DocTrees;
 
 public class MyTreePathScanner extends TreePathScanner<TreePath, Void> {
 
