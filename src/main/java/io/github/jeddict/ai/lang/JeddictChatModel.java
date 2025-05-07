@@ -41,11 +41,11 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
     public JeddictChatModel() {
     }
 
-    public JeddictChatModel(StreamingResponseHandler handler) {
+    public JeddictChatModel(JeddictStreamHandler handler) {
         super(handler);
     }
     
-    public JeddictChatModel(StreamingResponseHandler handler, String modelName) {
+    public JeddictChatModel(JeddictStreamHandler handler, String modelName) {
         super(handler, modelName);
     }
 
@@ -694,7 +694,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         return enhanced;
     }
 
-    public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage) {
+    public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage, List<String> images, Response previousChatResponse) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output. ")
                 .append("""
@@ -722,7 +722,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         }
 
         // Generate the commit message suggestions
-        String answer = generate(null, prompt.toString());
+        String answer = generate(null, prompt.toString(), images, previousChatResponse);
         System.out.println(answer);
         answer = removeCodeBlockMarkers(answer);
         return answer;
@@ -757,7 +757,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         return wrapped.toString();
     }
 
-    public String assistDbMetadata(String dbMetadata, String developerQuestion) {
+    public String assistDbMetadata(String dbMetadata, String query, List<String> images, Response previousChatResponse) {
         StringBuilder dbPrompt = new StringBuilder("You are an API server that provides assistance. ");
 
         dbPrompt.append("Given the following database schema metadata:\n")
@@ -771,7 +771,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         }
 
         dbPrompt.append("\nRespond to the developer's question: \n")
-                .append(developerQuestion)
+                .append(query)
                 .append("\n")
                 .append("""
                     There are two possible scenarios for your response:
@@ -787,7 +787,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                        - If the developer requests specific code snippets related to the database metadata, generate the appropriate code and include a clear description of its functionality and relevance.
                     """);
 
-        String response = generate(null, dbPrompt.toString());
+        String response = generate(null, dbPrompt.toString(), images, previousChatResponse);
         System.out.println(response);
         return response;
     }

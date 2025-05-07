@@ -527,6 +527,16 @@
             <artifactId>org-netbeans-modules-java-project-ui</artifactId>
             <version>RELEASE250</version>
         </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-api-visual</artifactId>
+            <version>RELEASE250</version>
+        </dependency>
+        <dependency>
+    <groupId>org.netbeans.api</groupId>
+    <artifactId>org-openide-explorer</artifactId>
+    <version>RELEASE250</version>
+</dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

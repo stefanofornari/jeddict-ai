@@ -16,7 +16,7 @@
 package io.github.jeddict.ai.actions;
 
 import io.github.jeddict.ai.completion.SQLCompletion;
-import io.github.jeddict.ai.hints.LearnFix;
+import io.github.jeddict.ai.hints.AssistantChatManager;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
@@ -83,7 +83,7 @@ public final class AskAIDBAction extends AbstractAction implements ContextAwareA
                return;
             }
             SQLCompletion sqlCompletion = new SQLCompletion(connection);
-            LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, sqlCompletion);
+            AssistantChatManager learnFix = new AssistantChatManager(io.github.jeddict.ai.completion.Action.QUERY, sqlCompletion);
             learnFix.openChat("sql", "", null, "AI Chat ["+connection.getDisplayName()+']', null);
         }
 

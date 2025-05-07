@@ -15,6 +15,7 @@
  */
 package io.github.jeddict.ai.components;
 
+import io.github.jeddict.ai.components.mermaid.MermaidPane;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
 import static io.github.jeddict.ai.util.EditorUtil.getExtension;
@@ -67,6 +68,7 @@ import static io.github.jeddict.ai.util.MimeUtil.JAVA_MIME;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import io.github.jeddict.ai.util.SourceUtil;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -89,11 +91,12 @@ import org.netbeans.modules.editor.NbEditorUtilities;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JTextArea;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
@@ -102,10 +105,10 @@ import javax.swing.text.Document;
  *
  * @author Shiwani Gupta
  */
-public class AssistantTopComponent extends TopComponent {
+public class AssistantChat extends TopComponent {
 
-    public static final ImageIcon icon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo16.png"));
-    public static final ImageIcon logoIcon = new ImageIcon(AssistantTopComponent.class.getResource("/icons/logo28.png"));
+    public static final ImageIcon icon = new ImageIcon(AssistantChat.class.getResource("/icons/logo16.png"));
+    public static final ImageIcon logoIcon = new ImageIcon(AssistantChat.class.getResource("/icons/logo28.png"));
 
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
     private final JPanel parentPanel;
@@ -117,7 +120,7 @@ public class AssistantTopComponent extends TopComponent {
     private String type = "java";
     private static PreferencesManager pm = PreferencesManager.getInstance();
 
-    public AssistantTopComponent(String name, String type, Project project) {
+    public AssistantChat(String name, String type, Project project) {
         setName(name);
         setLayout(new BorderLayout());
         setIcon(icon.getImage());
@@ -129,6 +132,10 @@ public class AssistantTopComponent extends TopComponent {
         parentPanel = new JPanel();
         parentPanel.setLayout(new BoxLayout(parentPanel, BoxLayout.Y_AXIS));
         add(parentPanel, BorderLayout.CENTER);
+    }
+
+    public void lastRemove() {
+        parentPanel.remove(parentPanel.getComponentCount()-1);
     }
 
     public void clear() {
@@ -148,7 +155,7 @@ public class AssistantTopComponent extends TopComponent {
         }
     }
 
-    private void createUserPaneButtons(BiConsumer<String, List<FileObject>> queryUpdate, List<FileObject> messageContext, JPanel buttonPanel) {
+    private void createUserPaneButtons(BiConsumer<String, Set<FileObject>> queryUpdate, Set<FileObject> messageContext, JPanel buttonPanel) {
         copyButton = QueryPane.createIconButton(Labels.COPY, ICON_COPY);
         editButton = QueryPane.createIconButton(Labels.EDIT, ICON_EDIT);
         saveButton = QueryPane.createIconButton(Labels.SAVE, ICON_SEND);
@@ -190,7 +197,7 @@ public class AssistantTopComponent extends TopComponent {
         });
     }
 
-    public JEditorPane createUserQueryPane(BiConsumer<String, List<FileObject>> queryUpdate, String content, List<FileObject> messageContext) {
+    public JEditorPane createUserQueryPane(BiConsumer<String, Set<FileObject>> queryUpdate, String content, Set<FileObject> messageContext) {
         
         Consumer<FileObject> callback = file -> {
             if (!messageContext.contains(file)) {
@@ -275,10 +282,37 @@ public class AssistantTopComponent extends TopComponent {
     private JPanel filePanel;
     private MessageContextComponentAdapter filePanelAdapter;
 
-    public JEditorPane createHtmlPane(String content) {
-        JEditorPane editorPane = MarkdownPane.createHtmlPane(content, this);
-        parentPanel.add(editorPane);
-        return editorPane;
+public JEditorPane createHtmlPane(String content) {
+    JEditorPane editorPane = new JEditorPane();
+    addEditorPaneRespectingTextArea(editorPane);
+    MarkdownPane.createHtmlPane(editorPane, content, this);
+    return editorPane;
+}
+
+private void addEditorPaneRespectingTextArea(JComponent component) {
+    int count = parentPanel.getComponentCount();
+    if (count > 0) {
+        Component lastComponent = parentPanel.getComponent(count - 1);
+        if (lastComponent instanceof JTextArea) {
+            parentPanel.add(component, count - 1);
+            return;
+        }
+    }
+    parentPanel.add(component);
+}
+
+    public JTextArea createTextAreaPane() {
+        JTextArea textArea = new JTextArea();
+        textArea.setEditable(false);
+        Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
+        java.awt.Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
+        java.awt.Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+
+        textArea.setFont(newFont);
+        textArea.setForeground(textColor);
+        textArea.setBackground(backgroundColor);
+        parentPanel.add(textArea);
+        return textArea;
     }
 
     public JEditorPane createPane() {
@@ -291,7 +325,7 @@ public class AssistantTopComponent extends TopComponent {
         editorPane.setFont(newFont);
         editorPane.setForeground(textColor);
         editorPane.setBackground(backgroundColor);
-        parentPanel.add(editorPane);
+    addEditorPaneRespectingTextArea(editorPane);
         return editorPane;
     }
 
@@ -317,7 +351,7 @@ public class AssistantTopComponent extends TopComponent {
             }
         });
         addContextMenu(editorPane);
-        parentPanel.add(editorPane);
+        addEditorPaneRespectingTextArea(editorPane);
         return editorPane;
     }
 
@@ -325,15 +359,23 @@ public class AssistantTopComponent extends TopComponent {
         SVGPane svgPane = new SVGPane();
         JEditorPane sourcePane = svgPane.createPane(content);
         addContextMenu(sourcePane);
-        parentPanel.add(svgPane);
+        addEditorPaneRespectingTextArea(svgPane);
         return svgPane;
+    }
+
+    public MermaidPane createMermaidPane(Block content) {
+        MermaidPane pane = new MermaidPane();
+        JEditorPane sourcePane = pane.createPane(content);
+        addContextMenu(sourcePane);
+        addEditorPaneRespectingTextArea(pane);
+        return pane;
     }
 
     public MarkdownPane createMarkdownPane(Block content) {
         MarkdownPane pane = new MarkdownPane();
         JEditorPane sourcePane = pane.createPane(content, this);
         addContextMenu(sourcePane);
-        parentPanel.add(pane);
+        addEditorPaneRespectingTextArea(pane);
         return pane;
     }
 

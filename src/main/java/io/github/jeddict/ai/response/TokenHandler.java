@@ -22,6 +22,7 @@ import org.json.JSONObject;
 
 import java.util.Iterator;
 import java.util.List;
+import org.netbeans.api.progress.ProgressHandle;
 
 /**
  * Tracks and manages token usage for input and output prompts with configurable granularity.
@@ -31,9 +32,9 @@ public class TokenHandler {
 
     private static final PreferencesManager preferencesManager = PreferencesManager.getInstance();
 
-    public static void saveInputToken(List<ChatMessage> messages) {
+    public static int saveInputToken(List<ChatMessage> messages) {
         if (messages == null || messages.isEmpty()) {
-            return;
+            return -1;
         }
 
         StringBuilder serialized = new StringBuilder();
@@ -44,8 +45,10 @@ public class TokenHandler {
                       .append("\n");
         }
 
-        int tokenCount = countTokens(serialized.toString());
+        String content = serialized.toString();
+        int tokenCount = countTokens(content);
         saveTokenUsage(preferencesManager.getDailyInputTokenStats(), tokenCount, true);
+        return tokenCount;
     }
 
     public static void saveOutputToken(String response) {

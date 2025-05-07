@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.completion;
 
-import io.github.jeddict.ai.components.AssistantTopComponent;
+import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.util.Utilities;
 import static io.github.jeddict.ai.util.Utilities.getHTMLColor;
 import io.github.jeddict.ai.util.SourceUtil;
@@ -162,7 +162,7 @@ public class JeddictItem extends JavaCompletionItem {
 
     @Override
     protected ImageIcon getIcon() {
-        return AssistantTopComponent.icon;
+        return AssistantChat.icon;
     }
 
     @Override

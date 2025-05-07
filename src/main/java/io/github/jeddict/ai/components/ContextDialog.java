@@ -19,7 +19,7 @@ import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.Color;
-import java.util.List;
+import java.util.Set;
 import javax.swing.table.DefaultTableModel;
 import org.openide.filesystems.FileObject;
 
@@ -30,14 +30,14 @@ import org.openide.filesystems.FileObject;
 public final class ContextDialog extends javax.swing.JDialog {
 
     private final String projectRootDir;
-    private final List<FileObject> fileObjects;
+    private final Set<FileObject> fileObjects;
 
     /**
      * Creates new form ContextDialog
      */
     public ContextDialog(java.awt.Frame parent,
             boolean enableRules, String rules,
-            String projectRootDir, List<FileObject> fileObjects) {
+            String projectRootDir, Set<FileObject> fileObjects) {
         super(parent, true);
         this.projectRootDir = projectRootDir;
         this.fileObjects = fileObjects;
@@ -56,14 +56,15 @@ public final class ContextDialog extends javax.swing.JDialog {
     private DefaultTableModel getTableModel() {
         Object[][] data = new Object[fileObjects.size()][2];
 
-        for (int i = 0; i < fileObjects.size(); i++) {
-            FileObject contextFile = fileObjects.get(i);
+        int i = 0;
+        for (FileObject contextFile : fileObjects) {
             String relativePath = contextFile.getPath();
             if (projectRootDir != null) {
                 relativePath = relativePath.replaceFirst(projectRootDir + "/", "");
             }
             data[i][0] = contextFile.getName();
             data[i][1] = relativePath;
+            i++;
         }
         tableModel = new DefaultTableModel(
                 data,

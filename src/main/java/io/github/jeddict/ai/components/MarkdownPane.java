@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.components;
 
-import static io.github.jeddict.ai.components.AssistantTopComponent.createEditorKit;
+import static io.github.jeddict.ai.components.AssistantChat.createEditorKit;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
@@ -54,8 +54,7 @@ import org.commonmark.renderer.html.HtmlRenderer;
  */
 public class MarkdownPane extends JTabbedPane {
 
-    public static JEditorPane createHtmlPane(String content, JComponent component) {
-        JEditorPane editorPane = new JEditorPane();
+    public static JEditorPane createHtmlPane(JEditorPane editorPane, String content, JComponent component) {
         editorPane.setBorder(BorderFactory.createEmptyBorder()); // No border
         editorPane.setMargin(new Insets(1, 0, 1, 0));
         editorPane.setContentType("text/html");
@@ -93,7 +92,8 @@ public class MarkdownPane extends JTabbedPane {
         HtmlRenderer renderer = HtmlRenderer.builder().build();
         String html = renderer.render(parser.parse(content.getContent()));
 
-        JEditorPane viewPane = createHtmlPane(html, component);
+        JEditorPane viewPane = new JEditorPane();
+        createHtmlPane(viewPane, html, component);
         tabbedPane.addTab("View", viewPane);
 
         JEditorPane editorPane = new JEditorPane();

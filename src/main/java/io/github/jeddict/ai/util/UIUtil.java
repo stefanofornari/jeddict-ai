@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.util;
 
-import io.github.jeddict.ai.components.AssistantTopComponent;
+import io.github.jeddict.ai.components.AssistantChat;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -41,13 +41,12 @@ public class UIUtil {
         panel.add(scrollPane);
 
         // Show the custom dialog
-        int option = JOptionPane.showConfirmDialog(
-                null,
+        int option = JOptionPane.showConfirmDialog(null,
                 panel,
                 "Please provide details about what to update in this method:",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE,
-                AssistantTopComponent.icon
+                AssistantChat.icon
         );
 
         // Check the user's choice
@@ -83,13 +82,12 @@ public class UIUtil {
         panel.add(scrollPane);
 
         // Show the custom dialog
-        int option = JOptionPane.showConfirmDialog(
-                null,
+        int option = JOptionPane.showConfirmDialog(null,
                 panel,
                 "Please enter the initial commit message (optional).",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE,
-                AssistantTopComponent.icon
+                AssistantChat.icon
         );
 
         // Check the user's choice

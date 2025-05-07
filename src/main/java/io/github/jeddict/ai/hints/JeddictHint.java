@@ -110,8 +110,8 @@ public class JeddictHint {
                 if (type.getAnnotationMirrors().stream().anyMatch(a -> a.getAnnotationType().toString().equals("jakarta.ws.rs.Path"))) {
                     fixes.add(new RestEndpointFix(tpHandle, Action.CREATE, elementHandle).toEditorFix());
                 }
-                fixes.add(new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix());
-                fixes.add(new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix());
+                fixes.add(new AssistantChatManager(tpHandle, Action.LEARN, treePath).toEditorFix());
+                fixes.add(new AssistantChatManager(tpHandle, Action.TEST, treePath).toEditorFix());
                 break;
 //            case IDENTIFIER:
 //            case BLOCK:
@@ -153,8 +153,8 @@ public class JeddictHint {
                             }
                         }
                     }
-                    fixes.add(new LearnFix(tpHandle, Action.LEARN, treePath).toEditorFix());
-                    fixes.add(new LearnFix(tpHandle, Action.TEST, treePath).toEditorFix());
+                    fixes.add(new AssistantChatManager(tpHandle, Action.LEARN, treePath).toEditorFix());
+                    fixes.add(new AssistantChatManager(tpHandle, Action.TEST, treePath).toEditorFix());
                 }
                 break;
             case VARIABLE:

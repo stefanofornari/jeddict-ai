@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.actions;
 
-import io.github.jeddict.ai.hints.LearnFix;
+import io.github.jeddict.ai.hints.AssistantChatManager;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.UIUtil;
 import java.awt.event.ActionEvent;
@@ -98,7 +98,7 @@ public final class GenerateCommitMessageAction extends AbstractAction implements
             String statusOutput = runGitCommand("status");
             sb.append(statusOutput);
             String intitalCommitMessage = UIUtil.askForInitialCommitMessage();
-            LearnFix learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY);
+            AssistantChatManager learnFix = new AssistantChatManager(io.github.jeddict.ai.completion.Action.QUERY);
             learnFix.askQueryForProjectCommit(project, sb.toString(), intitalCommitMessage);
         }
 

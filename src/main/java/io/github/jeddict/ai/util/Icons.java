@@ -30,7 +30,9 @@ public class Icons {
     public static final String ICON_NEW_CHAT = "\u2795";     // ➕
     public static final String ICON_SETTINGS = "\u2699\uFE0F️"; // ⚙️
     public static final String ICON_CONTEXT = "\uD83D\uDCC2"; // 📂
-    public static final String ICON_SEND = "\u25B6\uFE0F️︎";  // ▶️
+    public static final String ICON_SEND = "\u25B6\uFE0F️︎";  // ▶
+    public static final String ICON_STOP = "\u23F9\uFE0F";  // ⏹
+    public static final String ICON_LOADING = "\u23F3";  // ⏳
     public static final String ICON_EDIT = "\uD83D\uDD8D\uFE0F"; // 🖍️
     public static final String ICON_CANCEL = "\u274C";       // ❌
     public static final String ICON_STATS = "\uD83D\uDCC8"; // 📈

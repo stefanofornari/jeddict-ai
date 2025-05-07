@@ -46,15 +46,15 @@ import org.openide.filesystems.URLMapper;
  */
 public class ProjectUtil {
 
-    public static List<FileObject> getSourceFiles(Project project) {
-        List<FileObject> sourceFiles = new ArrayList<>();
+    public static Set<FileObject> getSourceFiles(Project project) {
+        Set<FileObject> sourceFiles = new HashSet<>();
         collectFiles(project.getProjectDirectory(), project.getProjectDirectory(), sourceFiles,
                 new HashSet<>(PreferencesManager.getInstance().getFileExtensionListToInclude()),
                 new HashSet<>(PreferencesManager.getInstance().getExcludeDirList()));
         return sourceFiles;
     }
 
-    public static void collectFiles(FileObject baseDir, FileObject folder, List<FileObject> sourceFiles, Set<String> fileExtensionListToInclude, Set<String> excludes) {
+    public static void collectFiles(FileObject baseDir, FileObject folder, Set<FileObject> sourceFiles, Set<String> fileExtensionListToInclude, Set<String> excludes) {
         for (FileObject file : folder.getChildren()) {
             String relativePath = getRelativePath(baseDir, file);
             boolean isExcluded = excludes.stream().filter(s -> !s.trim().isEmpty()).anyMatch(relativePath::startsWith);

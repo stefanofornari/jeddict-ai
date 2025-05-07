@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.actions;
 
-import io.github.jeddict.ai.hints.LearnFix;
+import io.github.jeddict.ai.hints.AssistantChatManager;
 import static javax.swing.Action.NAME;
 import org.openide.util.NbBundle;
 import java.awt.event.ActionEvent;
@@ -59,7 +59,7 @@ public final class AIAssistantPopupAction extends AbstractAction implements Acti
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        LearnFix learnFix;
+        AssistantChatManager learnFix;
         JTextComponent editor = EditorRegistry.lastFocusedComponent();
         String selectedText = editor.getSelectedText();
         final StyledDocument document = (StyledDocument) editor.getDocument();
@@ -70,7 +70,7 @@ public final class AIAssistantPopupAction extends AbstractAction implements Acti
             selectionStartPosition = -1;
             selectedText = "";
         }
-        learnFix = new LearnFix(io.github.jeddict.ai.completion.Action.QUERY, file);
+        learnFix = new AssistantChatManager(io.github.jeddict.ai.completion.Action.QUERY, file);
         final String text = selectedText;
         final int startLocation = selectionStartPosition;
         learnFix.openChat(null, selectedText, file.getName(), "Chat with AI", content -> {

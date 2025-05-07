@@ -18,10 +18,16 @@ package io.github.jeddict.ai.lang;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.output.Response;
-import io.github.jeddict.ai.components.AssistantTopComponent;
+import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.response.TokenHandler;
-import javax.swing.JEditorPane;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import org.netbeans.api.progress.ProgressHandle;
 
 /**
  *
@@ -29,41 +35,84 @@ import javax.swing.SwingUtilities;
  */
 public abstract class JeddictStreamHandler implements StreamingResponseHandler<AiMessage> {
 
-    private final AssistantTopComponent topComponent;
+    private final AssistantChat topComponent;
     private boolean init = true;
-    private JEditorPane editorPane;
+    private JTextArea textArea;
+    private ProgressHandle handle;
+    private boolean complete;
+//    protected MarkdownStreamParser parser;
+    private static final Logger LOGGER = Logger.getLogger(JeddictStreamHandler.class.getName());
 
-    public JeddictStreamHandler(AssistantTopComponent topComponent) {
+
+    public JeddictStreamHandler(AssistantChat topComponent) {
         this.topComponent = topComponent;
+//        parser = new MarkdownStreamParser(block -> {}, topComponent);
+    }
+
+    public ProgressHandle getProgressHandle() {
+        return handle;
+    }
+
+    public void setHandle(ProgressHandle handle) {
+        this.handle = handle;
     }
 
     @Override
-    public void onNext(String string) {
+    public void onNext(String token) {
         if (init) {
             topComponent.clear();
-            editorPane = topComponent.createPane();
-            editorPane.setText(string);
+            textArea = topComponent.createTextAreaPane();
+            textArea.setText(token);
             init = false;
         } else {
-            String partial = editorPane.getText() + string;
-            editorPane.setText(partial);
+            textArea.append(token);
         }
+//        parser.processToken(token);
+    }
+
+    public boolean isComplete() {
+        return complete;
     }
 
     @Override
-    public void onError(Throwable thrwbl) {
+    public void onError(Throwable throwable) {
+        complete = true;
+        // Log the error with timestamp and thread info
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        String threadName = Thread.currentThread().getName();
+        LOGGER.log(Level.SEVERE, "Error occurred at {0} on thread [{1}]", new Object[] { timestamp, threadName });
+        LOGGER.log(Level.SEVERE, "Exception in JeddictStreamHandler", throwable);
+        // Update UI on the Event Dispatch Thread
+        SwingUtilities.invokeLater(() -> {
+            if (textArea != null) {
+                textArea.append("\n\n[Error] An error occurred: " + throwable.getMessage());
+            } else {
+                // If textArea not yet initialized, clear and create one to show error
+                topComponent.clear();
+                JTextArea errorArea = topComponent.createTextAreaPane();
+                errorArea.setText("[Error] An error occurred: " + throwable.getMessage());
+                textArea = errorArea;
+    }
+            if (handle != null) {
+                handle.finish();
+            }
+        });
     }
 
     @Override
     public void onComplete(Response<AiMessage> out) {
+        complete = true;
         SwingUtilities.invokeLater(() -> {
             String response = out.content().text();
             if (response != null && !response.isEmpty()) {
-                TokenHandler.saveOutputToken(response);
+                CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
                 onComplete(response);
+                handle.finish();
             }
         });
     }
 
     public abstract void onComplete(String response);
+    
+    
 }
