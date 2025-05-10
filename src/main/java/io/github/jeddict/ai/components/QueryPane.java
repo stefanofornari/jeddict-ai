@@ -20,8 +20,8 @@ import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeTyp
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicButtonUI;

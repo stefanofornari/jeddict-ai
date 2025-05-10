@@ -21,14 +21,13 @@ import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import static io.github.jeddict.ai.util.SourceUtil.openFileInEditor;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.function.Consumer;
+import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import org.openide.filesystems.FileObject;
 
 public class FileTab extends JPanel {

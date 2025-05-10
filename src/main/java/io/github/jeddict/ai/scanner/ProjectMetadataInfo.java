@@ -16,14 +16,13 @@
 package io.github.jeddict.ai.scanner;
 
 import java.io.File;
-import org.apache.maven.project.MavenProject;
-import org.netbeans.api.project.Project;
-import org.netbeans.modules.maven.api.NbMavenProject;
-
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.netbeans.api.project.Project;
+import org.netbeans.modules.maven.api.NbMavenProject;
 
 /**
  *

@@ -26,40 +26,9 @@ import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.lang.JeddictChatModel;
 import io.github.jeddict.ai.completion.SQLCompletion;
 import io.github.jeddict.ai.components.AssistantChat;
 import static io.github.jeddict.ai.components.AssistantChat.createEditorKit;
-import io.github.jeddict.ai.settings.PreferencesManager;
-import static io.github.jeddict.ai.util.ProjectUtil.getSourceFiles;
-import io.github.jeddict.ai.util.StringUtil;
-import java.awt.BorderLayout;
-import java.awt.Desktop;
-import java.awt.FlowLayout;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.prefs.Preferences;
-import javax.swing.JButton;
-import javax.swing.JEditorPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
-import javax.swing.ScrollPaneConstants;
-import org.netbeans.api.java.source.JavaSource;
-import org.netbeans.api.java.source.TreePathHandle;
-import org.netbeans.api.java.source.WorkingCopy;
-import org.netbeans.api.project.FileOwnerQuery;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectInformation;
-import org.netbeans.api.project.ProjectUtils;
-import org.netbeans.spi.java.hints.JavaFix;
-import org.openide.util.NbBundle;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.util.function.Consumer;
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import io.github.jeddict.ai.components.ContextDialog;
 import io.github.jeddict.ai.components.CustomScrollBarUI;
 import io.github.jeddict.ai.components.FileTab;
@@ -69,15 +38,21 @@ import io.github.jeddict.ai.components.MessageContextComponentAdapter;
 import static io.github.jeddict.ai.components.QueryPane.createIconButton;
 import static io.github.jeddict.ai.components.QueryPane.createStyledComboBox;
 import io.github.jeddict.ai.components.TokenUsageChartDialog;
+import io.github.jeddict.ai.lang.JeddictChatModel;
+import io.github.jeddict.ai.lang.JeddictStreamHandler;
+import io.github.jeddict.ai.response.Block;
+import io.github.jeddict.ai.response.Response;
+import io.github.jeddict.ai.review.Review;
+import static io.github.jeddict.ai.review.ReviewUtil.convertReviewsToHtml;
+import static io.github.jeddict.ai.review.ReviewUtil.parseReviewsFromJson;
+import static io.github.jeddict.ai.settings.GenAIProvider.getModelsByProvider;
+import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.ContextHelper.getFilesContextList;
 import static io.github.jeddict.ai.util.ContextHelper.getImageFilesContext;
 import static io.github.jeddict.ai.util.ContextHelper.getProjectContext;
 import static io.github.jeddict.ai.util.ContextHelper.getTextFilesContext;
-import io.github.jeddict.ai.lang.JeddictStreamHandler;
 import io.github.jeddict.ai.util.EditorUtil;
-import io.github.jeddict.ai.response.Response;
-import static io.github.jeddict.ai.settings.GenAIProvider.getModelsByProvider;
-import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getHTMLContent;
 import static io.github.jeddict.ai.util.Icons.ICON_ATTACH;
@@ -94,37 +69,67 @@ import static io.github.jeddict.ai.util.Icons.ICON_UPDATE;
 import static io.github.jeddict.ai.util.Icons.ICON_WEB;
 import io.github.jeddict.ai.util.Labels;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
+import static io.github.jeddict.ai.util.ProjectUtil.getSourceFiles;
 import io.github.jeddict.ai.util.RandomTweetSelector;
+import io.github.jeddict.ai.util.StringUtil;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import org.netbeans.api.options.OptionsDisplayer;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.prefs.Preferences;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.Document;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.TreePathHandle;
+import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.api.options.OptionsDisplayer;
+import org.netbeans.api.project.FileOwnerQuery;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectInformation;
+import org.netbeans.api.project.ProjectUtils;
+import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Exceptions;
+import org.openide.util.NbBundle;
 import org.openide.windows.WindowManager;
 
 /**
@@ -132,6 +137,7 @@ import org.openide.windows.WindowManager;
  * @author Shiwani Gupta
  */
 public class AssistantChatManager extends JavaFix {
+    
 
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -283,7 +289,19 @@ public class AssistantChatManager extends JavaFix {
         String projectName = info.getDisplayName();
         displayHtmlContent(null, projectName + " GenAI Commit");
         this.commitChanges = commitChanges;
+        this.commitMessage = true;
         handleQuestion(intitalCommitMessage, messageContext, true);
+    }
+    
+    private boolean commitMessage, codeReview;
+
+    public void askQueryForCodeReview(Project project, String commitChanges, String contextMessage) {
+        ProjectInformation info = ProjectUtils.getInformation(project);
+        String projectName = info.getDisplayName();
+        displayHtmlContent(null, projectName + " Code Review");
+        this.commitChanges = commitChanges;
+        this.codeReview = true;
+        handleQuestion(contextMessage, messageContext, true);
     }
 
     public void displayHtmlContent(String filename, String title) {
@@ -633,6 +651,18 @@ public class AssistantChatManager extends JavaFix {
             } else {
                 result = null;
                 String question = questionPane.getText();
+                Map<String, String> prompts = PreferencesManager.getInstance().getPrompts();
+
+                for (Map.Entry<String, String> entry : prompts.entrySet()) {
+                    String promptKey = entry.getKey();
+                    String promptValue = entry.getValue();
+
+                    String toReplace = "/" + promptKey;
+
+                    if (question.contains(toReplace)) {
+                        question = question.replace(toReplace, promptValue);
+                    }
+                }
                 if (!question.isEmpty()) {
                     handleQuestion(question, messageContext, true);
                 }
@@ -796,7 +826,15 @@ public class AssistantChatManager extends JavaFix {
 //                            parser.flush();
 //                            parser.shutdown();
 //                            topComponent.lastRemove();
+                            if (codeReview) {
+                                List<Review> reviews = parseReviewsFromJson(response.getBlocks().get(0).getContent());
+                                String web = convertReviewsToHtml(reviews);
+                                topComponent.setReviews(reviews);
+                                response.getBlocks().clear();
+                                response.getBlocks().add(new Block("web", web));
+                            }
                             sourceCode = EditorUtil.updateEditors(queryUpdate, topComponent, response, getContextFiles());
+
                             stopLoading();
                             saveButton.setVisible(sourceCode != null);
                             updateButtons(prevButton, nextButton);
@@ -813,7 +851,7 @@ public class AssistantChatManager extends JavaFix {
                     }
                     List<String> messageScopeImgages = getImageFilesContext(messageContext);
                     response = new JeddictChatModel(handler, getModelName()).assistDbMetadata(context, question, messageScopeImgages, prevChat);
-                } else if (commitChanges != null) {
+                } else if (commitMessage && commitChanges != null) {
                     String context = commitChanges;
                     String messageScopeContent = getTextFilesContext(messageContext);
                     if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
@@ -821,6 +859,14 @@ public class AssistantChatManager extends JavaFix {
                     }
                     List<String> messageScopeImgages = getImageFilesContext(messageContext);
                     response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(context, question, messageScopeImgages, prevChat);
+                } else if (codeReview && commitChanges != null) {
+                    String context = commitChanges;
+                    String messageScopeContent = getTextFilesContext(messageContext);
+                    if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
+                        context = context + "\n\n Files:\n" + messageScopeContent;
+                    }
+                    List<String> messageScopeImgages = getImageFilesContext(messageContext);
+                    response = new JeddictChatModel(handler, getModelName()).generateCodeReviewSuggestions(context, question, messageScopeImgages, prevChat);
                 } else if (project != null || threadContext != null) {
                     Set<FileObject> mainThreadContext;
                     String threadScopeContent;

@@ -21,22 +21,30 @@ package io.github.jeddict.ai.settings;
  */
 import io.github.jeddict.ai.response.TokenGranularity;
 import static io.github.jeddict.ai.settings.GenAIModel.DEFAULT_MODEL;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.openide.util.NbPreferences;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.project.Project;
 
 public class PreferencesManager {
 
-    private final Preferences preferences;
+    private final FilePreferences preferences;
     private static final String API_KEY_ENV_VAR = "OPENAI_API_KEY";
     private static final String API_KEY_SYS_PROP = "openai.api.key";
     private static final String MODEL_ENV_VAR = "OPENAI_MODEL";
@@ -67,11 +75,14 @@ public class PreferencesManager {
     private static final String ALLOW_CODE_EXECUTION_PREFERENCE = "allowCodeExecution";
     private static final String INCLUDE_CODE_EXECUTION_OUTPUT_PREFERENCE = "includeCodeExecutionOutput";
     private static final String MAX_RETRIES_PREFERENCE = "maxRetries";
-    private static final String DAILY_INPUT_TOKEN_STATS_KEY = "dailyInputTokenStats";
-    private static final String DAILY_OUTPUT_TOKEN_STATS_KEY = "dailyOutputTokenStats";
     private static final String TOKEN_GRANULARITY_KEY = "tokenGranularity";
     private static final String LAST_BROWSE_DIRECTORY_PREFERENCE = "lastBrowseDirectory";
 
+    private final List<String> DEFAULT_ACCEPTED_EXTENSIONS = Arrays.asList(
+            "java", "php", "jsf", "kt", "groovy", "scala", "xml", "json", "yaml", "yml",
+            "properties", "txt", "md", "js", "ts", "css", "scss", "html", "xhtml", "sh",
+            "bat", "sql", "jsp", "rb", "cs", "go", "swift", "rs", "c", "cpp", "h", "py"
+    );
     private final List<String> EXCLUDE_DIR_DEFAULT = Arrays.asList(
             // Test Resources
             "src/test/java",
@@ -141,22 +152,37 @@ public class PreferencesManager {
             "azure-pipelines.yml",
             "Jenkinsfile"
     );
-    
-    private JSONObject dailyInputTokenStats;
-    private JSONObject dailyOutputTokenStats;
+    private static final String PROMPT_RESOURCE_PATH = "/templates/prompts/";
+    private List<String> acceptedExtensions = Collections.EMPTY_LIST;
+    private List<String> excludeDir = Collections.EMPTY_LIST;
+    private Map<String, String> userPrompts = new LinkedHashMap<>();
+    private final Map<String, String> systemPrompts = new LinkedHashMap<>();
+    private Map<String, String> headerKeyValueMap = new HashMap<>();
     private TokenGranularity tokenGranularity;
-    
+
     private PreferencesManager() {
-        preferences = NbPreferences.forModule(AIAssistancePanel.class);
+        preferences = new FilePreferences();
     }
 
     private static PreferencesManager instance;
 
     public static PreferencesManager getInstance() {
         if (instance == null) {
-            instance = new PreferencesManager();
+            synchronized (PreferencesManager.class) {
+                if (instance == null) {
+                    instance = new PreferencesManager();
+                }
+            }
         }
         return instance;
+    }
+
+    public void exportPreferences(String filePath) throws IOException {
+            preferences.exportPreferences(filePath);
+    }
+
+    public void importPreferences(String filePath) throws Exception {
+        preferences.importPreferences(filePath);
     }
 
     public void clearApiKey() {
@@ -413,110 +439,146 @@ public class PreferencesManager {
         preferences.put("chatPlacement", placement);
     }
 
-    private final List<String> DEFAULT_ACCEPTED_EXTENSIONS = Arrays.asList(
-            "java", "php", "jsf", "kt", "groovy", "scala", "xml", "json", "yaml", "yml",
-            "properties", "txt", "md", "js", "ts", "css", "scss", "html", "xhtml", "sh",
-            "bat", "sql", "jsp", "rb", "cs", "go", "swift", "rs", "c", "cpp", "h", "py"
-    );
-    private List<String> acceptedExtensions = Collections.EMPTY_LIST;
-
-    public String getFileExtensionToInclude() {
-        return preferences.get("fileExtensionToInclude", String.join(", ", DEFAULT_ACCEPTED_EXTENSIONS));
-    }
-
     public void setFileExtensionToInclude(String exts) {
-        if (exts != null && !exts.isEmpty()) {
-            preferences.put("fileExtensionToInclude", exts);
-            acceptedExtensions = Arrays.asList(getFileExtensionToInclude().split("\\s*,\\s*"));
+        if (exts != null) {
+            String[] fileExtensionToInclude = exts.split("\\s*,\\s*");
+            JSONArray array = preferences.getChildArray("fileExtensionToInclude", DEFAULT_ACCEPTED_EXTENSIONS);
+            array.clear();
+            for (String ext : fileExtensionToInclude) {
+                array.put(ext);
+            }
+            acceptedExtensions = Arrays.asList(fileExtensionToInclude);
         }
     }
 
     public List<String> getFileExtensionListToInclude() {
         if (acceptedExtensions.isEmpty()) {
-            acceptedExtensions = Arrays.asList(getFileExtensionToInclude().split("\\s*,\\s*"));
+            acceptedExtensions = preferences.getChildList("fileExtensionToInclude", DEFAULT_ACCEPTED_EXTENSIONS);
         }
         return acceptedExtensions;
     }
 
-    private List<String> excludeDir = Collections.EMPTY_LIST;
-
-    public String getExcludeDirs() {
-        return preferences.get("excludeDirs", String.join(", ", EXCLUDE_DIR_DEFAULT));
-    }
-
     public void setExcludeDirs(String dirs) {
-        if (dirs != null && !dirs.isEmpty()) {
-            preferences.put("excludeDirs", dirs);
-            excludeDir = Arrays.asList(getExcludeDirs().split("\\s*,\\s*", -1));
+        if (dirs != null) {
+            String[] excludeDirs = dirs.split("\\s*,\\s*");
+            JSONArray array = preferences.getChildArray("excludeDirs", EXCLUDE_DIR_DEFAULT);
+            array.clear();
+            for (String dir : excludeDirs) {
+                array.put(dir);
+            }
+            excludeDir = Arrays.asList(excludeDirs);
         }
     }
 
-    public List<String> getExcludeDirList() {
+    public List<String> getExcludeDirs() {
         if (excludeDir.isEmpty()) {
-            excludeDir = Arrays.asList(getExcludeDirs().split("\\s*,\\s*", -1));
+            excludeDir = preferences.getChildList("excludeDirs", EXCLUDE_DIR_DEFAULT);
         }
         return excludeDir;
     }
 
-    private Map<String, String> headerKeyValueMap = new HashMap<>();
 
-    public Map<String, String> getCustomHeaders() {
+        public synchronized Map<String, String> getCustomHeaders() {
+        String nodeKey = "customHeaders";
         if (headerKeyValueMap.isEmpty()) {
-            String headers = preferences.get("customHeaders", "");
-            if (!headers.isEmpty()) {
-                headerKeyValueMap = Arrays.stream(headers.split("\\s*;\\s*"))
-                        .map(entry -> entry.split("\\s*=\\s*", 2))
-                        .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+            JSONObject prefPrompts = preferences.getChild(nodeKey);
+            if (!prefPrompts.isEmpty()) {
+                for (String key : prefPrompts.keySet()) {
+                    String value = prefPrompts.getString(key);
+                    headerKeyValueMap.put(key, value);
+                }
             }
         }
         return headerKeyValueMap;
     }
 
     public void setCustomHeaders(Map<String, String> map) {
-        String headers = map.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining("; "));
-        preferences.put("customHeaders", headers);
+        String nodeKey = "customHeaders";
+        JSONObject prefPrompts = preferences.getChild(nodeKey);
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            prefPrompts.put(entry.getKey(), entry.getValue());
+        }
+        preferences.save();
         headerKeyValueMap = map;
     }
+    
 
-    private Map<String, String> promptMap = new HashMap<>();
+    /**
+     * Loads all default prompts from resource files in /prompts/
+     * Make sure you have these files in src/main/resources/prompts/
+     */
+    public Map<String, String> getSystemPrompts() {
+        if(!systemPrompts.isEmpty()) {
+            return systemPrompts;
+        }
+        String[] promptKeys = {"test", "getset", "rest", "openapi", "codereview"};
 
-    public Map<String, String> getPrompts() {
-        if (promptMap.isEmpty()) {
-            String prompts = preferences.get("prompts", "");
-            if (!prompts.isEmpty()) {
-                promptMap = Arrays.stream(prompts.split("\\s*;\\s*"))
-                        .map(entry -> entry.split("=", 2))
-                        .collect(Collectors.toMap(arr -> arr[0], arr -> arr.length > 1 ? arr[1] : ""));
+        for (String key : promptKeys) {
+            String content = loadPromptFromResource(key + ".txt");
+            if (content != null && !content.isBlank()) {
+                systemPrompts.put(key, content);
             }
         }
-        if (promptMap.isEmpty()) {
-            promptMap.put("test", "Generate JUnit Test");
-            promptMap.put("getset", "Generate getters, setters, no-arg constructor, equals(), hashCode(), and toString() methods.");
-            promptMap.put("rest", """
-You are an API Server that generates a JAX-RS RESTful resource class for a given POJO class.Generate only the REST resource class without any additional descriptions or comments. The endpoint must include:
-- Full CRUD operations (Create, Read, Update, Delete).
-- Methods for counting total records.
-- A search function that allows filtering based on relevant fields.
-- Pagination support for listing records.
-- Sorting functionality for query results.
-- Proper usage of HTTP status codes.
-- Path and query parameters for flexible querying.
-- JSON request and response handling using Jakarta JSON-B.
-Ensure the implementation follows JAX-RS best practices and is compatible with Jakarta EE standards.
-""");
-            promptMap.put("openapi", "Generate the MicroProfile OpenAPI annotations, Do not generate the method signature or implementation.");
+        return systemPrompts;
+    }
+
+    private String loadPromptFromResource(String resourceFileName) {
+        try (InputStream is = getClass().getResourceAsStream(PROMPT_RESOURCE_PATH + resourceFileName)) {
+            if (is == null) {
+                System.err.println("Prompt resource not found: " + PROMPT_RESOURCE_PATH + resourceFileName);
+                return "";
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                return reader.lines().collect(Collectors.joining("\n"));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
         }
-        return promptMap;
+    }
+
+    /**
+     * Returns the prompts map, merged from user preferences and restored
+     * defaults if deleted. Saves merged prompts back to preferences if
+     * restoration happened.
+     */
+    public synchronized Map<String, String> getPrompts() {
+        String nodeKey = "prompts";
+        if (userPrompts.isEmpty()) {
+            // Load existing prompts from the preferences
+            JSONObject prefPrompts = preferences.getChild(nodeKey);
+            if (!prefPrompts.isEmpty()) {
+                for (String key : prefPrompts.keySet()) {
+                    String value = prefPrompts.getString(key);
+                    userPrompts.put(key, URLDecoder.decode(value, StandardCharsets.UTF_8));
+                }
+            }
+        }
+
+        // Check if system prompts need to be added
+        boolean changed = false;
+        for (Map.Entry<String, String> entry : getSystemPrompts().entrySet()) {
+            String key = entry.getKey();
+            if (!userPrompts.containsKey(key) || userPrompts.get(key).isBlank()) {
+                preferences.putChild(nodeKey, key, entry.getValue());
+                changed = true;
+            }
+        }
+        
+        if(changed) {
+            preferences.save();
+        }
+        return userPrompts;
     }
 
     public void setPrompts(Map<String, String> map) {
-        String prompts = map.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining("; "));
-        preferences.put("prompts", prompts);
-        promptMap = map;
+        String nodeKey = "prompts";
+        JSONObject prefPrompts = preferences.getChild(nodeKey);
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            prefPrompts.put(entry.getKey(), URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        }
+        preferences.save();
+        userPrompts = map;
     }
 
     public String getGlobalRules() {
@@ -539,13 +601,11 @@ Ensure the implementation follows JAX-RS best practices and is compatible with J
     }
 
     public String getProjectRules(Project project) {
-        return preferences.node(project.getProjectDirectory().getName())
-                .get(PROJECT_RULES_PREFERENCE, null);
+        return preferences.get(project.getProjectDirectory().getName() + "-" + PROJECT_RULES_PREFERENCE, null);
     }
 
     public void setProjectRules(Project project, String message) {
-        preferences.node(project.getProjectDirectory().getName())
-                .put(PROJECT_RULES_PREFERENCE, message);
+        preferences.put(project.getProjectDirectory().getName() + "-" + PROJECT_RULES_PREFERENCE, message);
     }
 
     public String getSessionRules() {
@@ -700,30 +760,6 @@ Ensure the implementation follows JAX-RS best practices and is compatible with J
 
     public void setMaxRetries(Integer maxRetries) {
         preferences.putInt(MAX_RETRIES_PREFERENCE, maxRetries);
-    }
-
-    public JSONObject getDailyInputTokenStats() {
-        if (dailyInputTokenStats != null) {
-            return dailyInputTokenStats;
-        }
-        return new JSONObject(preferences.get(DAILY_INPUT_TOKEN_STATS_KEY, "{}"));
-    }
-
-    public void setDailyInputTokenStats(JSONObject usage) {
-        this.dailyInputTokenStats = usage;
-        preferences.put(DAILY_INPUT_TOKEN_STATS_KEY, usage.toString());
-    }
-
-    public JSONObject getDailyOutputTokenStats() {
-        if (dailyOutputTokenStats != null) {
-            return dailyOutputTokenStats;
-        }
-        return new JSONObject(preferences.get(DAILY_OUTPUT_TOKEN_STATS_KEY, "{}"));
-    }
-
-    public void setDailyOutputTokenStats(JSONObject usage) {
-        this.dailyOutputTokenStats = usage;
-        preferences.put(DAILY_OUTPUT_TOKEN_STATS_KEY, usage.toString());
     }
 
     public TokenGranularity getTokenGranularity() {

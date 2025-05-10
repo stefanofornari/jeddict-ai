@@ -26,22 +26,22 @@ import static io.github.jeddict.ai.scanner.ProjectClassScanner.getClassDataConte
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.SourceUtil;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
+import static io.github.jeddict.ai.util.UIUtil.queryToEnhance;
+import java.io.IOException;
 import javax.lang.model.element.Element;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
-import org.netbeans.spi.java.hints.JavaFix;
-import org.openide.util.NbBundle;
-import static io.github.jeddict.ai.util.UIUtil.queryToEnhance;
-import java.io.IOException;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.modules.editor.indent.api.Reformat;
+import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.util.Exceptions;
+import org.openide.util.NbBundle;
 
 /**
  *

@@ -16,9 +16,9 @@
 package io.github.jeddict.ai.components;
 
 import io.github.jeddict.ai.completion.JeddictCompletionProvider;
-import org.netbeans.spi.editor.highlighting.HighlightsLayerFactory;
-import org.netbeans.spi.editor.highlighting.HighlightsLayer;
 import org.netbeans.api.editor.mimelookup.MimeRegistration;
+import org.netbeans.spi.editor.highlighting.HighlightsLayer;
+import org.netbeans.spi.editor.highlighting.HighlightsLayerFactory;
 import org.netbeans.spi.editor.highlighting.ZOrder;
 
 @MimeRegistration(mimeType = "", service = HighlightsLayerFactory.class)

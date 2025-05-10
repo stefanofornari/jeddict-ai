@@ -16,9 +16,9 @@
 package io.github.jeddict.ai.completion;
 
 import io.github.jeddict.ai.components.AssistantChat;
+import io.github.jeddict.ai.util.SourceUtil;
 import io.github.jeddict.ai.util.Utilities;
 import static io.github.jeddict.ai.util.Utilities.getHTMLColor;
-import io.github.jeddict.ai.util.SourceUtil;
 import java.net.URL;
 import java.util.List;
 import javax.lang.model.SourceVersion;

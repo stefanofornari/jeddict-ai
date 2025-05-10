@@ -18,6 +18,8 @@ package io.github.jeddict.ai.util;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import javax.swing.text.Document;
+import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
@@ -61,5 +63,21 @@ public class FileUtil {
         FileObject fileObject = org.openide.filesystems.FileUtil.toFileObject(tempFile);
         return fileObject;
     }
-
+    
+    public static String getLatestContent(FileObject fileObject) {
+        try {
+            DataObject dataObject = DataObject.find(fileObject);
+            EditorCookie editorCookie = dataObject.getLookup().lookup(EditorCookie.class);
+            if (editorCookie != null) {
+                Document doc = editorCookie.getDocument(); // Do not load if not already open
+                if (doc != null) {
+                    return doc.getText(0, doc.getLength());
+                }
+            }
+            return fileObject.asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

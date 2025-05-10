@@ -17,10 +17,12 @@ package io.github.jeddict.ai.components;
 
 import io.github.jeddict.ai.response.TokenGranularity;
 import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.settings.ReportManager;
 import static io.github.jeddict.ai.util.ColorUtil.isDarkColor;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
-
+import java.awt.*;
+import javax.swing.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -29,9 +31,6 @@ import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONObject;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class TokenUsageChartFactory {
 
@@ -43,18 +42,18 @@ public class TokenUsageChartFactory {
     }
 
     public static JPanel createInputChartPanel() {
-        JSONObject inputStats = PreferencesManager.getInstance().getDailyInputTokenStats();
+        JSONObject inputStats = ReportManager.getInstance().getDailyInputTokenStats();
         return createBarChartPanel(inputStats, "Input Token Usage", "Input Tokens", getInputColor());
     }
 
     public static JPanel createOutputChartPanel() {
-        JSONObject outputStats = PreferencesManager.getInstance().getDailyOutputTokenStats();
+        JSONObject outputStats = ReportManager.getInstance().getDailyOutputTokenStats();
         return createBarChartPanel(outputStats, "Output Token Usage", "Output Tokens", getOutputColor());
     }
 
     public static JPanel createCombinedChartPanel() {
-        JSONObject inputStats = PreferencesManager.getInstance().getDailyInputTokenStats();
-        JSONObject outputStats = PreferencesManager.getInstance().getDailyOutputTokenStats();
+        JSONObject inputStats = ReportManager.getInstance().getDailyInputTokenStats();
+        JSONObject outputStats = ReportManager.getInstance().getDailyOutputTokenStats();
         return createCombinedBarChartPanel(inputStats, outputStats, "Combined Token Usage");
     }
 

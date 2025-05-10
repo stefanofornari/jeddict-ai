@@ -20,16 +20,16 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import javax.swing.*;
-import org.w3c.dom.*;
-import javax.xml.parsers.*;
 import java.net.HttpURLConnection;
-import java.net.URL;
-import java.io.File;
 import java.net.URI;
+import java.net.URL;
+import javax.swing.*;
+import javax.xml.parsers.*;
 import org.openide.util.NbPreferences;
+import org.w3c.dom.*;
 
 public class JeddictUpdateManager {
 

@@ -19,7 +19,6 @@ import io.github.jeddict.ai.hints.AssistantChatManager;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import javax.swing.AbstractAction;

@@ -21,10 +21,9 @@ package io.github.jeddict.ai.lang;
  */
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
-import dev.langchain4j.model.StreamingResponseHandler;
+import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
-import io.github.jeddict.ai.response.Response;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -362,14 +361,14 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                         + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE}. "
                         + "Suggest additional classes, interfaces, enums, or other top-level constructs. "
                         + "Ensure that the suggestions fit the context of the entire file. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Source File Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.COMPILATION_UNIT) {
                 prompt = "You are an API server that suggests Java code for the outermost context of a Java source file, outside of any existing class. "
                         + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE}. "
                         + "Suggest package declarations, import statements, comments, or annotations for public class. "
                         + "Ensure that the suggestions fit the context of the entire file. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Source File Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
                     && path.getParentPath() != null
@@ -377,7 +376,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code modifications for a class. "
                         + "At the placeholder location ${SUGGEST_CODE}, suggest either a class-level modifier such as 'public', 'protected', 'private', 'abstract', 'final', or a relevant class-level annotation. "
                         + "Ensure that the suggestions are appropriate for the class context provided. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
                     && path.getParentPath() != null
@@ -386,7 +385,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                         + "At the placeholder location ${SUGGEST_CODE}, suggest method-level modifiers such as 'public', 'protected', 'private', 'abstract', 'static', 'final', 'synchronized', or relevant method-level annotations. "
                         + "Additionally, you may suggest method-specific annotations. "
                         + "Ensure that the suggestions are appropriate for the method context provided. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Method Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
                     && path.getParentPath() != null
@@ -394,7 +393,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code for an inner class at the placeholder location ${SUGGEST_CODE}. "
                         + "Based on the provided Java class content, suggest either relevant inner class modifiers such as 'public', 'private', 'protected', 'static', 'abstract', 'final', or a full inner class definition. "
                         + "Additionally, you may suggest class-level annotations for the inner class. Ensure that the suggestions are contextually appropriate for an inner class. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
                     && path.getParentPath() != null
@@ -402,7 +401,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code for an class at the placeholder location ${SUGGEST_CODE}. "
                         + "Based on the provided Java class content, suggest either relevant class level members, attributes, constants, methods or blocks. "
                         + "Ensure that the suggestions are contextually appropriate for an class. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.PARENTHESIZED
                     && path.getParentPath() != null
@@ -410,13 +409,13 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code to enhance an if-statement. "
                         + "At the placeholder location ${SUGGEST_IF_CONDITIONS}, suggest additional conditional checks or actions within the if-statement. "
                         + "Ensure that the suggestions are contextually appropriate for the condition. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java If Statement Content:\n" + classContent;
             } else {
                 prompt = "You are an API server that suggests Java code for a specific context in a given Java class at the placeholder location ${SUGGEST_CODE}. "
                         + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a relevant single line of code or a multi-line code block as appropriate for the context represented by the placeholder ${SUGGEST_CODE} in the Java class. "
                         + "Ensure that the suggestions are relevant to the context. "
-                       + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             }
         }
@@ -450,7 +449,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
     // Choose the appropriate JSON request variant
     String request = singleCodeSnippet 
             ? singleJsonRequest 
-            : (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest);
+            : (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest);
 
     promptBuilder.append(request);
 
@@ -524,7 +523,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         } else {
             prompt = "You are an API server that suggests Java annotations for a specific context in a given Java class at the placeholder location ${SUGGEST_ANNOTATION_LIST}. "
                     + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant annotations that can be applied at the placeholder location represented by ${SUGGEST_ANNOTATION_LIST} in the Java Class. "
-                    + (preferencesManager.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                    + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                     + "Ensure that the suggestions are appropriate for the given Java Class Content:\n\n" + classContent;
         }
         
@@ -728,6 +727,48 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         return answer;
     }
 
+    public String generateCodeReviewSuggestions(String gitDiffOutput, String query, List<String> images, Response previousChatResponse) {
+
+        String prompt = """
+Instructions:
+- Base your review strictly on the provided Git diff.
+- Anchor each suggestion to a specific hunk header from the diff.
+- DO NOT infer or hallucinate line numbers not present in the diff.
+- DO NOT reference line numbers or attempt to estimate exact start/end lines.
+
+%s
+
+Respond only with a JSON array of review suggestions and each suggestion must include:
+- file: the file name
+- hunk: the Git diff hunk header (e.g., "@@ -10,7 +10,9 @@")
+- type: one of "security", "warning", "info", or "suggestion"
+    - "security" for vulnerabilities or high-risk flaws
+    - "warning" for potential bugs or unsafe behavior
+    - "info" for minor issues or readability
+    - "suggestion" for non-critical improvements or refactoring
+- title: a short title summarizing the issue
+- description: a longer explanation or recommendation
+
+Output a raw JSON array with no markdown, code block, or extra formatting.
+
+Expected JSON format:
+
+[
+  {
+    "file": "src/com/example/MyService.java",
+    "hunk": "@@ -42,6 +42,10 @@",
+    "type": "warning",
+    "title": "Possible null pointer exception",
+    "description": "The 'items' list might be null before iteration. Add a null check to avoid NPE."
+  }
+]
+              
+%s
+""".formatted(query, gitDiffOutput);
+
+        return generate(null, pm.getPrompts().get("codereview") +'\n'+ prompt, images, previousChatResponse);
+    }
+
     private String wrapLongLinesWithBr(String input, int maxLineLength) {
         StringBuilder wrapped = new StringBuilder();
         String[] lines = input.split("<br>"); // Split by existing line breaks
@@ -763,7 +804,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         dbPrompt.append("Given the following database schema metadata:\n")
                 .append(dbMetadata);
 
-        String rules = preferencesManager.getSessionRules();
+        String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             dbPrompt.append("\n\n")
                     .append(rules)
@@ -796,7 +837,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
             Project project, String classContent) {
         StringBuilder promptBuilder = new StringBuilder();
         promptBuilder.append("You are an API server that provides a description of the following class. ");
-        String rules = preferencesManager.getSessionRules();
+        String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             promptBuilder.append("\n\n")
                     .append(rules)
@@ -815,7 +856,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
             Project project, String methodContent) {
         StringBuilder promptBuilder = new StringBuilder();
         promptBuilder.append("You are an API server that provides a description of the following Method. ");
-        String rules = preferencesManager.getSessionRules();
+        String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             promptBuilder.append("\n\n")
                     .append(rules)
@@ -834,7 +875,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
             Project project, String source, String methodContent, List<String> images,
             Response previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
-        String rules = preferencesManager.getSessionRules();
+        String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             prompt.append(rules)
                     .append("\n\n");
@@ -936,7 +977,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         }
 
         promptBuilder.append("You are an API server that provides ");
-        String rules = preferencesManager.getSessionRules();
+        String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
             promptBuilder.append("\n\n")
                     .append(rules)
@@ -1013,7 +1054,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
           """);
 
         // Include description if enabled
-        if (preferencesManager.isDescriptionEnabled()) {
+        if (pm.isDescriptionEnabled()) {
             prompt.append("""
           Additionally, each entry should contain a 'description' field providing a very short explanation of what the query does and why it might be appropriate in this context, 
           formatted with <b>, <br> tags, and optionally, if required, include any important link with <a href=''> tags.
