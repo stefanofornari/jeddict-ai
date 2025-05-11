@@ -15,30 +15,40 @@
  */
 package io.github.jeddict.ai.review;
 
+import static io.github.jeddict.ai.components.QueryPane.createIconButton;
+import io.github.jeddict.ai.hints.AssistantChatManager;
 import io.github.jeddict.ai.util.ColorUtil;
 import static io.github.jeddict.ai.util.ColorUtil.darken;
 import static io.github.jeddict.ai.util.ColorUtil.lighten;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getFontFromMimeType;
 import static io.github.jeddict.ai.util.EditorUtil.getTextColorFromMimeType;
+import static io.github.jeddict.ai.util.Icons.ICON_NEXT;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import static java.awt.Font.BOLD;
 import java.awt.event.MouseListener;
 import java.util.List;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
+import org.netbeans.editor.BaseDocument;
+import org.netbeans.modules.editor.NbEditorUtilities;
+import org.openide.filesystems.FileObject;
 
 public class ReviewFloatingPanel extends JComponent {
+    
+    private final int defaultWidth = 600;
 
-    public ReviewFloatingPanel(List<ReviewValue> reviewValues) {
+    public ReviewFloatingPanel(ReviewFloatingWindow parent, BaseDocument document, List<ReviewValue> reviewValues) {
         Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
         Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
         Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
@@ -55,42 +65,65 @@ public class ReviewFloatingPanel extends JComponent {
             panel.setBorder(new EmptyBorder(5, 5, 5, 5));
             panel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            JTextArea header = new JTextArea(reviewValue.getValue() + ": " + reviewValue.getTitle());
-            header.setEditable(false);
-            header.setLineWrap(true);
-            header.setWrapStyleWord(true);
-            header.setOpaque(false);
-            header.setFont(new Font(newFont.getFamily(), BOLD, newFont.getSize() + 1));
-            header.setForeground(lighten(textColor, 1.75f));
-            header.setBorder(null);
-            header.setFocusable(false);
-            header.setSize(new Dimension(300, Short.MAX_VALUE));
-            header.setPreferredSize(header.getPreferredSize());
-            header.setMaximumSize(new Dimension(Short.MAX_VALUE, header.getPreferredSize().height));
+            JButton learnMoreButton = createIconButton(reviewValue.getValue() + ": " + reviewValue.getTitle(), ICON_NEXT);
+            learnMoreButton.setForeground(lighten(textColor, 1.5f));
+            learnMoreButton.setBackground(isDark ? lighten(backgroundColor, .5f) : darken(backgroundColor, .5f));
+            learnMoreButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+            learnMoreButton.addActionListener(e -> {
+                FileObject fileObject = NbEditorUtilities.getFileObject(document);
+                String reviewText = reviewValue.getValue() 
+                        + ": " + reviewValue.getTitle()
+                        + '\n' + reviewValue.getDescription().replaceAll("\\.\\s", ".\n");
+                AssistantChatManager learnFix = new AssistantChatManager(io.github.jeddict.ai.completion.Action.QUERY, fileObject);
+                learnFix.openChat(null, reviewText, fileObject.getName(), "Code Review - " + fileObject.getName(), content -> {});
+                parent.dispose();
+            });
+            
+//            JTextArea header = new JTextArea();
+//            header.setEditable(false);
+//            header.setLineWrap(true);
+//            header.setWrapStyleWord(true);
+//            header.setOpaque(false);
+//            header.setFont(new Font(newFont.getFamily(), BOLD, newFont.getSize() + 1));
+//            header.setForeground(lighten(textColor, 1.75f));
+//            header.setBorder(null);
+//            header.setFocusable(false);
+//            header.setSize(new Dimension(defaultWidth + 30 - learnMoreButton.getPreferredSize().width, Short.MAX_VALUE));
+//            header.setPreferredSize(header.getPreferredSize());
+//            header.setMaximumSize(new Dimension(Short.MAX_VALUE, header.getPreferredSize().height));
 
-            JTextArea textArea = new JTextArea(reviewValue.getDescription());
-            textArea.setEditable(false);
-            textArea.setLineWrap(true);
-            textArea.setWrapStyleWord(true);
-            textArea.setOpaque(false);
-            textArea.setForeground(lighten(textColor, 1.5f));
-            textArea.setFont(newFont);
-            textArea.setFocusable(false);
-            textArea.setBorder(null);
+            JTextArea content = new JTextArea(reviewValue.getDescription());
+            content.setEditable(false);
+            content.setLineWrap(true);
+            content.setWrapStyleWord(true);
+            content.setOpaque(false);
+            content.setForeground(lighten(textColor, 1.5f));
+            content.setFont(newFont);
+            content.setFocusable(false);
+            content.setBorder(null);
 
             // Set a fixed width, max height to calculate preferred size properly
-            textArea.setSize(new Dimension(300, Short.MAX_VALUE));
-            Dimension prefSize = textArea.getPreferredSize();
-            textArea.setPreferredSize(prefSize);
-            textArea.setMaximumSize(new Dimension(Short.MAX_VALUE, prefSize.height));
-            panel.add(header);
-            panel.add(textArea);
-//            JButton learnMoreButton = new JButton("Learn More");
-//            learnMoreButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-//            learnMoreButton.addActionListener(e -> {
-//
-//            });
+            content.setSize(new Dimension(defaultWidth, Short.MAX_VALUE));
+            Dimension prefSize = content.getPreferredSize();
+            content.setPreferredSize(prefSize);
+            content.setMaximumSize(new Dimension(Short.MAX_VALUE, prefSize.height));
+//            panel.add(header);
+//            panel.add(content);
 //            panel.add(learnMoreButton);
+            
+            
+            // Create headerPanel to hold header and button horizontally
+  JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+headerPanel.setOpaque(false);
+//headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+//headerPanel.add(header);
+headerPanel.add(learnMoreButton);
+
+
+            panel.add(headerPanel);
+            panel.add(content);
+
+    add(panel);
 
             add(panel);
         }
@@ -99,7 +132,7 @@ public class ReviewFloatingPanel extends JComponent {
     @Override
     public Dimension getPreferredSize() {
         Dimension size = super.getPreferredSize();
-        size.width = Math.max(size.width, 320);
+        size.width = Math.max(size.width, defaultWidth+20);
         return size;
     }
 

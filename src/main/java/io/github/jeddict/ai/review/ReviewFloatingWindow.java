@@ -28,21 +28,24 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
+import org.netbeans.editor.BaseDocument;
 
 final class ReviewFloatingWindow implements AWTEventListener, WindowFocusListener {
 
     private final JWindow mainWindow;
     private final List<ReviewValue> reviewValues;
     private ReviewFloatingPanel floatingPanel = null;
+    private final BaseDocument document;
 
     public ReviewFloatingWindow(ReviewPanel master, List<ReviewValue> reviewValues1) {
         this.reviewValues = reviewValues1;
         Window window = SwingUtilities.windowForComponent(master);
         mainWindow = new JWindow(window);
+        document = master.getDocument();
     }
 
     public void show(Point point) {
-        floatingPanel = new ReviewFloatingPanel(new ArrayList<>(reviewValues));
+        floatingPanel = new ReviewFloatingPanel(this, document, new ArrayList<>(reviewValues));
         mainWindow.add(floatingPanel);
         mainWindow.pack();
         mainWindow.setLocation(point);

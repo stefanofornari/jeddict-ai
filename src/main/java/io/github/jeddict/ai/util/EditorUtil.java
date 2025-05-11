@@ -15,6 +15,9 @@
  */
 package io.github.jeddict.ai.util;
 
+import io.github.jeddict.ai.agent.FileAction;
+import io.github.jeddict.ai.agent.FileActionExecutor;
+import io.github.jeddict.ai.agent.FileActionParser;
 import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.response.Response;
@@ -24,6 +27,7 @@ import static io.github.jeddict.ai.util.MimeUtil.MIME_MERMAID;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_PUML;
 import static io.github.jeddict.ai.util.SourceUtil.findClassInSourcePath;
+import static io.github.jeddict.ai.util.SourceUtil.findFileInProjects;
 import static io.github.jeddict.ai.util.SourceUtil.openFileInEditor;
 import static io.github.jeddict.ai.util.SourceUtil.openFileInEditorAtLine;
 import java.awt.Font;
@@ -53,6 +57,7 @@ import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.FontColorNames;
 import org.netbeans.api.editor.settings.FontColorSettings;
+import org.netbeans.api.project.Project;
 import org.netbeans.editor.BaseDocument;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
@@ -67,7 +72,7 @@ public class EditorUtil {
     private static final HtmlRenderer renderer = HtmlRenderer.builder().build();
     private static final Logger LOGGER = Logger.getLogger(EditorUtil.class.getName());
 
-    public static String updateEditors(BiConsumer<String, Set<FileObject>> queryUpdate, AssistantChat topComponent, Response response, Set<FileObject> threadContext) {
+    public static String updateEditors(BiConsumer<String, Set<FileObject>> queryUpdate, Project project, AssistantChat topComponent, Response response, Set<FileObject> threadContext) {
         StringBuilder code = new StringBuilder();
 
         topComponent.clear();
@@ -77,11 +82,13 @@ public class EditorUtil {
         }
 
         JComponent firstPane = null;
+        Block prevBlock = null;
         for (Block block : response.getBlocks()) {
-            JComponent pane = printBlock(code, block, topComponent);
+            JComponent pane = printBlock(code, prevBlock, block, project, topComponent);
             if (firstPane == null) {
                 firstPane = pane;
             }
+            prevBlock = block;
         }
 
         if (firstPane != null) {
@@ -100,9 +107,9 @@ public class EditorUtil {
         return code.toString();
     }
 
-    public static JComponent printBlock(StringBuilder code, Block block, AssistantChat topComponent) {
+    public static JComponent printBlock(StringBuilder code, Block prevBlock, Block block, Project project, AssistantChat topComponent) {
         JComponent pane;
-        if (block.getType().equals("text") || block.getType().equals("web")) {
+        if (block != null && (block.getType().equals("text") || block.getType().equals("web"))) {
             String html;
             if (block.getType().equals("text")) {
                 html = renderer.render(parser.parse(block.getContent()));
@@ -130,7 +137,10 @@ public class EditorUtil {
                             javaClass = javaClassLoc[0];
                             lineNumber = Integer.parseInt(javaClassLoc[1]);
                         }
-                        FileObject path = findClassInSourcePath(javaClass, true);
+                        FileObject path = findFileInProjects(javaClass);
+                        if (path == null) {
+                            path = findClassInSourcePath(javaClass, true);
+                        }
                         if (path != null) {
                             if (lineNumber < 0) {
                                 openFileInEditor(path);
@@ -141,6 +151,20 @@ public class EditorUtil {
                     }
                 }
             });
+        } else if (prevBlock != null && block != null && block.getType().equals("action")) {
+           FileAction action = FileActionParser.parse(block.getContent(), prevBlock.getContent());
+            code.append('\n').append(block.getContent()).append('\n');
+            pane = topComponent.createPane();
+            if (project != null) {
+                ((JEditorPane) pane).setText("> " + action.getAction() + " " + action.getPath());
+                try {
+                    FileActionExecutor.applyFileActionsToProject(project, action);
+                } catch (Exception ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+            } else {
+                ((JEditorPane) pane).setText("> Project instance not found to " + action.getAction() + " " + action.getPath());
+            }
         } else {
             code.append('\n').append(block.getContent()).append('\n');
             String mimeType = getMimeType(block.getType());

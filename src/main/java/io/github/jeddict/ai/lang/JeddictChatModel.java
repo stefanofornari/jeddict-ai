@@ -24,6 +24,7 @@ import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
+import static io.github.jeddict.ai.util.ProjectUtil.getSourceFilesRelativePath;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,13 +38,38 @@ import org.netbeans.api.project.Project;
 
 public class JeddictChatModel extends JeddictChatModelBuilder {
 
+    private static final String jsonRequest = """
+    Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing two fields: 'imports' and 'snippet'. 
+    'imports' should be an array of required Java import statements (if no imports are required, return an empty array). 
+    'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. 
+    Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid. 
+
+    """;
+
+    private static final String singleJsonRequest = """
+    Return a JSON object with a single best suggestion without any additional text or explanation. The object should contain two fields: 'imports' and 'snippet'. 
+    'imports' should be an array of required Java import statements (if no imports are required, return an empty array). 
+    'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. 
+    Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid. 
+
+    """;
+
+    private static final String jsonRequestWithDescription = """
+    Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing three fields: 'imports', 'snippet', and 'description'. 
+    'imports' should be an array of required Java import statements (if no imports are required, return an empty array). 
+    'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. 
+    'description' should be a very short explanation of what the snippet does and why it might be appropriate in this context, formatted with <b>, <br> and optionally, if required, include any important link with <a href=''> tags. 
+    Make sure to escape any double quotes within the snippet and description using a backslash (\\) so that the JSON remains valid. 
+
+    """;
+
     public JeddictChatModel() {
     }
 
     public JeddictChatModel(JeddictStreamHandler handler) {
         super(handler);
     }
-    
+
     public JeddictChatModel(JeddictStreamHandler handler, String modelName) {
         super(handler, modelName);
     }
@@ -116,26 +142,27 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
 
     public String generateRestEndpointForClass(Project project, String classContent) {
         // Define a prompt to generate unique JAX-RS resource methods with necessary imports
-        String prompt = "You are an API server that generates JAX-RS REST endpoints based on the provided Java class definition. "
-                + "Analyze the context and functionality of the class to create meaningful and relevant REST endpoints. "
-                + "Ensure that you create new methods for various HTTP operations (GET, POST, PUT, DELETE) and include all necessary imports for JAX-RS annotations and responses. "
-                + "The generated methods should have some basic implementation and should not be empty. Avoid duplicating existing methods from the class content. "
-                + "Format the output as a JSON object with two fields: 'imports' as array (list of necessary imports) and 'methodContent' as text. "
-                + "Include all required imports such as Response, GET, POST, PUT, DELETE, Path, etc. "
-                + "Example output:\n"
-                + "{\n"
-                + "  \"imports\": [\n"
-                + "    \"jakarta.ws.rs.GET\",\n"
-                + "    \"jakarta.ws.rs.POST\",\n"
-                + "    \"jakarta.ws.rs.PUT\",\n"
-                + "    \"jakarta.ws.rs.DELETE\",\n"
-                + "    \"jakarta.ws.rs.core.Response\"\n"
-                + "  ],\n"
-                + "  \"methodContent\": \"@GET public Response getPing() { // implementation }@POST public Response createPing() { // implementation for createPing }@PUT public Response updatePing() { // implementation }@DELETE public Response deletePing() { // implementation for deletePing }\"\n"
-                + "}\n\n"
-                + "Only return methods with annotations, implementation details, and necessary imports for the given class. "
-                + "Do not include class declarations, constructors, or unnecessary boilerplate code. Ensure the generated methods are unique and not duplicates of existing methods in the class content.\n\n"
-                + classContent;
+        String prompt = """
+        You are an API server that generates JAX-RS REST endpoints based on the provided Java class definition. \
+        Analyze the context and functionality of the class to create meaningful and relevant REST endpoints. \
+        Ensure that you create new methods for various HTTP operations (GET, POST, PUT, DELETE) and include all necessary imports for JAX-RS annotations and responses. \
+        The generated methods should have some basic implementation and should not be empty. Avoid duplicating existing methods from the class content. \
+        Format the output as a JSON object with two fields: 'imports' as array (list of necessary imports) and 'methodContent' as text. \
+        Include all required imports such as Response, GET, POST, PUT, DELETE, Path, etc. \
+        Example output:
+        {
+          "imports": [
+            "jakarta.ws.rs.GET",
+            "jakarta.ws.rs.POST",
+            "jakarta.ws.rs.core.Response"
+          ],
+          "methodContent": "@GET public Response getPing() { // implementation }@POST public Response createPing() { // implementation for createPing }@PUT public Response updatePing() { // implementation }@DELETE public Response deletePing() { // implementation for deletePing }"
+        }
+
+        Only return methods with annotations, implementation details, and necessary imports for the given class. \
+        Do not include class declarations, constructors, or unnecessary boilerplate code. Ensure the generated methods are unique and not duplicates of existing methods in the class content.
+
+        """ + classContent;
 
         // Generate the unique JAX-RS methods with imports
         String answer = generate(project, prompt);
@@ -146,120 +173,136 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
     }
 
     public String updateMethodFromDevQuery(Project project, String javaClassContent, String methodContent, String developerRequest) {
-        String prompt
-                = "You are an API server that enhances Java methods based on user requests. "
-                + "Given the following Java method and the developer's request, modify and enhance the method accordingly. "
-                + "Incorporate any specific details or requirements mentioned by the developer. Do not include any additional text or explanation, just return the enhanced Java method source code.\n\n"
-                + "Include all necessary imports relevant to the enhanced or newly created method. "
-                + "Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code. "
-                + "Do not include full java class, any additional text or explanation, just the imports and the method source code.\n\n"
-                + "Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'. "
-                + "Developer Request:\n" + developerRequest + "\n\n"
-                + "Java Class Content:\n" + javaClassContent + "\n\n"
-                + "Java Method Content:\n" + methodContent;
+        String prompt = """
+            You are an API server that enhances Java methods based on user requests. 
+            Given the following Java method and the developer's request, modify and enhance the method accordingly. 
+            Incorporate any specific details or requirements mentioned by the developer. Do not include any additional text or explanation, just return the enhanced Java method source code.
 
-        // Generate the enhanced Java method
+            Include all necessary imports relevant to the enhanced or newly created method. 
+            Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code. 
+            Do not include full java class, any additional text or explanation, just the imports and the method source code.
+
+            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'. 
+            Developer Request:
+            """ + developerRequest + """
+
+            Java Class Content:
+            """ + javaClassContent + """
+
+            Java Method Content:
+            """ + methodContent;
+
         String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
     public String enhanceMethodFromMethodContent(Project project, String javaClassContent, String methodContent) {
-        String prompt
-                = "You are an API server that enhances or creates Java methods based on the method name, comments, and its content. "
-                + "Given the following Java class content and Java method content, modify and enhance the method accordingly. "
-                + "Include all necessary imports relevant to the enhanced or newly created method. "
-                + "Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code. "
-                + "Do not include full java class, any additional text or explanation, just the imports and the method source code.\n\n"
-                + "Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'. "
-                + "Java Class Content:\n" + javaClassContent + "\n\n"
-                + "Java Method Content:\n" + methodContent;
+        String prompt = """
+            You are an API server that enhances or creates Java methods based on the method name, comments, and its content. 
+            Given the following Java class content and Java method content, modify and enhance the method accordingly. 
+            Include all necessary imports relevant to the enhanced or newly created method. 
+            Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code. 
+            Do not include full java class, any additional text or explanation, just the imports and the method source code.
 
-        // Generate the enhanced or newly created Java method with necessary imports
+            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'. 
+            Java Class Content:
+            """ + javaClassContent + """
+
+            Java Method Content:
+            """ + methodContent;
+
         String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String fixMethodCompilationError(
-            Project project, 
-            String javaClassContent,
-            String methodContent, 
-            String errorMessage,
-            String classDatas) {
-        
-        String prompt
-                = "You are an API server that fixes compilation errors in Java methods based on the provided error messages. "
-                + "Given the following Java method content, class content, and the error message, correct the method accordingly. "
-                + "Ensure that all compilation errors indicated by the error message are resolved. "
-                + "Include any necessary imports relevant to the fixed method. "
-                + "Return only the corrected Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code. "
-                + "Do not include full Java class, any additional text, or explanation—just the imports and the corrected method source code.\n\n"
-                + "Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'. "
-                + "Error Message:\n" + errorMessage + "\n\n"
-                + "Java Class Content:\n" + javaClassContent + "\n\n"
-                + "Java Method Content:\n" + methodContent;
+    public String fixMethodCompilationError(Project project, String javaClassContent, String methodContent, String errorMessage, String classDatas) {
+        String prompt = """
+            You are an API server that fixes compilation errors in Java methods based on the provided error messages. 
+            Given the following Java method content, class content, and the error message, correct the method accordingly. 
+            Ensure that all compilation errors indicated by the error message are resolved. 
+            Include any necessary imports relevant to the fixed method. 
+            Return only the corrected Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code. 
+            Do not include full Java class, any additional text, or explanation—just the imports and the corrected method source code.
+
+            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'. 
+            Error Message:
+            """ + errorMessage + """
+
+            Java Class Content:
+            """ + javaClassContent + """
+
+            Java Method Content:
+            """ + methodContent;
 
         prompt = loadClassData(prompt, classDatas);
-        // Generate the fixed Java method
         String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
-    public String fixVariableError(
-            Project project, 
-            String javaClassContent, 
-            String errorMessage,
-            String classDatas) {
-        String prompt
-                = "You are an API server that fixes variable-related compilation errors in Java classes based on the provided error messages. "
-                + "Given the following Java class content and the error message, correct given variable-related issues based on error message at class level. "
-                + "Ensure that all compilation errors indicated by the error message, such as undeclared variables, incorrect variable types, or misuse of variables, are resolved. "
-                + "Include any necessary imports relevant to the fixed method or class. "
-                + "Return only the corrected variable content and its necessary imports, without including any unnecessary boilerplate code. "
-                + "Do not include any additional text or explanation—just the imports and the corrected variable source code.\n\n"
-                + "Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'variableContent' (corrected variable line or content). "
-                + "Error Message:\n" + errorMessage + "\n\n"
-                + "Java Class Content:\n" + javaClassContent;
+    public String fixVariableError(Project project, String javaClassContent, String errorMessage, String classDatas) {
+        String prompt = """
+            You are an API server that fixes variable-related compilation errors in Java classes based on the provided error messages. 
+            Given the following Java class content and the error message, correct given variable-related issues based on error message at class level. 
+            Ensure that all compilation errors indicated by the error message, such as undeclared variables, incorrect variable types, or misuse of variables, are resolved. 
+            Include any necessary imports relevant to the fixed method or class. 
+            Return only the corrected variable content and its necessary imports, without including any unnecessary boilerplate code. 
+            Do not include any additional text or explanation—just the imports and the corrected variable source code.
+
+            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'variableContent' (corrected variable line or content). 
+            Error Message:
+            """ + errorMessage + """
+
+            Java Class Content:
+            """ + javaClassContent;
 
         prompt = loadClassData(prompt, classDatas);
-        // Generate the fixed Java class or method
         String answer = generate(project, prompt);
         System.out.println(answer);
         return answer;
     }
 
     public String enhanceVariableName(String variableContext, String methodContent, String classContent) {
-        String prompt
-                = "You are an API server that suggests a more meaningful and descriptive name for a specific variable in a given Java class. "
-                + "Based on the provided Java class content and the variable context, suggest an improved name for the variable. "
-                + "Return only the new variable name. Do not include any additional text or explanation.\n\n"
-                + "Variable Context:\n" + variableContext + "\n\n"
-                + (methodContent != null ? ("Java Method Content:\n" + methodContent + "\n\n") : "")
-                + (classContent != null ? ("Java Class Content:\n" + classContent) : "");
+        StringBuilder prompt = new StringBuilder("""
+            You are an API server that suggests a more meaningful and descriptive name for a specific variable in a given Java class. 
+            Based on the provided Java class content and the variable context, suggest an improved name for the variable. 
+            Return only the new variable name. Do not include any additional text or explanation.
 
-        // Generate the new variable name
-        String answer = generate(null, prompt);
+            Variable Context:
+            """ + variableContext + "\n\n");
+
+        if (methodContent != null) {
+            prompt.append("Java Method Content:\n").append(methodContent).append("\n\n");
+        }
+        if (classContent != null) {
+            prompt.append("Java Class Content:\n").append(classContent);
+        }
+
+        String answer = generate(null, prompt.toString());
         System.out.println(answer);
         return answer;
     }
 
     public List<String> suggestVariableNames(String classDatas, String variablePrefix, String classContent, String variableExpression) {
-        String prompt;
+        String prompt = """
+        You are an API server that suggests a list of meaningful and descriptive names for a specific variable in a given Java class. 
+        Based on the provided Java class content, variable prefix, and variable expression, generate a list of improved names for the variable. 
+        Return only the list of suggested names, one per line, without any additional text or explanation.
 
-//    if(variablePrefix == null || variablePrefix.isEmpty()) {
-        prompt = "You are an API server that suggests a list of meaningful and descriptive names for a specific variable in a given Java class. "
-                + "Based on the provided Java class content, variable prefix, and variable expression, generate a list of improved names for the variable. "
-                + "Return only the list of suggested names, one per line, without any additional text or explanation.\n\n"
-                + "Variable Prefix: " + variablePrefix + "\n\n"
-                + "Variable Expression Line:\n" + variableExpression + "\n\n"
-                //            + "Parent Content:\n" + parentContent + "\n\n"
-                + "Java Class Content:\n" + classContent + "\n\n"
-                + "Here is the context of all classes in the project, including variable names and method signatures (method bodies are excluded to avoid sending unnecessary code):\n" + classDatas;
-//    }
+        Variable Prefix: %s
 
-        // Generate the list of suggested variable names
+        Variable Expression Line:
+        %s
+
+        Java Class Content:
+        %s
+
+        Here is the context of all classes in the project, including variable names and method signatures (method bodies are excluded to avoid sending unnecessary code):
+        %s
+        """.formatted(variablePrefix, variableExpression, classContent, classDatas);
+
         String answer = generate(null, prompt);
         System.out.println(answer);
 
@@ -350,10 +393,10 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                     + "that naturally fit into the surrounding code to improve code clarity or functionality.\n"
                     + "Do not repeat existing methods or duplicate code that already follows the placeholder.\n"
                     + "Avoid suggesting code that would not compile if inserted exactly where `${SUGGEST_CODE}` is.\n";
-            prompt = prompt+"Java Class Content:\n" + classContent
+            prompt = prompt + "Java Class Content:\n" + classContent
                     + "\n" + singleJsonRequest;
             if (hintContext != null && !hintContext.isEmpty()) {
-                prompt = prompt+ "\n" + hintContext;
+                prompt = prompt + "\n" + hintContext;
             }
         } else {
             if (path == null) {
@@ -361,14 +404,14 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                         + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE}. "
                         + "Suggest additional classes, interfaces, enums, or other top-level constructs. "
                         + "Ensure that the suggestions fit the context of the entire file. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Source File Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.COMPILATION_UNIT) {
                 prompt = "You are an API server that suggests Java code for the outermost context of a Java source file, outside of any existing class. "
                         + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE}. "
                         + "Suggest package declarations, import statements, comments, or annotations for public class. "
                         + "Ensure that the suggestions fit the context of the entire file. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Source File Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
                     && path.getParentPath() != null
@@ -376,7 +419,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code modifications for a class. "
                         + "At the placeholder location ${SUGGEST_CODE}, suggest either a class-level modifier such as 'public', 'protected', 'private', 'abstract', 'final', or a relevant class-level annotation. "
                         + "Ensure that the suggestions are appropriate for the class context provided. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
                     && path.getParentPath() != null
@@ -385,7 +428,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                         + "At the placeholder location ${SUGGEST_CODE}, suggest method-level modifiers such as 'public', 'protected', 'private', 'abstract', 'static', 'final', 'synchronized', or relevant method-level annotations. "
                         + "Additionally, you may suggest method-specific annotations. "
                         + "Ensure that the suggestions are appropriate for the method context provided. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Method Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
                     && path.getParentPath() != null
@@ -393,7 +436,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code for an inner class at the placeholder location ${SUGGEST_CODE}. "
                         + "Based on the provided Java class content, suggest either relevant inner class modifiers such as 'public', 'private', 'protected', 'static', 'abstract', 'final', or a full inner class definition. "
                         + "Additionally, you may suggest class-level annotations for the inner class. Ensure that the suggestions are contextually appropriate for an inner class. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
                     && path.getParentPath() != null
@@ -401,7 +444,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code for an class at the placeholder location ${SUGGEST_CODE}. "
                         + "Based on the provided Java class content, suggest either relevant class level members, attributes, constants, methods or blocks. "
                         + "Ensure that the suggestions are contextually appropriate for an class. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             } else if (path.getLeaf().getKind() == Tree.Kind.PARENTHESIZED
                     && path.getParentPath() != null
@@ -409,13 +452,13 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 prompt = "You are an API server that suggests Java code to enhance an if-statement. "
                         + "At the placeholder location ${SUGGEST_IF_CONDITIONS}, suggest additional conditional checks or actions within the if-statement. "
                         + "Ensure that the suggestions are contextually appropriate for the condition. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java If Statement Content:\n" + classContent;
             } else {
                 prompt = "You are an API server that suggests Java code for a specific context in a given Java class at the placeholder location ${SUGGEST_CODE}. "
                         + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a relevant single line of code or a multi-line code block as appropriate for the context represented by the placeholder ${SUGGEST_CODE} in the Java class. "
                         + "Ensure that the suggestions are relevant to the context. "
-                       + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
+                        + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                         + "Java Class Content:\n" + classContent;
             }
         }
@@ -429,40 +472,40 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         return nextLines;
     }
 
- public List<Snippet> hintNextLineCode(Project project, String classDatas, String classContent, String lineText, TreePath path, String hintContext, boolean singleCodeSnippet) {
-    StringBuilder promptBuilder = new StringBuilder();
-    
-    promptBuilder.append("You are an API server that suggests relevant Java code at the placeholder ${SUGGEST_CODE}.\n")
-        .append("The goal is to generate context-aware, meaningful, and syntactically valid Java code suggestions that fit naturally in the given location.\n");
+    public List<Snippet> hintNextLineCode(Project project, String classDatas, String classContent, String lineText, TreePath path, String hintContext, boolean singleCodeSnippet) {
+        StringBuilder promptBuilder = new StringBuilder();
 
-    if (hintContext != null && !hintContext.isEmpty()) {
-        promptBuilder.append("Hint:\n").append(hintContext).append("\n");
+        promptBuilder.append("You are an API server that suggests relevant Java code at the placeholder ${SUGGEST_CODE}.\n")
+                .append("The goal is to generate context-aware, meaningful, and syntactically valid Java code suggestions that fit naturally in the given location.\n");
+
+        if (hintContext != null && !hintContext.isEmpty()) {
+            promptBuilder.append("Hint:\n").append(hintContext).append("\n");
+        }
+
+        if (lineText != null && !lineText.trim().isEmpty()) {
+            promptBuilder.append("Current Line:\n\"").append(lineText).append("\"\n");
+        }
+
+        promptBuilder.append("Full Java Context:\n")
+                .append(classContent).append("\n");
+
+        // Choose the appropriate JSON request variant
+        String request = singleCodeSnippet
+                ? singleJsonRequest
+                : (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest);
+
+        promptBuilder.append(request);
+
+        // Replace placeholders with class-related data
+        String prompt = loadClassData(promptBuilder.toString(), classDatas);
+
+        // Generate suggestions using the AI model
+        String jsonResponse = generate(project, prompt);
+        System.out.println("jsonResponse " + jsonResponse);
+
+        // Parse and return results
+        return parseJsonToSnippets(jsonResponse);
     }
-
-    if (lineText != null && !lineText.trim().isEmpty()) {
-        promptBuilder.append("Current Line:\n\"").append(lineText).append("\"\n");
-    }
-
-    promptBuilder.append("Full Java Context:\n")
-        .append(classContent).append("\n");
-
-    // Choose the appropriate JSON request variant
-    String request = singleCodeSnippet 
-            ? singleJsonRequest 
-            : (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest);
-
-    promptBuilder.append(request);
-
-    // Replace placeholders with class-related data
-    String prompt = loadClassData(promptBuilder.toString(), classDatas);
-
-    // Generate suggestions using the AI model
-    String jsonResponse = generate(project, prompt);
-    System.out.println("jsonResponse " + jsonResponse);
-
-    // Parse and return results
-    return parseJsonToSnippets(jsonResponse);
-}
 
     public List<String> suggestJavaComment(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests appropriate Java comments for a specific context in a given Java class at the placeholder location ${SUGGEST_JAVA_COMMENT}. "
@@ -483,7 +526,6 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant Javadoc or a comment block as appropriate for the context represented by the placeholder ${SUGGEST_JAVADOC} in the Java Class. "
                 + "Return a JSON array where each element can either be a single-line comment, a multi-line comment block, or a Javadoc comment formatted as a single string using \\n for line breaks. "
                 + " Do not split multi line javadoc comments to array, must be at same index in json array. \n\n"
-                //            + "Ensure that the suggestions are relevant to the context of com.sun.source.tree.Tree.Kind." + type + ". "
                 + "Java Class Content:\n" + classContent;
         // Generate the list of suggested Javadoc or comments
         String jsonResponse = generate(project, prompt);
@@ -492,22 +534,6 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         List<String> comments = parseJsonToList(jsonResponse);
         return comments;
     }
-
-    String jsonRequest = "Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing two fields: 'imports' and 'snippet'. "
-            + "'imports' should be an array of required Java import statements (if no imports are required, return an empty array). "
-            + "'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. "
-            + "Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid. \n\n";
-
-    String jsonRequestWithDescription = "Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing three fields: 'imports', 'snippet', and 'description'. "
-            + "'imports' should be an array of required Java import statements (if no imports are required, return an empty array). "
-            + "'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. "
-            + "'description' should be a very short explanation of what the snippet does and why it might be appropriate in this context, formatted with <b>, <\br> and optionally if required then include any imporant link with <a href=''> tags. "
-            + "Make sure to escape any double quotes within the snippet and description using a backslash (\\) so that the JSON remains valid. \n\n";
-
-    String singleJsonRequest = "Return a JSON object with a single best suggestion without any additional text or explanation. The object should contain two fields: 'imports', and 'snippet'. "
-            + "'imports' should be an array of required Java import statements (if no imports are required, return an empty array). "
-            + "'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks. "
-            + "Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid. \n\n";
 
     public List<Snippet> suggestAnnotations(Project project, String classDatas, String classContent, String lineText, String hintContext, boolean singleCodeSnippet) {
         String prompt;
@@ -526,7 +552,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
                     + (pm.isDescriptionEnabled() ? jsonRequestWithDescription : jsonRequest)
                     + "Ensure that the suggestions are appropriate for the given Java Class Content:\n\n" + classContent;
         }
-        
+
         // Generate the list of suggested annotations
         String jsonResponse = generate(project, prompt);
         System.out.println("jsonResponse " + jsonResponse);
@@ -738,7 +764,7 @@ Instructions:
 
 %s
 
-Respond only with a JSON array of review suggestions and each suggestion must include:
+Respond only with a YAML array of review suggestions. Each suggestion must include:
 - file: the file name
 - hunk: the Git diff hunk header (e.g., "@@ -10,7 +10,9 @@")
 - type: one of "security", "warning", "info", or "suggestion"
@@ -749,53 +775,20 @@ Respond only with a JSON array of review suggestions and each suggestion must in
 - title: a short title summarizing the issue
 - description: a longer explanation or recommendation
 
-Output a raw JSON array with no markdown, code block, or extra formatting.
+Output raw YAML with no markdown, code block, or extra formatting.
 
-Expected JSON format:
+Expected YAML format:
 
-[
-  {
-    "file": "src/com/example/MyService.java",
-    "hunk": "@@ -42,6 +42,10 @@",
-    "type": "warning",
-    "title": "Possible null pointer exception",
-    "description": "The 'items' list might be null before iteration. Add a null check to avoid NPE."
-  }
-]
-              
+- file: src/com/example/MyService.java
+  hunk: "@@ -42,6 +42,10 @@"
+  type: warning
+  title: Possible null pointer exception
+  description: The 'items' list might be null before iteration. Add a null check to avoid NPE.
+
 %s
 """.formatted(query, gitDiffOutput);
 
-        return generate(null, pm.getPrompts().get("codereview") +'\n'+ prompt, images, previousChatResponse);
-    }
-
-    private String wrapLongLinesWithBr(String input, int maxLineLength) {
-        StringBuilder wrapped = new StringBuilder();
-        String[] lines = input.split("<br>"); // Split by existing line breaks
-
-        for (String line : lines) {
-            String[] words = line.split(" "); // Split line into words
-            StringBuilder currentLine = new StringBuilder();
-
-            for (String word : words) {
-                // Check if adding the next word exceeds the maximum line length
-                if (currentLine.length() + word.length() + 1 > maxLineLength) {
-                    // If current line is not empty, append it to the result
-                    if (currentLine.length() > 0) {
-                        wrapped.append(currentLine.toString().trim()).append("<br>");
-                        currentLine.setLength(0); // Reset current line
-                    }
-                }
-                currentLine.append(word).append(" "); // Append the word with a space
-            }
-
-            // Append any remaining words in the current line
-            if (currentLine.length() > 0) {
-                wrapped.append(currentLine.toString().trim()).append("<br>");
-            }
-        }
-
-        return wrapped.toString();
+        return generate(null, pm.getPrompts().get("codereview") + '\n' + prompt, images, previousChatResponse);
     }
 
     public String assistDbMetadata(String dbMetadata, String query, List<String> images, Response previousChatResponse) {
@@ -893,8 +886,64 @@ Expected JSON format:
         prompt.append("User Query:\n")
                 .append(userQuery);
 
-        // Generate the answer
         String answer = generate(project, prompt.toString(), images, previousChatResponse);
+        System.out.println(answer);
+        return answer;
+    }
+
+    public String agent(
+            Project project, String source, String methodContent, List<String> images,
+            Response previousChatResponse, String userQuery) {
+
+        String projectMap = String.join("\n", getSourceFilesRelativePath(project));
+        String sessionRules = pm.getSessionRules();
+        if (sessionRules != null && !sessionRules.isEmpty()) {
+            sessionRules = "\n\n" + sessionRules + "\n\n";
+        } else {
+            sessionRules = "";
+        }
+        if (source != null && !source.isEmpty()) {
+            source = "\n\n Existing Source: " + source + "\n\n";
+        } else {
+            source = "";
+        }
+        String prompt = """
+    You are an intelligent code generation assistant.
+
+    Your task is to generate or modify code based on a user query. The output must include a list of file actions (create, update, delete) with the full file path (relative to the project base directory) and the corresponding file content.
+
+    Assume the project base directory is: %s
+                            
+    Project Files are:
+    %s
+                        
+    %s
+
+    User query:
+    %s
+                            
+    %s
+
+  Instructions:
+    - Do NOT add action for any build files (e.g., pom.xml, build.gradle, settings.gradle, etc.). Assume they already exist and are correctly configured.
+    - Interpret the user’s intent and break it down into one or more file operations.
+    - For each file to be created, modified, or deleted:
+      - Start with a short natural-language description of what the file is or does.
+      - Include the full file content enclosed in a proper code block (e.g., ```java).
+      - After the content block, add a new block like this:
+        ```action
+        path=relative/path/to/file
+        action=create|update|delete
+        ```
+      - For delete actions, omit the code block and use only the action block with `action=delete`.
+    - Ensure all code must be syntactically correct, valid, and follow standard conventions unless otherwise stated.
+
+    Respond in Markdown format as described above.                      
+                        
+    ]
+    """.formatted(project.getProjectDirectory().getPath(), projectMap, source, userQuery, sessionRules);
+
+        String answer = generate(project, prompt, images, previousChatResponse);
         System.out.println(answer);
         return answer;
     }
@@ -910,7 +959,7 @@ Expected JSON format:
 
         // Determine the test case type based on the user query
         String prompt = PreferencesManager.getInstance().getPrompts().get("test");
-        if(prompt == null || prompt.isEmpty()) {
+        if (prompt == null || prompt.isEmpty()) {
             prompt = "";
         }
         if (userQuery != null) {
@@ -997,9 +1046,9 @@ Expected JSON format:
     }
 
     public List<Snippet> suggestNextLineCode(Project project, String fileContent, String currentLine, String mimeType, String hintContext, boolean singleCodeSnippet) {
-            StringBuilder description = new StringBuilder(MIME_TYPE_DESCRIPTIONS.getOrDefault(mimeType, "code snippets"));
-       StringBuilder prompt = new StringBuilder("You are an API server that provides ").append(description).append(" suggestions based on the file content. ");
-                if (hintContext == null) {
+        StringBuilder description = new StringBuilder(MIME_TYPE_DESCRIPTIONS.getOrDefault(mimeType, "code snippets"));
+        StringBuilder prompt = new StringBuilder("You are an API server that provides ").append(description).append(" suggestions based on the file content. ");
+        if (hintContext == null) {
             hintContext = "";
         } else {
             hintContext = hintContext + "\n";
@@ -1030,7 +1079,7 @@ Expected JSON format:
                   File Content:
                   """).append(fileContent);
         }
-       
+
         String jsonResponse = generate(project, prompt.toString());
         List<Snippet> nextLines = parseJsonToSnippets(jsonResponse);
         return nextLines;

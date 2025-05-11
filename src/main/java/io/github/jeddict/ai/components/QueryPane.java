@@ -40,7 +40,12 @@ public class QueryPane {
         Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
         Font font = getFontFromMimeType(MIME_PLAIN_TEXT);
 
-        JButton button = new JButton(text + " " + emoji);
+        JButton button;
+        if (text == null || text.isBlank()) {
+            button = new JButton(emoji);
+        } else {
+            button = new JButton(text + " " + emoji);
+        }
         button.setFocusPainted(false);
         button.setContentAreaFilled(false);
         button.setOpaque(false);
@@ -49,7 +54,8 @@ public class QueryPane {
         button.setFont(new Font("Monospaced", Font.BOLD, font.getSize()));
         Color newtextColor = isDark ? textColor.darker() : new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 98);
         button.setForeground(newtextColor);
-        button.setMargin(MARGIN);
+        button.setMargin(EMPTY_INSETS);
+        button.setHorizontalAlignment(SwingConstants.CENTER);
         button.setBorder(new EmptyBorder(8, 16, 8, 16));
 
         button.addActionListener(e -> {
@@ -89,7 +95,7 @@ public class QueryPane {
         return button;
     }
 
-    public static JComboBox<String> createStyledComboBox(String[] items) {
+    public static <T> JComboBox<T> createStyledComboBox(T[] items) {
         Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
         boolean isDark = ColorUtil.isDarkColor(bgColor);
         Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
@@ -99,12 +105,12 @@ public class QueryPane {
         Color background = bgColor;
         Color foreground = isDark ? textColor.darker() : new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 98);
         
-        JComboBox<String> comboBox = new JComboBox<>(items);
+        JComboBox<T> comboBox = new JComboBox<>(items);
         comboBox.setFont(new Font("Monospaced", Font.BOLD, font.getSize()));
         comboBox.setForeground(foreground);
         comboBox.setBackground(background);
         comboBox.setOpaque(false);
-        RoundedBorder border = new RoundedBorder(30, borderColor, comboBox);
+        RoundedBorder<T> border = new RoundedBorder<>(30, borderColor, comboBox);
         comboBox.setBorder(border);
         comboBox.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
@@ -119,6 +125,7 @@ public class QueryPane {
                 arrowButton.setBorderPainted(false);
                 arrowButton.setFocusPainted(false);
                 arrowButton.setBorder(new EmptyBorder(0, 0, 0, 0));
+                arrowButton.setMargin(new Insets(0,0,0,0)); 
                 return arrowButton;
             }
 
@@ -134,6 +141,12 @@ public class QueryPane {
                 g.setColor(background);
                 g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
             }
+   
+            @Override
+            protected Insets getInsets() {
+                return new Insets(2, 4, 2, 4);
+            }
+         
         });
 
         comboBox.setRenderer(new DefaultListCellRenderer() {
@@ -152,13 +165,13 @@ public class QueryPane {
         return comboBox;
     }
 
-    public static class RoundedBorder extends AbstractBorder {
+    public static class RoundedBorder<T> extends AbstractBorder {
 
         private final int radius;
         private final Color color;
-        private final JComboBox<String> comboBox;
+        private final JComboBox<T> comboBox;
 
-        public RoundedBorder(int radius, Color color, JComboBox<String> comboBox ) {
+        public RoundedBorder(int radius, Color color, JComboBox<T> comboBox ) {
             this.radius = radius;
             this.color = color;
             this.comboBox = comboBox;

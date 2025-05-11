@@ -58,14 +58,13 @@ import org.openide.util.NbBundle;
 
 final class AIAssistancePanel extends javax.swing.JPanel {
 
-    private final AIAssistanceOptionsPanelController controller;
     private DefaultTableModel excludeTableModel;
     private DefaultTableModel customHeadersTableModel;
     private DefaultTableModel promptTableModel;
 
-    AIAssistancePanel(AIAssistanceOptionsPanelController controller) {
-        this.controller = controller;
+    AIAssistancePanel() {
         initComponents();
+//        updateColorsForTheme();
         int index = jTabbedPane1.indexOfComponent(backupPane);
         if (index != -1) {
             jTabbedPane1.removeTabAt(index);
@@ -1701,6 +1700,66 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     boolean valid() {
         return true;
     }
+    
+    private void updateColorsForTheme() {
+    // Get background and foreground colors based on MIME type or current editor theme
+    Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+    Color fgColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
+    boolean isDark = ColorUtil.isDarkColor(bgColor);
+
+    // Set combo boxes
+    Color comboBg = bgColor;
+    Color comboFg = fgColor;
+
+    // Optionally adjust colors for combo boxes if needed
+    // comboBg = isDark ? Color.DARK_GRAY : Color.WHITE;
+    // comboFg = isDark ? Color.LIGHT_GRAY : Color.BLACK;
+
+    // Example for providerComboBox and modelComboBox
+    providerComboBox.setBackground(comboBg);
+    providerComboBox.setForeground(comboFg);
+    modelComboBox.setBackground(comboBg);
+    modelComboBox.setForeground(comboFg);
+    defaultAIAssistantPlacement.setBackground(comboBg);
+    defaultAIAssistantPlacement.setForeground(comboFg);
+    classContextComboBox.setBackground(comboBg);
+    classContextComboBox.setForeground(comboFg);
+    varContextComboBox.setBackground(comboBg);
+    varContextComboBox.setForeground(comboFg);
+    classContextInlineHintComboBox.setBackground(comboBg);
+    classContextInlineHintComboBox.setForeground(comboFg);
+
+    // Set labels
+    providerLabel.setForeground(fgColor);
+    gptModelLabel.setForeground(fgColor);
+    providerLocationLabel.setForeground(fgColor);
+    apiKeyLabel.setForeground(fgColor);
+    temperatureLabel.setForeground(fgColor);
+    timeoutLabel.setForeground(fgColor);
+    topPLabel.setForeground(fgColor);
+    maxRetriesLabel.setForeground(fgColor);
+    maxOutputTokensLabel.setForeground(fgColor);
+    repeatPenaltyLabel.setForeground(fgColor);
+    seedLabel.setForeground(fgColor);
+    maxTokensLabel.setForeground(fgColor);
+    maxCompletionTokensLabel.setForeground(fgColor);
+    topKLabel.setForeground(fgColor);
+    presencePenaltyLabel.setForeground(fgColor);
+    frequencyPenaltyLabel.setForeground(fgColor);
+    organizationIdLabel.setForeground(fgColor);
+    fileExtLabel.setForeground(fgColor);
+    defaultAIAssistantPlacementLabel.setForeground(fgColor);
+    classContextLabel.setForeground(fgColor);
+    varContextLabel.setForeground(fgColor);
+    classContextLabel1.setForeground(fgColor);
+    aiInlineCompletionShortcutLabel.setForeground(fgColor);
+    gptModelHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+    classContextHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+    varContextHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+    classContextHelp1.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+    modelsInfo.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+    apiKeyInfo.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLayeredPane activationPane;

@@ -513,6 +513,22 @@ public static void openFileInEditorAtLine(FileObject fileObject, int lineNumber)
         return methodContent.toString();
     }
 
+    public static FileObject findFileInProjects(String relativePath) {
+        if (!relativePath.startsWith("src")) {
+            return null; // Only proceed if path starts with "src"
+        }
+
+        for (Project project : OpenProjects.getDefault().getOpenProjects()) {
+            FileObject projectDir = project.getProjectDirectory();
+            FileObject fileToOpen = projectDir.getFileObject(relativePath);
+
+            if (fileToOpen != null && fileToOpen.isData()) {
+                return fileToOpen;
+            }
+        }
+        return null;
+    }
+
     /**
      * Searches all open projects' source classpaths for a class with the given
      * simple name or fully qualified.
