@@ -114,6 +114,10 @@ public final class ReviewPanel extends JPanel implements DocumentListener, Compo
         enableEvents(AWTEvent.MOUSE_EVENT_MASK);
     }
 
+    public BaseDocument getDocument() {
+        return document;
+    }
+
     @Override
     public Dimension getPreferredSize() {
         Dimension dim = textComponent.getSize();

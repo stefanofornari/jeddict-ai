@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.AbstractAction;
 import static javax.swing.Action.NAME;
+import javax.swing.JOptionPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.StyledDocument;
@@ -93,7 +94,7 @@ public final class AIAssistantPopupAction extends AbstractAction implements Acti
                             }
                         }
                     } else {
-                        javax.swing.JOptionPane.showMessageDialog(null, "Please select text in the original editor before updating.");
+                        JOptionPane.showMessageDialog(null, "Please select text in the original editor before updating.");
                     }
                 }
             });

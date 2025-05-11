@@ -137,7 +137,7 @@ public class MarkdownStreamParser {
                     if (block != null) {
                         // Here you can add processing logic if needed
                         SwingUtilities.invokeLater(() -> {
-                            JComponent comp = printBlock(code, block, topComponent);
+                            JComponent comp = printBlock(code, null, block, null, topComponent);
                             comp.requestFocusInWindow();
                             comp.scrollRectToVisible(comp.getVisibleRect());
                             doneBlocks.offer(block);

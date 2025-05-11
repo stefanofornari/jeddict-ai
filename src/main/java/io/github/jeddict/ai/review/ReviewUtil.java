@@ -15,10 +15,16 @@
  */
 package io.github.jeddict.ai.review;
 
+import io.github.jeddict.ai.util.ColorUtil;
+import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
+import static io.github.jeddict.ai.util.MimeUtil.MIME_PLAIN_TEXT;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.util.Map;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  *
@@ -27,6 +33,8 @@ import org.json.JSONObject;
 public class ReviewUtil {
 
     public static String convertReviewsToHtml(List<Review> reviews) {
+        Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+        boolean isDark = ColorUtil.isDarkColor(backgroundColor);
         StringBuilder html = new StringBuilder();
         html.append("<h2>Review Summary</h2>");
         html.append("<table>");
@@ -49,7 +57,7 @@ public class ReviewUtil {
             String titleColor;
             switch (review.type.toLowerCase()) {
                 case "warning":
-                    titleColor = "yellow";
+                    titleColor = isDark ? "yellow": "orange";
                     break;
                 case "info":
                     titleColor = "#007bff";
@@ -75,23 +83,45 @@ public class ReviewUtil {
         return html.toString();
     }
 
-    public static List<Review> parseReviewsFromJson(String jsonResponse) {
+    public static List<Review> parseReviewsFromYaml(String yamlResponse) {
         List<Review> reviews = new ArrayList<>();
+        LoaderOptions options = new LoaderOptions();
+        Yaml yaml = new Yaml(new SafeConstructor(options));
 
         try {
-            JSONArray jsonArray = new JSONArray(jsonResponse);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject obj = jsonArray.getJSONObject(i);
-                String filePath = obj.optString("file", "unknown");
-                String type = obj.optString("type", "info");
-                String title = obj.optString("title", "");
-                String description = obj.optString("description", "");
-                String hunk = obj.optString("hunk", "");
+            Iterable<Object> yamlObjects = yaml.loadAll(yamlResponse);
 
-                reviews.add(new Review(filePath, hunk, type, title, description));
+            for (Object obj : yamlObjects) {
+                if (obj instanceof List<?> reviewList) {
+                    for (Object item : reviewList) {
+                        if (item instanceof Map<?, ?> map) {
+
+                            Object fileObj = map.get("file");
+                            String file = fileObj != null ? fileObj.toString() : "unknown";
+
+                            Object hunkObj = map.get("hunk");
+                            String hunk = hunkObj != null ? hunkObj.toString() : "";
+
+                            Object typeObj = map.get("type");
+                            String type = typeObj != null ? typeObj.toString() : "info";
+
+                            Object titleObj = map.get("title");
+                            String title = titleObj != null ? titleObj.toString() : "";
+
+                            Object descObj = map.get("description");
+                            String description = descObj != null ? descObj.toString() : "";
+
+                            try {
+                                reviews.add(new Review(file, hunk, type, title, description));
+                            } catch (Exception e) {
+                                e.printStackTrace(); // Handle malformed YAML or unexpected structure
+                            }
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
-            e.printStackTrace(); // Handle malformed JSON or unexpected format
+            e.printStackTrace(); // Handle malformed YAML or unexpected structure
         }
 
         return reviews;

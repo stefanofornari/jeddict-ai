@@ -15,6 +15,7 @@
  */
 package io.github.jeddict.ai.hints;
 
+import io.github.jeddict.ai.agent.AssistantAction;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
@@ -44,7 +45,7 @@ import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.review.Review;
 import static io.github.jeddict.ai.review.ReviewUtil.convertReviewsToHtml;
-import static io.github.jeddict.ai.review.ReviewUtil.parseReviewsFromJson;
+import static io.github.jeddict.ai.review.ReviewUtil.parseReviewsFromYaml;
 import static io.github.jeddict.ai.settings.GenAIProvider.getModelsByProvider;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.ColorUtil;
@@ -146,8 +147,9 @@ public class AssistantChatManager extends JavaFix {
     private SQLCompletion sqlCompletion;
     private ComponentAdapter buttonPanelAdapter;
     private JComboBox<String> models;
+    private JComboBox<AssistantAction> actionComboBox;
     private Timer timer;
-    private JButton prevButton, nextButton, copyButton, saveButton, openInBrowserButton, submitButton;
+    private JButton prevButton, nextButton,  openInBrowserButton, submitButton;//copyButton, saveButton,
     private AssistantChat topComponent;
     private JEditorPane questionPane;
     private JScrollPane questionScrollPane;
@@ -169,6 +171,8 @@ public class AssistantChatManager extends JavaFix {
             return FileOwnerQuery.getOwner(threadContext.toArray(FileObject[]::new)[0]);
         } else if (fileObject != null) {
             return FileOwnerQuery.getOwner(fileObject);
+        }  else if (messageContext != null && !messageContext.isEmpty()) {
+            return FileOwnerQuery.getOwner(messageContext.toArray(FileObject[]::new)[0]);
         } else {
             return null;
         }
@@ -252,7 +256,7 @@ public class AssistantChatManager extends JavaFix {
                         @Override
                         public void onComplete(String textResponse) {
                             Response response = new Response(null, textResponse, messageContextCopy);
-                            sourceCode = EditorUtil.updateEditors(null, topComponent, response, getContextFiles());
+                            sourceCode = EditorUtil.updateEditors(null, getProject(),topComponent, response, getContextFiles());
                             responseHistory.add(response);
                             currentResponseIndex = responseHistory.size() - 1;
                         }
@@ -473,23 +477,42 @@ public class AssistantChatManager extends JavaFix {
             }
         });
         leftButtonPanel.add(models);
+        
+        AssistantAction[] options = AssistantAction.values();
+        actionComboBox = createStyledComboBox(options);
+        actionComboBox.setSelectedItem(AssistantAction.ASK);
+        actionComboBox.setToolTipText("<html><b>Chat</b> – for general queries<br><b>Agent</b> – for file/project generation actions</html>");
+        actionComboBox.addActionListener(e -> {
+            AssistantAction selectedAction = (AssistantAction) actionComboBox.getSelectedItem();
+            if (selectedAction == AssistantAction.BUILD) {
+                if (getProject() == null) {
+                    NotifyDescriptor.Message msg = new NotifyDescriptor.Message(
+                            "To use ai agent mode, connect chat to any project by dropping any source file on chat window or start new chat from project/package/source file context.",
+                            NotifyDescriptor.WARNING_MESSAGE
+                    );
+                    DialogDisplayer.getDefault().notify(msg);
+                    actionComboBox.setSelectedItem(AssistantAction.ASK);
+                }
+            }
+        });
+        leftButtonPanel.add(actionComboBox);
 
         int javaEditorCount = topComponent.getAllCodeEditorCount();
 
-        copyButton = createIconButton(Labels.COPY, ICON_COPY);
-        copyButton.setToolTipText("Copy to clipboard");
-        copyButton.setVisible(javaEditorCount > 0);
-        leftButtonPanel.add(copyButton);
+//        copyButton = createIconButton(Labels.COPY, ICON_COPY);
+//        copyButton.setToolTipText("Copy to clipboard");
+//        copyButton.setVisible(javaEditorCount > 0);
+//        leftButtonPanel.add(copyButton);
+//
+//        saveButton = createIconButton(Labels.SAVE, ICON_SAVE);
+//        saveButton.setToolTipText("Save as");
+//        saveButton.setVisible(javaEditorCount == 1);
+//        leftButtonPanel.add(saveButton);
 
-        saveButton = createIconButton(Labels.SAVE, ICON_SAVE);
-        saveButton.setToolTipText("Save as");
-        saveButton.setVisible(javaEditorCount == 1);
-        leftButtonPanel.add(saveButton);
-
-        JButton saveToEditorButton = createIconButton(Labels.UPDATE + " " + fileName, ICON_UPDATE);
-        saveToEditorButton.setToolTipText("Update " + fileName);
-        saveToEditorButton.setVisible(fileName != null);
-        leftButtonPanel.add(saveToEditorButton);
+//        JButton saveToEditorButton = createIconButton(Labels.UPDATE + " " + fileName, ICON_UPDATE);
+//        saveToEditorButton.setToolTipText("Update " + fileName);
+//        saveToEditorButton.setVisible(fileName != null);
+//        leftButtonPanel.add(saveToEditorButton);
 
         JButton showChartsButton = createIconButton(Labels.STATS, ICON_STATS);
         showChartsButton.setToolTipText("Show Token Usage Charts");
@@ -537,9 +560,9 @@ public class AssistantChatManager extends JavaFix {
                 updateButton(prevButton, showOnlyIcons, ICON_PREV, Labels.PREV + " " + ICON_PREV);
                 updateButton(nextButton, showOnlyIcons, ICON_NEXT, Labels.NEXT + " " + ICON_NEXT);
                 updateButton(openInBrowserButton, showOnlyIcons, ICON_WEB, Labels.VIEW + " " + ICON_WEB);
-                updateButton(copyButton, showOnlyIcons, ICON_COPY, Labels.COPY + " " + ICON_COPY);
-                updateButton(saveButton, showOnlyIcons, ICON_SAVE, Labels.SAVE + " " + ICON_SAVE);
-                updateButton(saveToEditorButton, showOnlyIcons, ICON_UPDATE, Labels.UPDATE + " " + ICON_UPDATE);
+//                updateButton(copyButton, showOnlyIcons, ICON_COPY, Labels.COPY + " " + ICON_COPY);
+//                updateButton(saveButton, showOnlyIcons, ICON_SAVE, Labels.SAVE + " " + ICON_SAVE);
+//                updateButton(saveToEditorButton, showOnlyIcons, ICON_UPDATE, Labels.UPDATE + " " + ICON_UPDATE);
                 updateButton(newChatButton, showOnlyIcons, ICON_NEW_CHAT, Labels.NEW_CHAT + " " + ICON_NEW_CHAT);
                 updateButton(showChartsButton, showOnlyIcons, ICON_STATS, Labels.STATS + " " + ICON_STATS);
                 updateButton(optionsButton, showOnlyIcons, ICON_SETTINGS, Labels.SETTINGS + " " + ICON_SETTINGS);
@@ -547,6 +570,7 @@ public class AssistantChatManager extends JavaFix {
                 updateButton(sessionContextButton, showOnlyIcons, ICON_CONTEXT, Labels.SESSION_CONTEXT + " " + ICON_CONTEXT);
                 updateButton(submitButton, showOnlyIcons, ICON_SEND, Labels.SEND + " " + ICON_SEND);
                 updateCombobox(models,  showOnlyIcons);
+                updateCombobox(actionComboBox,  showOnlyIcons);
                 topComponent.updateUserPaneButtons(showOnlyIcons);
 
             }
@@ -554,7 +578,7 @@ public class AssistantChatManager extends JavaFix {
             private void updateButton(JButton button, boolean iconOnly, String iconText, String fullText) {
                 button.setText(iconOnly ? iconText : fullText);
             }
-            private void updateCombobox(JComboBox<String> comboBox, boolean iconOnly) {
+            private <T> void updateCombobox(JComboBox<T> comboBox, boolean iconOnly) {
                 comboBox.putClientProperty("minimal", iconOnly);
             }
         };
@@ -593,19 +617,19 @@ public class AssistantChatManager extends JavaFix {
             }
         });
 
-        copyButton.addActionListener(e -> {
-            StringSelection stringSelection = new StringSelection(topComponent.getAllCodeEditorText());
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.setContents(stringSelection, null);
-        });
-        saveButton.addActionListener(e -> {
-            topComponent.saveAs(null, topComponent.getAllCodeEditorText());
-        });
-        saveToEditorButton.addActionListener(e -> {
-            if (action != null) {
-                action.accept(topComponent.getAllCodeEditorText());
-            }
-        });
+//        copyButton.addActionListener(e -> {
+//            StringSelection stringSelection = new StringSelection(topComponent.getAllCodeEditorText());
+//            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+//            clipboard.setContents(stringSelection, null);
+//        });
+//        saveButton.addActionListener(e -> {
+//            topComponent.saveAs(null, topComponent.getAllCodeEditorText());
+//        });
+//        saveToEditorButton.addActionListener(e -> {
+//            if (action != null) {
+//                action.accept(topComponent.getAllCodeEditorText());
+//            }
+//        });
         newChatButton.addActionListener(e -> {
             topComponent.clear();
             topComponent.repaint();
@@ -642,7 +666,7 @@ public class AssistantChatManager extends JavaFix {
                 Object answer = DialogDisplayer.getDefault().notify(confirmDialog);
                 if (NotifyDescriptor.YES_OPTION.equals(answer)) {
                     result.cancel(true);
-                    if (handler.getProgressHandle() != null) {
+                    if (handler != null && handler.getProgressHandle() != null) {
                         handler.getProgressHandle().finish();
                     }
                     result = null;
@@ -676,7 +700,7 @@ public class AssistantChatManager extends JavaFix {
             if (currentResponseIndex > 0) {
                 currentResponseIndex--;
                 Response historyResponse = responseHistory.get(currentResponseIndex);
-                sourceCode = EditorUtil.updateEditors(queryUpdate, topComponent, historyResponse, getContextFiles());
+                sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(),topComponent, historyResponse, getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -685,7 +709,7 @@ public class AssistantChatManager extends JavaFix {
             if (currentResponseIndex < responseHistory.size() - 1) {
                 currentResponseIndex++;
                 Response historyResponse = responseHistory.get(currentResponseIndex);
-                sourceCode = EditorUtil.updateEditors(queryUpdate, topComponent, historyResponse, getContextFiles());
+                sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(),topComponent, historyResponse, getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -716,7 +740,6 @@ public class AssistantChatManager extends JavaFix {
     }
 
     private void startLoading() {
-//        submitButton.setEnabled(false);
         final String[] spinnerFrames = {"◐", "◓", "◑", "◒"};
         final int[] frameIndex = {0};
         timer = new Timer(200, e -> {
@@ -727,7 +750,6 @@ public class AssistantChatManager extends JavaFix {
     }
 
     private void stopLoading() {
-//        submitButton.setEnabled(true);
         timer.stop();
     }
     
@@ -827,16 +849,16 @@ public class AssistantChatManager extends JavaFix {
 //                            parser.shutdown();
 //                            topComponent.lastRemove();
                             if (codeReview) {
-                                List<Review> reviews = parseReviewsFromJson(response.getBlocks().get(0).getContent());
+                                List<Review> reviews = parseReviewsFromYaml(response.getBlocks().get(0).getContent());
                                 String web = convertReviewsToHtml(reviews);
                                 topComponent.setReviews(reviews);
                                 response.getBlocks().clear();
                                 response.getBlocks().add(new Block("web", web));
-                            }
-                            sourceCode = EditorUtil.updateEditors(queryUpdate, topComponent, response, getContextFiles());
+                            } 
+                            sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, response, getContextFiles());
 
                             stopLoading();
-                            saveButton.setVisible(sourceCode != null);
+//                            saveButton.setVisible(sourceCode != null);
                             updateButtons(prevButton, nextButton);
                             buttonPanelAdapter.componentResized(null);
                         });
@@ -886,7 +908,11 @@ public class AssistantChatManager extends JavaFix {
                     List<String> images = new ArrayList<>();
                     images.addAll(threadScopeImgages);
                     images.addAll(messageScopeImgages);
-                    response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChat, question);
+                    if (actionComboBox.getSelectedItem() == AssistantAction.BUILD) {
+                        response = new JeddictChatModel(handler, getModelName()).agent(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChat, question);
+                    } else {
+                        response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChat, question);
+                    }
                 } else if (treePath == null) {
                     response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), null, null, null, prevChat, question);
                 } else if (action == Action.TEST) {
@@ -927,8 +953,8 @@ public class AssistantChatManager extends JavaFix {
         nextButton.setVisible(currentResponseIndex < responseHistory.size() - 1);
 
         int javaEditorCount = topComponent.getAllCodeEditorCount();
-        copyButton.setVisible(javaEditorCount > 0);
-        saveButton.setVisible(javaEditorCount > 0);
+//        copyButton.setVisible(javaEditorCount > 0);
+//        saveButton.setVisible(javaEditorCount > 0);
 
         openInBrowserButton.setVisible(topComponent.getAllEditorCount() > 0);
     }

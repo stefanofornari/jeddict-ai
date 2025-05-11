@@ -91,7 +91,7 @@ public final class AIAssistanceOptionsPanelController extends OptionsPanelContro
 
     private AIAssistancePanel getPanel() {
         if (panel == null) {
-            panel = new AIAssistancePanel(this);
+            panel = new AIAssistancePanel();
         }
         return panel;
     }

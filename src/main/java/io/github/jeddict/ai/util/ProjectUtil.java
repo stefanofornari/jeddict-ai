@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import static org.netbeans.api.java.project.JavaProjectConstants.SOURCES_HINT_TEST;
 import static org.netbeans.api.java.project.JavaProjectConstants.SOURCES_TYPE_JAVA;
@@ -52,6 +53,29 @@ public class ProjectUtil {
                 new HashSet<>(PreferencesManager.getInstance().getFileExtensionListToInclude()),
                 new HashSet<>(PreferencesManager.getInstance().getExcludeDirs()));
         return sourceFiles;
+    }
+    
+    /**
+     * Converts absolute FileObject paths to paths relative to the project's
+     * root directory.
+     *
+     * @param project the NetBeans project
+     * @param fileObjects the set of FileObjects to convert
+     * @return a set of String paths relative to the project directory
+     */
+    public static Set<String> getSourceFilesRelativePath(Project project) {
+        final Set<FileObject> fileObjects = getSourceFiles(project);
+        FileObject projectDir = project.getProjectDirectory();
+        String projectPath = projectDir.getPath(); // Unix-style path
+
+        return fileObjects.stream()
+                .map(fo -> {
+                    String filePath = fo.getPath();
+                    return filePath.startsWith(projectPath)
+                            ? filePath.substring(projectPath.length() + 1) // +1 to skip the slash
+                            : filePath;
+                })
+                .collect(Collectors.toSet());
     }
 
     public static void collectFiles(FileObject baseDir, FileObject folder, Set<FileObject> sourceFiles, Set<String> fileExtensionListToInclude, Set<String> excludes) {

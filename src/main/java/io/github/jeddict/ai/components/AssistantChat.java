@@ -325,7 +325,7 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
         editorPane.setFont(newFont);
         editorPane.setForeground(textColor);
         editorPane.setBackground(backgroundColor);
-    addEditorPaneRespectingTextArea(editorPane);
+        addEditorPaneRespectingTextArea(editorPane);
         return editorPane;
     }
 
