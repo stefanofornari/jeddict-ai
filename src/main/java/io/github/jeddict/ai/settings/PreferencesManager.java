@@ -89,8 +89,8 @@ public class PreferencesManager {
             "src/test/resources",
             "test",
             // Main Resources
-            "src/main/resources",
-            "src/main/webapp",
+//            "src/main/resources",
+//            "src/main/webapp",
             // Build Directories
             "target",
             "build",
