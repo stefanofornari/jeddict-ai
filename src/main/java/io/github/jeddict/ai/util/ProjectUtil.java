@@ -60,7 +60,6 @@ public class ProjectUtil {
      * root directory.
      *
      * @param project the NetBeans project
-     * @param fileObjects the set of FileObjects to convert
      * @return a set of String paths relative to the project directory
      */
     public static Set<String> getSourceFilesRelativePath(Project project) {
