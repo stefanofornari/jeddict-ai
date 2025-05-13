@@ -262,10 +262,18 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         Exceptions.printStackTrace(ex);
                     }
                 });
+                String remainingText = "";
+                if (words.length > 1) {
+                    // Find the index of the first space and extract everything after it
+                    int firstSpace = extractedText.indexOf(" ");
+                    if (firstSpace != -1 && firstSpace + 1 < extractedText.length()) {
+                        remainingText = extractedText.substring(firstSpace + 1);
+                    }
+                }
                 LineScanResult result = new LineScanResult(
                         extractedText,
                         words.length > 0 ? words[0].substring(1) : "", // First word after slash
-                        words.length > 1 ? words[1] : "", // Second word after slash
+                        remainingText, // Entire remaining string after first word
                         slashPosition
                 );
                 return result;

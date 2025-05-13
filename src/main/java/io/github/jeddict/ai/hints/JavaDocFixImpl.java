@@ -106,22 +106,22 @@ public class JavaDocFixImpl extends JavaFix {
                 if (action == ENHANCE) {
                     javadocContent = new JeddictChatModel().enhanceJavadocForMethod(
                 FileOwnerQuery.getOwner(copy.getFileObject()), 
-                oldDocCommentTree.toString(), ((MethodTree) tree).getName().toString());
+                oldDocCommentTree.toString(), ((MethodTree) tree).toString());
                 } else {
                     javadocContent = new JeddictChatModel().generateJavadocForMethod(
                 FileOwnerQuery.getOwner(copy.getFileObject()), 
-                ((MethodTree) tree).getName().toString());
+                ((MethodTree) tree).toString());
                 }
                 break;
             case VARIABLE:
                 if (action == ENHANCE) {
                     javadocContent = new JeddictChatModel().enhanceJavadocForField(
                 FileOwnerQuery.getOwner(copy.getFileObject()), 
-                oldDocCommentTree.toString(), ((VariableTree) tree).getName().toString());
+                oldDocCommentTree.toString(), ((VariableTree) tree).toString());
                 } else {
                     javadocContent = new JeddictChatModel().generateJavadocForField(
                 FileOwnerQuery.getOwner(copy.getFileObject()), 
-                ((VariableTree) tree).getName().toString());
+                ((VariableTree) tree).toString());
                 }
                 break;
             default:

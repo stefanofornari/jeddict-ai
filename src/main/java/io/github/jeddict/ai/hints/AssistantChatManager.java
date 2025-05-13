@@ -156,6 +156,7 @@ public class AssistantChatManager extends JavaFix {
     private final List<Response> responseHistory = new ArrayList<>();
     private int currentResponseIndex = -1;
     private String sourceCode = null;
+    private Project projectContext;
     private Project project;
     private final Set<FileObject> threadContext = new HashSet<>();
     private final Set<FileObject> messageContext = new HashSet<>();
@@ -165,17 +166,18 @@ public class AssistantChatManager extends JavaFix {
     private Tree leaf;
 
     private Project getProject() {
-        if (project != null) {
-            return project;
-        } else if (threadContext != null && !threadContext.isEmpty()) {
-            return FileOwnerQuery.getOwner(threadContext.toArray(FileObject[]::new)[0]);
-        } else if (fileObject != null) {
-            return FileOwnerQuery.getOwner(fileObject);
-        }  else if (messageContext != null && !messageContext.isEmpty()) {
-            return FileOwnerQuery.getOwner(messageContext.toArray(FileObject[]::new)[0]);
-        } else {
-            return null;
+        if (project == null) {
+            if (projectContext != null) {
+                project = projectContext;
+            } else if (threadContext != null && !threadContext.isEmpty()) {
+                project = FileOwnerQuery.getOwner(threadContext.toArray(FileObject[]::new)[0]);
+            } else if (fileObject != null) {
+                project = FileOwnerQuery.getOwner(fileObject);
+            } else if (messageContext != null && !messageContext.isEmpty()) {
+                project = FileOwnerQuery.getOwner(messageContext.toArray(FileObject[]::new)[0]);
+            }
         }
+        return project;
     }
 
     public AssistantChatManager(TreePathHandle tpHandle, Action action, TreePath treePath) {
@@ -198,7 +200,7 @@ public class AssistantChatManager extends JavaFix {
     public AssistantChatManager(Action action, Project project) {
         super(null);
         this.action = action;
-        this.project = project;
+        this.projectContext = project;
     }
 
     public AssistantChatManager(Action action, List<FileObject> selectedFileObjects) {
@@ -285,7 +287,7 @@ public class AssistantChatManager extends JavaFix {
     }
 
     private Set<FileObject> getProjectContextList() {
-        return getSourceFiles(project);
+        return getSourceFiles(projectContext);
     }
 
     public void askQueryForProjectCommit(Project project, String commitChanges, String intitalCommitMessage) {
@@ -486,12 +488,59 @@ public class AssistantChatManager extends JavaFix {
             AssistantAction selectedAction = (AssistantAction) actionComboBox.getSelectedItem();
             if (selectedAction == AssistantAction.BUILD) {
                 if (getProject() == null) {
-                    NotifyDescriptor.Message msg = new NotifyDescriptor.Message(
-                            "To use ai agent mode, connect chat to any project by dropping any source file on chat window or start new chat from project/package/source file context.",
-                            NotifyDescriptor.WARNING_MESSAGE
-                    );
-                    DialogDisplayer.getDefault().notify(msg);
-                    actionComboBox.setSelectedItem(AssistantAction.ASK);
+                    Project[] openProjects = org.netbeans.api.project.ui.OpenProjects.getDefault().getOpenProjects();
+                    if (openProjects.length == 1) {
+                        project =  openProjects[0];
+                        DialogDisplayer.getDefault().notify(
+                                new NotifyDescriptor.Message(
+                                        "Connected chat to project: " + ProjectUtils.getInformation(project).getDisplayName(),
+                                        NotifyDescriptor.INFORMATION_MESSAGE
+                                )
+                        );
+                    } else if (openProjects.length > 1) {
+                        JComboBox<Project> projectComboBox = new JComboBox<>(openProjects);
+                        projectComboBox.setRenderer(new javax.swing.ListCellRenderer<>() {
+                            private final javax.swing.DefaultListCellRenderer defaultRenderer = new javax.swing.DefaultListCellRenderer();
+
+                            @Override
+                            public java.awt.Component getListCellRendererComponent(javax.swing.JList<? extends Project> list, Project value, int index, boolean isSelected, boolean cellHasFocus) {
+                                String displayName = (value == null) ? "" : ProjectUtils.getInformation(value).getDisplayName();
+                                return defaultRenderer.getListCellRendererComponent(list, displayName, index, isSelected, cellHasFocus);
+                            }
+                        });
+                        NotifyDescriptor descriptor = new NotifyDescriptor(
+                                projectComboBox,
+                                "Select Project for AI Agent Mode",
+                                NotifyDescriptor.OK_CANCEL_OPTION,
+                                NotifyDescriptor.QUESTION_MESSAGE,
+                                null,
+                                NotifyDescriptor.OK_OPTION
+                        );
+                        Object dialogResult = DialogDisplayer.getDefault().notify(descriptor);
+                        if (NotifyDescriptor.OK_OPTION.equals(dialogResult)) {
+                            Project selectedProject = (Project) projectComboBox.getSelectedItem();
+                            if (selectedProject != null) {
+                                project = selectedProject;
+                                DialogDisplayer.getDefault().notify(
+                                        new NotifyDescriptor.Message(
+                                                "Connected chat to project: " + ProjectUtils.getInformation(project).getDisplayName(),
+                                                NotifyDescriptor.INFORMATION_MESSAGE
+                                        )
+                                );
+                            } else {
+                                actionComboBox.setSelectedItem(AssistantAction.ASK);
+                            }
+                        } else {
+                            actionComboBox.setSelectedItem(AssistantAction.ASK);
+                        }
+                    } else {
+                        NotifyDescriptor.Message msg = new NotifyDescriptor.Message(
+                                "To use AI agent mode, connect chat to any project by dropping any source file on chat window or start new chat from project/package/source file context.",
+                                NotifyDescriptor.WARNING_MESSAGE
+                        );
+                        DialogDisplayer.getDefault().notify(msg);
+                        actionComboBox.setSelectedItem(AssistantAction.ASK);
+                    }
                 }
             }
         });
@@ -773,7 +822,7 @@ public class AssistantChatManager extends JavaFix {
 
     private Set<FileObject> getContextFiles() {
         Set<FileObject> fileObjects = new HashSet<>();
-        if (project != null) {
+        if (projectContext != null) {
             fileObjects.addAll(getProjectContextList());
         }
         if (threadContext != null) {
@@ -785,8 +834,8 @@ public class AssistantChatManager extends JavaFix {
     private void showFilePathPopup() {
         Set<FileObject> fileObjects = getContextFiles();
         String projectRootDir = null;
-        if (project != null) {
-            projectRootDir = project.getProjectDirectory().getPath();
+        if (projectContext != null) {
+            projectRootDir = projectContext.getProjectDirectory().getPath();
         } else if (!fileObjects.isEmpty()) {
             projectRootDir = FileOwnerQuery.getOwner(fileObjects.iterator().next()).getProjectDirectory().getPath();
         }
@@ -889,10 +938,10 @@ public class AssistantChatManager extends JavaFix {
                     }
                     List<String> messageScopeImgages = getImageFilesContext(messageContext);
                     response = new JeddictChatModel(handler, getModelName()).generateCodeReviewSuggestions(context, question, messageScopeImgages, prevChat);
-                } else if (project != null || threadContext != null) {
+                } else if (projectContext != null || threadContext != null) {
                     Set<FileObject> mainThreadContext;
                     String threadScopeContent;
-                    if (project != null) {
+                    if (projectContext != null) {
                         mainThreadContext = getProjectContextList();
                         threadScopeContent = getProjectContext(mainThreadContext);
                     } else {
