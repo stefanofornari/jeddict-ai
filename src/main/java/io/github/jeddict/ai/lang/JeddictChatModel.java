@@ -782,8 +782,8 @@ Expected YAML format:
 - file: src/com/example/MyService.java
   hunk: "@@ -42,6 +42,10 @@"
   type: warning
-  title: Possible null pointer exception
-  description: The 'items' list might be null before iteration. Add a null check to avoid NPE.
+  title: "Possible null pointer exception"
+  description: "The 'items' list might be null before iteration. Add a null check to avoid NPE."
 
 %s
 """.formatted(query, gitDiffOutput);
@@ -924,19 +924,21 @@ Expected YAML format:
                             
     %s
 
-  Instructions:
-    - Do NOT add action for any build files (e.g., pom.xml, build.gradle, settings.gradle, etc.). Assume they already exist and are correctly configured.
-    - Interpret the user’s intent and break it down into one or more file operations.
-    - For each file to be created, modified, or deleted:
-      - Start with a short natural-language description of what the file is or does.
-      - Include the full file content enclosed in a proper code block (e.g., ```java).
-      - After the content block, add a new block like this:
-        ```action
-        path=relative/path/to/file
-        action=create|update|delete
-        ```
-      - For delete actions, omit the code block and use only the action block with `action=delete`.
-    - Ensure all code must be syntactically correct, valid, and follow standard conventions unless otherwise stated.
+Instructions:
+  - Do NOT add action for any build files (e.g., pom.xml, build.gradle, etc.).
+  - Interpret the user’s intent and break it down into one or more file operations.
+  - For each file that needs to be created, updated, or deleted:
+    - Start with a short natural-language description of what the file is or does.
+    - Then immediately follow it with:
+      1. A code block containing the full file content (use proper language tag like ```java).
+      2. Directly after the code block, include an `action` block in this format:
+         ```action
+         path=relative/path/to/file
+         action=create|update|delete
+         ```
+    - For delete actions, omit the code block and only include the `action` block.
+  - Ensure that each file’s content block is **immediately followed** by its corresponding action block.
+  - Ensure all code must be syntactically correct, valid, and follow standard conventions unless otherwise stated.
 
     Respond in Markdown format as described above.                      
                         

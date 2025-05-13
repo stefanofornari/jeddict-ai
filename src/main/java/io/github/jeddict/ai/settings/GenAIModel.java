@@ -53,21 +53,21 @@ public class GenAIModel {
         MODELS.put("gpt-4.1-nano", new GenAIModel(OPEN_AI, "gpt-4.1-nano",
                 "Fastest, most cost-effective GPT-4.1 model",
                 0.10, 0.40));
-        MODELS.put("gpt-4o-mini", new GenAIModel(OPEN_AI, "gpt-4o-mini",
-                "Fast, affordable small model for focused tasks.",
-                0.150, 0.600));
         MODELS.put("gpt-4.1-mini", new GenAIModel(OPEN_AI, "gpt-4.1-mini",
                 "Balanced for intelligence, speed, and cost.",
                 0.40, 1.60));
+        MODELS.put("gpt-4.1", new GenAIModel(OPEN_AI, "gpt-4.1",
+                "Fast, intelligent, flexible GPT model.",
+                2, 8.0));
+        MODELS.put("o4-mini", new GenAIModel(OPEN_AI, "o4-mini",
+                "Faster, more affordable reasoning model.",
+                1.10, 4.40));
+        MODELS.put("gpt-4o-mini", new GenAIModel(OPEN_AI, "gpt-4o-mini",
+                "Fast, affordable small model for focused tasks.",
+                0.150, 0.600));
         MODELS.put("o3-mini", new GenAIModel(OPEN_AI, "o3-mini",
                 "A small model alternative to o3.",
                 1.10, 4.40));
-        MODELS.put("o1-mini", new GenAIModel(OPEN_AI, "o1-mini",
-                "A compact model for diverse tasks.",
-                1.10, 4.40));
-        MODELS.put("gpt-4o", new GenAIModel(OPEN_AI, "gpt-4o",
-                "Fast, intelligent, flexible GPT model.",
-                2.50, 10.00));
 
 
         MODELS.put("claude-3-5-sonnet-20240620", new GenAIModel(ANTHROPIC, "claude-3-5-sonnet-20240620", "A sonnet model offering refined conversational capabilities.", 3.00, 15.00));
