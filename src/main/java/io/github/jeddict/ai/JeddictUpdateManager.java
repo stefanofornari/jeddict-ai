@@ -39,11 +39,11 @@ public class JeddictUpdateManager {
     private static final String LEARN_URL = "https://jeddict.github.io/page.html?l=tutorial/AI";
 
     private static String getCurrentNetBeansVersion() {
-        return "25";
+        return "26";
     }
 
     private static String getCurrentJeddictVersion() {
-        return "3.0";
+        return "3.1";
     }
 
     private File saveFile;
