@@ -85,7 +85,7 @@ public class JeddictChatModelBuilder {
     public JeddictChatModelBuilder() {
         this(null);
     }
-    
+
     public JeddictChatModelBuilder(JeddictStreamHandler handler) {
         this(handler, pm.getModel());
     }
@@ -100,7 +100,7 @@ public class JeddictChatModelBuilder {
                     case GOOGLE -> {
                         streamModel = buildModel(new GoogleStreamingBuilder(), modelName);
                     }
-                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
+                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI,COPILOT_PROXY -> {
                         streamModel = buildModel(new OpenAiStreamingBuilder(), modelName);
                     }
                     case MISTRAL -> {
@@ -125,7 +125,7 @@ public class JeddictChatModelBuilder {
                     case GOOGLE -> {
                         model = buildModel(new GoogleBuilder(), modelName);
                     }
-                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI -> {
+                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI,COPILOT_PROXY -> {
                         model = buildModel(new OpenAiBuilder(), modelName);
                     }
                     case MISTRAL -> {

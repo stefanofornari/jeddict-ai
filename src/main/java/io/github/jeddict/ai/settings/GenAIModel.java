@@ -48,8 +48,7 @@ public class GenAIModel {
                 "A professional version of the Gemini model with enhanced capabilities.",
                 1.25, 5.00));
 
-
-               // Existing models
+        // Existing models
         MODELS.put("gpt-4.1-nano", new GenAIModel(OPEN_AI, "gpt-4.1-nano",
                 "Fastest, most cost-effective GPT-4.1 model",
                 0.10, 0.40));
@@ -68,7 +67,6 @@ public class GenAIModel {
         MODELS.put("o3-mini", new GenAIModel(OPEN_AI, "o3-mini",
                 "A small model alternative to o3.",
                 1.10, 4.40));
-
 
         MODELS.put("claude-3-5-sonnet-20240620", new GenAIModel(ANTHROPIC, "claude-3-5-sonnet-20240620", "A sonnet model offering refined conversational capabilities.", 3.00, 15.00));
         MODELS.put("claude-3-haiku-20240307", new GenAIModel(ANTHROPIC, "claude-3-haiku-20240307", "A haiku model designed for concise and creative expression.", 0.25, 1.25));
