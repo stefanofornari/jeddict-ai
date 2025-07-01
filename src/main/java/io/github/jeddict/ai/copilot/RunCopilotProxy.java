@@ -20,6 +20,8 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.util.Exceptions;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.IOProvider;
@@ -68,6 +70,7 @@ import org.openide.windows.WindowManager;
 public class RunCopilotProxy {
 
     private static volatile Process process;
+    private final SingletonProxyManager proxyManager = new SingletonProxyManager();
 
     /**
      * Checks whether the process is currently running.
@@ -77,6 +80,18 @@ public class RunCopilotProxy {
      */
     public boolean isRunning() {
         return process != null && process.isAlive();
+    }
+
+    private boolean isNpxInstalled() {
+        String npxCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "npx.cmd" : "npx";
+        ProcessBuilder pb = new ProcessBuilder(npxCmd, "--version");
+        try {
+            Process proc = pb.start();
+            int exitCode = proc.waitFor();
+            return exitCode == 0;
+        } catch (IOException | InterruptedException ex) {
+            return false;
+        }
     }
 
     /**
@@ -127,6 +142,11 @@ public class RunCopilotProxy {
      * {@code null}.
      */
     public void runProcess(ActionListener listener) {
+        if (!isNpxInstalled()) {
+            NotifyDescriptor nd = new NotifyDescriptor.Message("\"npx\" was not found. Please check your Node.js installation.", NotifyDescriptor.ERROR_MESSAGE);
+            DialogDisplayer.getDefault().notify(nd);
+            return;
+        }
         String npxCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "npx.cmd" : "npx";
         ProcessBuilder pb = new ProcessBuilder(npxCmd, "copilot-api@latest", "start");
         try {
@@ -174,7 +194,12 @@ public class RunCopilotProxy {
      * initializing the proxy with default parameters.
      */
     public void startProxy() {
-        startProxy(null);
+        WindowManager.getDefault().invokeWhenUIReady(() -> {
+            proxyManager.waitForLockAndRun(() -> {
+                // Tu spusti runProcess(listener)
+                new Thread(() -> runProcess(null)).start();
+            });
+        });
     }
 
     /**
@@ -192,7 +217,10 @@ public class RunCopilotProxy {
      */
     public void startProxy(ActionListener listener) {
         WindowManager.getDefault().invokeWhenUIReady(() -> {
-            new Thread(() -> runProcess(listener)).start();
+            proxyManager.waitForLockAndRun(() -> {
+                // Tu spusti runProcess(listener)
+                new Thread(() -> runProcess(listener)).start();
+            });
         });
     }
 }
