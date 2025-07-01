@@ -114,6 +114,7 @@ public class RunCopilotProxy {
             } catch (InterruptedException ex) {
             }
         }
+        proxyManager.releaseLock();
     }
 
     /**
