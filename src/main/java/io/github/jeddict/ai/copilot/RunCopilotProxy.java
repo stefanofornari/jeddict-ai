@@ -20,9 +20,13 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ImageIcon;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.util.Exceptions;
+import org.openide.util.NbBundle;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.IOProvider;
 import org.openide.windows.InputOutput;
@@ -152,7 +156,7 @@ public class RunCopilotProxy {
         ProcessBuilder pb = new ProcessBuilder(npxCmd, "copilot-api@latest", "start");
         try {
             process = pb.start();
-            InputOutput io = IOProvider.getDefault().getIO("Copilot Proxy", false);
+            InputOutput io = IOProvider.getDefault().getIO("Copilot Proxy", false, new Action[]{new RestartProxyAction()}, null);
             new Thread(() -> {
                 boolean listeningSent = false;
                 try ( BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -223,5 +227,27 @@ public class RunCopilotProxy {
                 new Thread(() -> runProcess(listener)).start();
             });
         });
+    }
+
+    @NbBundle.Messages("LBL_RESTART_ACTION=Restart Copilot Proxy")
+    private final class RestartProxyAction extends AbstractAction {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            RunCopilotProxy.this.closeProxy();
+            RunCopilotProxy.this.startProxy();
+        }
+
+        @Override
+        public Object getValue(String key) {
+            if (key.equals(Action.SMALL_ICON)) {
+                return new ImageIcon(RunCopilotProxy.class.getResource("/icons/restart.png"));
+            } else if (key.equals(Action.SHORT_DESCRIPTION)) {
+                return NbBundle.getMessage(RunCopilotProxy.class, "LBL_RESTART_ACTION");
+            } else {
+                return super.getValue(key);
+            }
+        }
+
     }
 }
