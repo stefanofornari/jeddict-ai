@@ -15,6 +15,7 @@
  */
 package io.github.jeddict.ai.settings;
 
+import io.github.jeddict.ai.copilot.RunCopilotProxy;
 import static io.github.jeddict.ai.models.Constant.DEEPINFRA_URL;
 import static io.github.jeddict.ai.models.Constant.DEEPSEEK_URL;
 import io.github.jeddict.ai.models.GPT4AllModelFetcher;
@@ -54,6 +55,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
+import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 
 final class AIAssistancePanel extends javax.swing.JPanel {
@@ -61,6 +63,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private DefaultTableModel excludeTableModel;
     private DefaultTableModel customHeadersTableModel;
     private DefaultTableModel promptTableModel;
+    private static final String DEFAULT_COPILOT_PROVIDER_LOCATION = "http://localhost:4141/v1";
 
     AIAssistancePanel() {
         initComponents();
@@ -1001,6 +1004,13 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             providerLocationField.setText("");
             providerLocationField.setVisible(false);
             providerLocationPane.setVisible(false);
+        } else if (selectedProvider == GenAIProvider.COPILOT_PROXY) {
+            apiKeyLabel.setVisible(false);
+            apiKeyField.setVisible(false);
+            apiKeyPane.setVisible(false);
+            providerLocationLabel.setVisible(false);
+            providerLocationField.setVisible(false);
+            providerLocationPane.setVisible(false);
         } else {
             apiKeyLabel.setVisible(false);
             apiKeyField.setVisible(false);
@@ -1077,6 +1087,18 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         if (selectedProvider != null) {
             updateModelComboBox(selectedProvider);
         }
+        RunCopilotProxy proxy = Lookup.getDefault().lookup(RunCopilotProxy.class);
+        if (selectedProvider == GenAIProvider.COPILOT_PROXY) {
+            if (!proxy.isRunning()) {
+                proxy.startProxy((e) -> {
+                    updateModelComboBox(selectedProvider);
+                });
+            }
+        } else {
+            if (proxy.isRunning()) {
+                proxy.closeProxy();
+            }
+        }
         providerSettings();
     }//GEN-LAST:event_providerComboBoxActionPerformed
 
@@ -1102,7 +1124,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             includeCodeExecutionOutput.setVisible(true);
             maxRetriesPane.setVisible(true);
         }
-        if (selectedProvider == GenAIProvider.OPEN_AI || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI) {
+        if (selectedProvider == GenAIProvider.OPEN_AI
+                || selectedProvider == GenAIProvider.CUSTOM_OPEN_AI
+                || selectedProvider == GenAIProvider.COPILOT_PROXY) {
             organizationIdPane.setVisible(true);
             maxTokensPane.setVisible(true);
             maxCompletionTokensPane.setVisible(true);
@@ -1190,6 +1214,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 && !providerLocationField.getText().isEmpty()) {
             GPT4AllModelFetcher fetcher = new GPT4AllModelFetcher();
             return fetcher.fetchModelNames(providerLocationField.getText());
+        } else if (selectedProvider == GenAIProvider.COPILOT_PROXY) {
+            GPT4AllModelFetcher fetcher = new GPT4AllModelFetcher();
+            return fetcher.fetchModelNames(DEFAULT_COPILOT_PROVIDER_LOCATION);
         } else if (selectedProvider == GenAIProvider.GROQ
                 && !providerLocationField.getText().isEmpty()) {
             GroqModelFetcher fetcher = new GroqModelFetcher();
@@ -1324,7 +1351,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setCustomHeaders(getHeaderTableModelValues());
         preferencesManager.setPrompts(getPromptModelValues());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
-        preferencesManager.setChatPlacement((String)defaultAIAssistantPlacement.getSelectedItem());
+        preferencesManager.setChatPlacement((String) defaultAIAssistantPlacement.getSelectedItem());
         preferencesManager.setGlobalRules(globalRules.getText());
 
         if (!temperature.getText().isEmpty()) {
@@ -1414,6 +1441,10 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 || selectedProvider == GenAIProvider.LM_STUDIO
                 || selectedProvider == GenAIProvider.GPT4ALL) {
             preferencesManager.setProviderLocation(providerLocationField.getText());
+        } else if (selectedProvider == GenAIProvider.COPILOT_PROXY) {
+            //langchain4j does not support null API key, but copilot-api ignores it
+            preferencesManager.setApiKey("Ignored");
+            preferencesManager.setProviderLocation(DEFAULT_COPILOT_PROVIDER_LOCATION);
         }
     }
 
@@ -1444,7 +1475,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 }
             }
         };
-        
+
         addContextMenuToTable(excludeDirTable);
         return excludeTableModel;
     }
@@ -1652,7 +1683,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     }
 
     static class CustomTableCellRenderer extends DefaultTableCellRenderer {
-        
+
         private boolean highLightPrompts;
 
         public CustomTableCellRenderer() {
@@ -1700,66 +1731,65 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     boolean valid() {
         return true;
     }
-    
+
     private void updateColorsForTheme() {
-    // Get background and foreground colors based on MIME type or current editor theme
-    Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
-    Color fgColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
-    boolean isDark = ColorUtil.isDarkColor(bgColor);
+        // Get background and foreground colors based on MIME type or current editor theme
+        Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+        Color fgColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
+        boolean isDark = ColorUtil.isDarkColor(bgColor);
 
-    // Set combo boxes
-    Color comboBg = bgColor;
-    Color comboFg = fgColor;
+        // Set combo boxes
+        Color comboBg = bgColor;
+        Color comboFg = fgColor;
 
-    // Optionally adjust colors for combo boxes if needed
-    // comboBg = isDark ? Color.DARK_GRAY : Color.WHITE;
-    // comboFg = isDark ? Color.LIGHT_GRAY : Color.BLACK;
+        // Optionally adjust colors for combo boxes if needed
+        // comboBg = isDark ? Color.DARK_GRAY : Color.WHITE;
+        // comboFg = isDark ? Color.LIGHT_GRAY : Color.BLACK;
+        // Example for providerComboBox and modelComboBox
+        providerComboBox.setBackground(comboBg);
+        providerComboBox.setForeground(comboFg);
+        modelComboBox.setBackground(comboBg);
+        modelComboBox.setForeground(comboFg);
+        defaultAIAssistantPlacement.setBackground(comboBg);
+        defaultAIAssistantPlacement.setForeground(comboFg);
+        classContextComboBox.setBackground(comboBg);
+        classContextComboBox.setForeground(comboFg);
+        varContextComboBox.setBackground(comboBg);
+        varContextComboBox.setForeground(comboFg);
+        classContextInlineHintComboBox.setBackground(comboBg);
+        classContextInlineHintComboBox.setForeground(comboFg);
 
-    // Example for providerComboBox and modelComboBox
-    providerComboBox.setBackground(comboBg);
-    providerComboBox.setForeground(comboFg);
-    modelComboBox.setBackground(comboBg);
-    modelComboBox.setForeground(comboFg);
-    defaultAIAssistantPlacement.setBackground(comboBg);
-    defaultAIAssistantPlacement.setForeground(comboFg);
-    classContextComboBox.setBackground(comboBg);
-    classContextComboBox.setForeground(comboFg);
-    varContextComboBox.setBackground(comboBg);
-    varContextComboBox.setForeground(comboFg);
-    classContextInlineHintComboBox.setBackground(comboBg);
-    classContextInlineHintComboBox.setForeground(comboFg);
-
-    // Set labels
-    providerLabel.setForeground(fgColor);
-    gptModelLabel.setForeground(fgColor);
-    providerLocationLabel.setForeground(fgColor);
-    apiKeyLabel.setForeground(fgColor);
-    temperatureLabel.setForeground(fgColor);
-    timeoutLabel.setForeground(fgColor);
-    topPLabel.setForeground(fgColor);
-    maxRetriesLabel.setForeground(fgColor);
-    maxOutputTokensLabel.setForeground(fgColor);
-    repeatPenaltyLabel.setForeground(fgColor);
-    seedLabel.setForeground(fgColor);
-    maxTokensLabel.setForeground(fgColor);
-    maxCompletionTokensLabel.setForeground(fgColor);
-    topKLabel.setForeground(fgColor);
-    presencePenaltyLabel.setForeground(fgColor);
-    frequencyPenaltyLabel.setForeground(fgColor);
-    organizationIdLabel.setForeground(fgColor);
-    fileExtLabel.setForeground(fgColor);
-    defaultAIAssistantPlacementLabel.setForeground(fgColor);
-    classContextLabel.setForeground(fgColor);
-    varContextLabel.setForeground(fgColor);
-    classContextLabel1.setForeground(fgColor);
-    aiInlineCompletionShortcutLabel.setForeground(fgColor);
-    gptModelHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
-    classContextHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
-    varContextHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
-    classContextHelp1.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
-    modelsInfo.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
-    apiKeyInfo.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
-}
+        // Set labels
+        providerLabel.setForeground(fgColor);
+        gptModelLabel.setForeground(fgColor);
+        providerLocationLabel.setForeground(fgColor);
+        apiKeyLabel.setForeground(fgColor);
+        temperatureLabel.setForeground(fgColor);
+        timeoutLabel.setForeground(fgColor);
+        topPLabel.setForeground(fgColor);
+        maxRetriesLabel.setForeground(fgColor);
+        maxOutputTokensLabel.setForeground(fgColor);
+        repeatPenaltyLabel.setForeground(fgColor);
+        seedLabel.setForeground(fgColor);
+        maxTokensLabel.setForeground(fgColor);
+        maxCompletionTokensLabel.setForeground(fgColor);
+        topKLabel.setForeground(fgColor);
+        presencePenaltyLabel.setForeground(fgColor);
+        frequencyPenaltyLabel.setForeground(fgColor);
+        organizationIdLabel.setForeground(fgColor);
+        fileExtLabel.setForeground(fgColor);
+        defaultAIAssistantPlacementLabel.setForeground(fgColor);
+        classContextLabel.setForeground(fgColor);
+        varContextLabel.setForeground(fgColor);
+        classContextLabel1.setForeground(fgColor);
+        aiInlineCompletionShortcutLabel.setForeground(fgColor);
+        gptModelHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+        classContextHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+        varContextHelp.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+        classContextHelp1.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+        modelsInfo.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+        apiKeyInfo.setForeground(isDark ? lighten(fgColor, 0.3f) : darken(fgColor, 0.3f));
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLayeredPane activationPane;
