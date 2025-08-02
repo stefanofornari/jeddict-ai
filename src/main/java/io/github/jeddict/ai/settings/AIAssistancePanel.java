@@ -63,6 +63,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private DefaultTableModel excludeTableModel;
     private DefaultTableModel customHeadersTableModel;
     private DefaultTableModel promptTableModel;
+    private static final String DEFAULT_COPILOT_PROVIDER_LOCATION = "http://localhost:4141/v1";
 
     AIAssistancePanel() {
         initComponents();
@@ -1215,7 +1216,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
             return fetcher.fetchModelNames(providerLocationField.getText());
         } else if (selectedProvider == GenAIProvider.COPILOT_PROXY) {
             GPT4AllModelFetcher fetcher = new GPT4AllModelFetcher();
-            return fetcher.fetchModelNames("http://localhost:4141/v1");
+            return fetcher.fetchModelNames(DEFAULT_COPILOT_PROVIDER_LOCATION);
         } else if (selectedProvider == GenAIProvider.GROQ
                 && !providerLocationField.getText().isEmpty()) {
             GroqModelFetcher fetcher = new GroqModelFetcher();
@@ -1441,8 +1442,9 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 || selectedProvider == GenAIProvider.GPT4ALL) {
             preferencesManager.setProviderLocation(providerLocationField.getText());
         } else if (selectedProvider == GenAIProvider.COPILOT_PROXY) {
-            preferencesManager.setApiKey(new String("sssss"));
-            preferencesManager.setProviderLocation("http://localhost:4141/v1");
+            //langchain4j does not support null API key, but copilot-api ignores it
+            preferencesManager.setApiKey("Ignored");
+            preferencesManager.setProviderLocation(DEFAULT_COPILOT_PROVIDER_LOCATION);
         }
     }
 
