@@ -84,15 +84,17 @@ public abstract class JeddictStreamHandler implements StreamingResponseHandler<A
         LOGGER.log(Level.SEVERE, "Exception in JeddictStreamHandler", throwable);
         // Update UI on the Event Dispatch Thread
         SwingUtilities.invokeLater(() -> {
+            final String error =  "[Error] An error occurred: " + throwable.getMessage();
             if (textArea != null) {
-                textArea.append("\n\n[Error] An error occurred: " + throwable.getMessage());
+                textArea.append("\n\n" + error);
             } else {
                 // If textArea not yet initialized, clear and create one to show error
                 topComponent.clear();
                 JTextArea errorArea = topComponent.createTextAreaPane();
-                errorArea.setText("[Error] An error occurred: " + throwable.getMessage());
+                errorArea.setText(error);
                 textArea = errorArea;
-    }
+            }
+            onComplete(error);
             if (handle != null) {
                 handle.finish();
             }
@@ -113,6 +115,6 @@ public abstract class JeddictStreamHandler implements StreamingResponseHandler<A
     }
 
     public abstract void onComplete(String response);
-    
-    
+
+
 }
