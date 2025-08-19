@@ -74,7 +74,7 @@
                             <id>org.netbeans.api:org-netbeans-modules-java-sourceui</id>
                             <type>impl</type>
                         </dependency>
-                        
+
                         <dependency>
                             <id>org.netbeans.api:org-netbeans-api-progress-nb</id>
                             <type>impl</type>
@@ -192,13 +192,13 @@
         <dependency>
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-swing</artifactId>
-            <version>1.17</version>
+            <version>1.19</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-script</artifactId>
-            <version>1.17</version>
+            <version>1.19</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.plantuml</groupId>
@@ -395,7 +395,7 @@
             <artifactId>org-netbeans-modules-editor</artifactId>
             <version>RELEASE260</version>
         </dependency>
-        
+
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-windows</artifactId>
@@ -414,7 +414,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
-            <version>RELEASE260</version>
+            <version>RELEASE130</version>
         </dependency>
 
         <dependency>
@@ -470,7 +470,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-awt</artifactId>
-            <version>RELEASE260</version>
+            <version>RELEASE130</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
@@ -556,7 +556,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    
+
     <profiles>
         <profile>
             <id>release</id>
@@ -656,7 +656,7 @@
             </distributionManagement>
         </profile>
     </profiles>
-    
+
     <repositories>
         <repository>
             <id>orgapachenetbeans</id>
