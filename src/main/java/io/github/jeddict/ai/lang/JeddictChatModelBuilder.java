@@ -294,6 +294,7 @@ public class JeddictChatModelBuilder {
                         "Error in AI Assistance",
                         JOptionPane.ERROR_MESSAGE);
             }
+            handle.finish();
         }
         return null;
     }
