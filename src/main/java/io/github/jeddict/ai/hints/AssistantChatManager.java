@@ -76,6 +76,7 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
@@ -93,11 +94,13 @@ import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.prefs.Preferences;
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
@@ -701,39 +704,43 @@ public class AssistantChatManager extends JavaFix {
             }
         });
 
-        submitButton.addActionListener(e -> {
-            if (result != null && !result.isDone()) {
-                NotifyDescriptor.Confirmation confirmDialog = new NotifyDescriptor.Confirmation(
-                        "The AI Assistant is still processing the request. Do you want to cancel it?",
-                        "Interrupt AI Assistant",
-                        NotifyDescriptor.YES_NO_OPTION
-                );
-                Object answer = DialogDisplayer.getDefault().notify(confirmDialog);
-                if (NotifyDescriptor.YES_OPTION.equals(answer)) {
-                    result.cancel(true);
-                    if (handler != null && handler.getProgressHandle() != null) {
-                        handler.getProgressHandle().finish();
+        submitButton.setAction(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                System.out.println("sending the prompt...");
+                if (result != null && !result.isDone()) {
+                    NotifyDescriptor.Confirmation confirmDialog = new NotifyDescriptor.Confirmation(
+                            "The AI Assistant is still processing the request. Do you want to cancel it?",
+                            "Interrupt AI Assistant",
+                            NotifyDescriptor.YES_NO_OPTION
+                    );
+                    Object answer = DialogDisplayer.getDefault().notify(confirmDialog);
+                    if (NotifyDescriptor.YES_OPTION.equals(answer)) {
+                        result.cancel(true);
+                        if (handler != null && handler.getProgressHandle() != null) {
+                            handler.getProgressHandle().finish();
+                        }
+                        result = null;
+                        stopLoading();
                     }
+                } else {
                     result = null;
-                    stopLoading();
-                }
-            } else {
-                result = null;
-                String question = questionPane.getText();
-                Map<String, String> prompts = PreferencesManager.getInstance().getPrompts();
+                    String question = questionPane.getText();
+                    Map<String, String> prompts = PreferencesManager.getInstance().getPrompts();
 
-                for (Map.Entry<String, String> entry : prompts.entrySet()) {
-                    String promptKey = entry.getKey();
-                    String promptValue = entry.getValue();
+                    for (Map.Entry<String, String> entry : prompts.entrySet()) {
+                        String promptKey = entry.getKey();
+                        String promptValue = entry.getValue();
 
-                    String toReplace = "/" + promptKey;
+                        String toReplace = "/" + promptKey;
 
-                    if (question.contains(toReplace)) {
-                        question = question.replace(toReplace, promptValue);
+                        if (question.contains(toReplace)) {
+                            question = question.replace(toReplace, promptValue);
+                        }
                     }
-                }
-                if (!question.isEmpty()) {
-                    handleQuestion(question, messageContext, true);
+                    if (!question.isEmpty()) {
+                        handleQuestion(question, messageContext, true);
+                    }
                 }
             }
         });
@@ -773,6 +780,20 @@ public class AssistantChatManager extends JavaFix {
 
         FileTransferHandler.register(bottomPanel, this::addFileTab);
         FileTransferHandler.register(questionPane, this::addFileTab);
+
+        //
+        // intercept Ctrl+ENTER to submit the prompt
+        //
+        final String actionKey = "submit-prompt";
+        final javax.swing.KeyStroke ctrlEnter = javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, java.awt.event.KeyEvent.CTRL_DOWN_MASK);
+
+        final javax.swing.InputMap inputMap = questionPane.getInputMap(JComponent.WHEN_FOCUSED);
+        final javax.swing.ActionMap actionMap = questionPane.getActionMap();
+
+        inputMap.put(ctrlEnter, actionKey);
+        actionMap.put(actionKey, submitButton.getAction());
+
+        // ---
 
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
         bottomPanel.add(filePanel);
