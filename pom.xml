@@ -303,7 +303,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-progress</artifactId>
-            <version>RELEASE240</version>
+            <version>RELEASE260</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
