@@ -74,7 +74,7 @@
                             <id>org.netbeans.api:org-netbeans-modules-java-sourceui</id>
                             <type>impl</type>
                         </dependency>
-                        
+
                         <dependency>
                             <id>org.netbeans.api:org-netbeans-api-progress-nb</id>
                             <type>impl</type>
@@ -395,7 +395,7 @@
             <artifactId>org-netbeans-modules-editor</artifactId>
             <version>RELEASE260</version>
         </dependency>
-        
+
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-windows</artifactId>
@@ -550,13 +550,13 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-io</artifactId>
-            <version>RELEASE130</version>
+            <version>RELEASE260</version>
         </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    
+
     <profiles>
         <profile>
             <id>release</id>
@@ -656,7 +656,7 @@
             </distributionManagement>
         </profile>
     </profiles>
-    
+
     <repositories>
         <repository>
             <id>orgapachenetbeans</id>
