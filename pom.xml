@@ -414,7 +414,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
-            <version>RELEASE130</version>
+            <version>RELEASE260</version>
         </dependency>
 
         <dependency>
@@ -470,7 +470,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-awt</artifactId>
-            <version>RELEASE130</version>
+            <version>RELEASE260</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
@@ -550,7 +550,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-io</artifactId>
-            <version>RELEASE130</version>
+            <version>RELEASE260</version>
         </dependency>
     </dependencies>
     <properties>
