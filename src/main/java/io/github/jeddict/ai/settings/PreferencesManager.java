@@ -440,7 +440,7 @@ public class PreferencesManager {
     }
 
     public String getSubmitShortcut() {
-        // Default to "Enter" if user has not set any preference
+        // Default to "Ctrl + Enter" if user has not set any preference
         return preferences.get("submitShortcut", "Ctrl + Enter");
     }
 
