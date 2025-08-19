@@ -707,7 +707,6 @@ public class AssistantChatManager extends JavaFix {
         submitButton.setAction(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                System.out.println("sending the prompt...");
                 if (result != null && !result.isDone()) {
                     NotifyDescriptor.Confirmation confirmDialog = new NotifyDescriptor.Confirmation(
                             "The AI Assistant is still processing the request. Do you want to cancel it?",
