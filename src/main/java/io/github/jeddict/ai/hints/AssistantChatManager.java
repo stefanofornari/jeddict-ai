@@ -76,9 +76,12 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -107,6 +110,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -153,7 +157,7 @@ public class AssistantChatManager extends JavaFix {
     private JScrollPane questionScrollPane;
     private final List<Response> responseHistory = new ArrayList<>();
     private int currentResponseIndex = -1;
-    private String sourceCode = null;
+    private String sourceCode;
     private Project projectContext;
     private Project project;
     private final Set<FileObject> threadContext = new HashSet<>();
@@ -781,15 +785,28 @@ public class AssistantChatManager extends JavaFix {
         FileTransferHandler.register(questionPane, this::addFileTab);
 
         //
-        // intercept Ctrl+ENTER to submit the prompt
+        // intercept shortkeys to submit the prompt
         //
         final String actionKey = "submit-prompt";
-        final javax.swing.KeyStroke ctrlEnter = javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, java.awt.event.KeyEvent.CTRL_DOWN_MASK);
+
+        String shortcut = pm.getSubmitShortcut(); // e.g. "Ctrl + Enter", "Enter", "Shift + Enter", "Alt + Enter"
+
+        javax.swing.KeyStroke submitKey;
+        switch (shortcut) {
+            case "Enter":
+                submitKey = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
+                break;
+            case "Shift + Enter":
+                submitKey = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.SHIFT_DOWN_MASK);
+                break;
+            default: // "Ctrl + Enter"
+                submitKey = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.CTRL_DOWN_MASK);
+        }
 
         final javax.swing.InputMap inputMap = questionPane.getInputMap(JComponent.WHEN_FOCUSED);
         final javax.swing.ActionMap actionMap = questionPane.getActionMap();
 
-        inputMap.put(ctrlEnter, actionKey);
+        inputMap.put(submitKey, actionKey);
         actionMap.put(actionKey, submitButton.getAction());
 
         // ---

@@ -439,6 +439,15 @@ public class PreferencesManager {
         preferences.put("chatPlacement", placement);
     }
 
+    public String getSubmitShortcut() {
+        // Default to "Ctrl + Enter" if user has not set any preference
+        return preferences.get("submitShortcut", "Ctrl + Enter");
+    }
+
+    public void setSubmitShortcut(String shortcut) {
+        preferences.put("submitShortcut", shortcut);
+    }
+
     public void setFileExtensionToInclude(String exts) {
         if (exts != null) {
             String[] fileExtensionToInclude = exts.split("\\s*,\\s*");

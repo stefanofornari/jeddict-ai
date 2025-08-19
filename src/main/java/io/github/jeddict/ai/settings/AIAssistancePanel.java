@@ -171,12 +171,17 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         fileExtField = new javax.swing.JTextArea();
         jLabel1 = new javax.swing.JLabel();
         jLayeredPane2 = new javax.swing.JLayeredPane();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        excludeDirTable = new javax.swing.JTable();
-        jLayeredPane1 = new javax.swing.JLayeredPane();
+        jLayeredPane3 = new javax.swing.JLayeredPane();
+        jLayeredPane7 = new javax.swing.JLayeredPane();
+        submitShortcutLabel = new javax.swing.JLabel();
+        submitShortcut = new javax.swing.JComboBox<>();
+        jLayeredPane4 = new javax.swing.JLayeredPane();
         defaultAIAssistantPlacementLabel = new javax.swing.JLabel();
         defaultAIAssistantPlacement = new javax.swing.JComboBox<>();
+        jLayeredPane5 = new javax.swing.JLayeredPane();
         excludeJavadocCommentsCheckBox = new javax.swing.JCheckBox();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        excludeDirTable = new javax.swing.JTable();
         inlineCompletionPane = new javax.swing.JLayeredPane();
         classContextPane = new javax.swing.JLayeredPane();
         classContextLabelPane = new javax.swing.JLayeredPane();
@@ -573,20 +578,20 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         customHeadersPane.setLayout(customHeadersPaneLayout);
         customHeadersPaneLayout.setHorizontalGroup(
             customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 558, Short.MAX_VALUE)
+            .addGap(0, 600, Short.MAX_VALUE)
             .addGroup(customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(customHeadersPaneLayout.createSequentialGroup()
                     .addContainerGap()
-                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 546, Short.MAX_VALUE)
+                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
                     .addContainerGap()))
         );
         customHeadersPaneLayout.setVerticalGroup(
             customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 385, Short.MAX_VALUE)
+            .addGap(0, 211, Short.MAX_VALUE)
             .addGroup(customHeadersPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, customHeadersPaneLayout.createSequentialGroup()
                     .addContainerGap()
-                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 379, Short.MAX_VALUE)))
+                    .addComponent(customHeadersScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 205, Short.MAX_VALUE)))
         );
 
         providerSettingsPane.add(customHeadersPane);
@@ -643,20 +648,29 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         jLayeredPane2.setLayout(new java.awt.GridLayout(1, 2, 5, 0));
 
-        excludeDirTable.setModel(getExcludeTableModel());
-        jScrollPane2.setViewportView(excludeDirTable);
+        jLayeredPane3.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
-        jLayeredPane2.add(jScrollPane2);
+        jLayeredPane7.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
-        askAIPane.add(jLayeredPane2);
+        org.openide.awt.Mnemonics.setLocalizedText(submitShortcutLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.submitShortcutLabel.text")); // NOI18N
+        jLayeredPane7.add(submitShortcutLabel);
 
-        jLayeredPane1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 15, 5));
+        submitShortcut.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Ctrl + Enter", "Enter", "Shift + Enter"}));
+        jLayeredPane7.add(submitShortcut);
+
+        jLayeredPane3.add(jLayeredPane7);
+
+        jLayeredPane4.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         org.openide.awt.Mnemonics.setLocalizedText(defaultAIAssistantPlacementLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.defaultAIAssistantPlacementLabel.text")); // NOI18N
-        jLayeredPane1.add(defaultAIAssistantPlacementLabel);
+        jLayeredPane4.add(defaultAIAssistantPlacementLabel);
 
         defaultAIAssistantPlacement.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Left", "Center", "Right" }));
-        jLayeredPane1.add(defaultAIAssistantPlacement);
+        jLayeredPane4.add(defaultAIAssistantPlacement);
+
+        jLayeredPane3.add(jLayeredPane4);
+
+        jLayeredPane5.setLayout(new java.awt.FlowLayout());
 
         org.openide.awt.Mnemonics.setLocalizedText(excludeJavadocCommentsCheckBox, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.text")); // NOI18N
         excludeJavadocCommentsCheckBox.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.excludeJavadocCommentsCheckBox.toolTipText")); // NOI18N
@@ -665,9 +679,18 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 excludeJavadocCommentsCheckBoxActionPerformed(evt);
             }
         });
-        jLayeredPane1.add(excludeJavadocCommentsCheckBox);
+        jLayeredPane5.add(excludeJavadocCommentsCheckBox);
 
-        askAIPane.add(jLayeredPane1);
+        jLayeredPane3.add(jLayeredPane5);
+
+        jLayeredPane2.add(jLayeredPane3);
+
+        excludeDirTable.setModel(getExcludeTableModel());
+        jScrollPane2.setViewportView(excludeDirTable);
+
+        jLayeredPane2.add(jScrollPane2);
+
+        askAIPane.add(jLayeredPane2);
 
         jTabbedPane1.addTab(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.askAIPane.TabConstraints.tabTitle"), askAIPane); // NOI18N
 
@@ -868,7 +891,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                         .addComponent(jLabel3)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(importButton)))
-                .addContainerGap(78, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -881,7 +904,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(importButton)
                     .addComponent(jLabel3))
-                .addContainerGap(684, Short.MAX_VALUE))
+                .addContainerGap(337, Short.MAX_VALUE))
         );
 
         backupPane.add(jPanel1, java.awt.BorderLayout.CENTER);
@@ -892,12 +915,12 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 558, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 600, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 835, Short.MAX_VALUE)
+                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 488, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -1311,6 +1334,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         fileExtField.setText(String.join(", ", preferencesManager.getFileExtensionListToInclude()));
         excludeJavadocCommentsCheckBox.setSelected(preferencesManager.isExcludeJavadocEnabled());
         defaultAIAssistantPlacement.setSelectedItem(preferencesManager.getChatPlacement());
+        submitShortcut.setSelectedItem(preferencesManager.getSubmitShortcut());
         globalRules.setText(preferencesManager.getGlobalRules());
 
         GenAIProvider selectedProvider = (GenAIProvider) providerComboBox.getSelectedItem();
@@ -1352,6 +1376,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         preferencesManager.setPrompts(getPromptModelValues());
         preferencesManager.setExcludeJavadocEnabled(excludeJavadocCommentsCheckBox.isSelected());
         preferencesManager.setChatPlacement((String) defaultAIAssistantPlacement.getSelectedItem());
+        preferencesManager.setSubmitShortcut((String) submitShortcut.getSelectedItem());
         preferencesManager.setGlobalRules(globalRules.getText());
 
         if (!temperature.getText().isEmpty()) {
@@ -1752,6 +1777,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         modelComboBox.setForeground(comboFg);
         defaultAIAssistantPlacement.setBackground(comboBg);
         defaultAIAssistantPlacement.setForeground(comboFg);
+        submitShortcut.setBackground(comboBg);
+        submitShortcut.setForeground(comboFg);
         classContextComboBox.setBackground(comboBg);
         classContextComboBox.setForeground(comboFg);
         varContextComboBox.setBackground(comboBg);
@@ -1851,8 +1878,11 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
-    private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JLayeredPane jLayeredPane2;
+    private javax.swing.JLayeredPane jLayeredPane3;
+    private javax.swing.JLayeredPane jLayeredPane4;
+    private javax.swing.JLayeredPane jLayeredPane5;
+    private javax.swing.JLayeredPane jLayeredPane7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
@@ -1908,6 +1938,8 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private javax.swing.JLayeredPane snippetPane;
     private javax.swing.JLayeredPane snippetPane1;
     private javax.swing.JCheckBox stream;
+    private javax.swing.JComboBox<String> submitShortcut;
+    private javax.swing.JLabel submitShortcutLabel;
     private javax.swing.JTextField temperature;
     private javax.swing.JLabel temperatureLabel;
     private javax.swing.JLayeredPane temperaturePane;
