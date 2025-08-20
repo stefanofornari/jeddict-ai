@@ -448,6 +448,15 @@ public class PreferencesManager {
         preferences.put("submitShortcut", shortcut);
     }
 
+    public int getConversationContext() {
+        // Default = 3 (Last 3 replies)
+        return preferences.getInt("conversationContext", 3);
+    }
+
+    public void setConversationContext(int contextValue) {
+        preferences.putInt("conversationContext", contextValue);
+    }
+
     public void setFileExtensionToInclude(String exts) {
         if (exts != null) {
             String[] fileExtensionToInclude = exts.split("\\s*,\\s*");
