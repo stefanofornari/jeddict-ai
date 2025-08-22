@@ -170,7 +170,7 @@ public class JeddictChatModelBuilder {
 
         setIfValid(builder::temperature, pm.getTemperature(), Double.MIN_VALUE);
         setIfValid(value -> builder.timeout(Duration.ofSeconds(value)), pm.getTimeout(), Integer.MIN_VALUE);
-        if (builder instanceof ChatModelStreamingBuilder) {
+        if (builder instanceof ChatModelBuilder) {
             setIfValid(((ChatModelBuilder)builder)::maxRetries, pm.getMaxRetries(), Integer.MIN_VALUE);
         }
         setIfValid(builder::maxOutputTokens, pm.getMaxOutputTokens(), Integer.MIN_VALUE);
@@ -268,13 +268,19 @@ public class JeddictChatModelBuilder {
             }
         } catch (Exception e) {
             String errorMessage = e.getMessage();
-            if (e.getCause() != null ) {
+            if (e.getCause() != null && e.getCause().getMessage() != null) {
                 //
                 // let's pretend it is a JSON object, if not, ignore it
                 //
-                JSONObject jsonObject = new JSONObject(e.getCause().getMessage());
-                if (jsonObject.has("error") && jsonObject.getJSONObject("error").has("message")) {
-                    errorMessage = jsonObject.getJSONObject("error").getString("message");
+                try {
+                    JSONObject jsonObject = new JSONObject(e.getCause().getMessage());
+                    if (jsonObject.has("error") && jsonObject.getJSONObject("error").has("message")) {
+                        errorMessage = jsonObject.getJSONObject("error").getString("message");
+                    }
+                } catch (Throwable x) {
+                    //
+                    // It was not a proper JSON
+                    //
                 }
             }
             if (errorMessage != null
