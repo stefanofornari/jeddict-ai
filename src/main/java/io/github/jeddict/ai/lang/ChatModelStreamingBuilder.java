@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.lang;
 
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import java.time.Duration;
 import java.util.Map;
 
@@ -25,10 +25,10 @@ import java.util.Map;
  * streaming functionality enables real-time, token-by-token response generation.
  *
  * @author Francois Steyn
- * @see StreamingChatLanguageModel
+ * @see StreamingChatModel
  * @see ChatModelBaseBuilder
  */
-public interface ChatModelStreamingBuilder extends ChatModelBaseBuilder<StreamingChatLanguageModel> {
+public interface ChatModelStreamingBuilder extends ChatModelBaseBuilder<StreamingChatModel> {
 
     @Override
     ChatModelStreamingBuilder baseUrl(final String baseUrl);
@@ -50,9 +50,6 @@ public interface ChatModelStreamingBuilder extends ChatModelBaseBuilder<Streamin
 
     @Override
     ChatModelStreamingBuilder topP(final Double topP);
-
-    @Override
-    ChatModelStreamingBuilder maxRetries(final Integer maxRetries);
 
     @Override
     ChatModelStreamingBuilder maxOutputTokens(final Integer maxOutputTokens);
@@ -91,6 +88,6 @@ public interface ChatModelStreamingBuilder extends ChatModelBaseBuilder<Streamin
     ChatModelStreamingBuilder allowCodeExecution(final boolean allowCodeExecution);
 
     @Override
-    StreamingChatLanguageModel build();
+    StreamingChatModel build();
 
 }

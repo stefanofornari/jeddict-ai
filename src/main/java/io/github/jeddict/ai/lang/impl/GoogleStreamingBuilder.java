@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.lang.impl;
 
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 import io.github.jeddict.ai.lang.ChatModelStreamingBuilder;
 import java.time.Duration;
@@ -72,12 +72,6 @@ public class GoogleStreamingBuilder implements ChatModelStreamingBuilder {
     @Override
     public ChatModelStreamingBuilder topP(final Double topP) {
         builder.topP(topP);
-        return this;
-    }
-
-    @Override
-    public ChatModelStreamingBuilder maxRetries(final Integer maxRetries) {
-        builder.maxRetries(maxRetries);
         return this;
     }
 
@@ -154,7 +148,7 @@ public class GoogleStreamingBuilder implements ChatModelStreamingBuilder {
     }
 
     @Override
-    public StreamingChatLanguageModel build() {
+    public StreamingChatModel build() {
         return builder.build();
     }
 

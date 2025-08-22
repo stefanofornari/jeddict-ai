@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.lang;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import java.time.Duration;
 import java.util.Map;
 
@@ -24,10 +24,10 @@ import java.util.Map;
  * chat-based language models. It inherits all configuration methods from the base builder while specifically targeting ChatLanguageModel as the build output type.
  *
  * @author Francois Steyn
- * @see ChatLanguageModel
+ * @see ChatModel
  * @see ChatModelBaseBuilder
  */
-public interface ChatModelBuilder extends ChatModelBaseBuilder<ChatLanguageModel> {
+public interface ChatModelBuilder extends ChatModelBaseBuilder<ChatModel> {
 
     @Override
     ChatModelBuilder baseUrl(final String baseUrl);
@@ -49,9 +49,6 @@ public interface ChatModelBuilder extends ChatModelBaseBuilder<ChatLanguageModel
 
     @Override
     ChatModelBuilder topP(final Double topP);
-
-    @Override
-    ChatModelBuilder maxRetries(final Integer maxRetries);
 
     @Override
     ChatModelBuilder maxOutputTokens(final Integer maxOutputTokens);
@@ -90,6 +87,8 @@ public interface ChatModelBuilder extends ChatModelBaseBuilder<ChatLanguageModel
     ChatModelBuilder allowCodeExecution(final boolean allowCodeExecution);
 
     @Override
-    ChatLanguageModel build();
+    ChatModel build();
+
+    ChatModelBuilder maxRetries(final Integer maxRetries);
 
 }

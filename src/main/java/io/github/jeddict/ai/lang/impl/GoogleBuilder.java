@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.lang.impl;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import io.github.jeddict.ai.lang.ChatModelBuilder;
 import java.time.Duration;
@@ -154,7 +154,7 @@ public class GoogleBuilder implements ChatModelBuilder {
     }
 
     @Override
-    public ChatLanguageModel build() {
+    public ChatModel build() {
         return builder.build();
     }
 }

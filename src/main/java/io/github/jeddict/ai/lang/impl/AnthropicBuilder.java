@@ -16,7 +16,7 @@
 package io.github.jeddict.ai.lang.impl;
 
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import io.github.jeddict.ai.lang.ChatModelBuilder;
 import java.time.Duration;
 import java.util.Map;
@@ -155,7 +155,7 @@ public class AnthropicBuilder implements ChatModelBuilder {
     }
 
     @Override
-    public ChatLanguageModel build() {
+    public ChatModel build() {
         return builder.build();
     }
 }

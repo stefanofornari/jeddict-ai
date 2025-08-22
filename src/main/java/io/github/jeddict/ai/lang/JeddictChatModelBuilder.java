@@ -22,8 +22,8 @@ import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.lang.impl.AnthropicBuilder;
 import io.github.jeddict.ai.lang.impl.AnthropicStreamingBuilder;
@@ -77,8 +77,8 @@ import org.openide.util.NbBundle;
  */
 public class JeddictChatModelBuilder {
 
-    private ChatLanguageModel model;
-    private StreamingChatLanguageModel streamModel;
+    private ChatModel model;
+    private StreamingChatModel streamModel;
     protected static PreferencesManager pm = PreferencesManager.getInstance();
     private JeddictStreamHandler handler;
 
@@ -170,7 +170,9 @@ public class JeddictChatModelBuilder {
 
         setIfValid(builder::temperature, pm.getTemperature(), Double.MIN_VALUE);
         setIfValid(value -> builder.timeout(Duration.ofSeconds(value)), pm.getTimeout(), Integer.MIN_VALUE);
-        setIfValid(builder::maxRetries, pm.getMaxRetries(), Integer.MIN_VALUE);
+        if (builder instanceof ChatModelStreamingBuilder) {
+            setIfValid(((ChatModelBuilder)builder)::maxRetries, pm.getMaxRetries(), Integer.MIN_VALUE);
+        }
         setIfValid(builder::maxOutputTokens, pm.getMaxOutputTokens(), Integer.MIN_VALUE);
         setIfValid(builder::repeatPenalty, pm.getRepeatPenalty(), Double.MIN_VALUE);
         setIfValid(builder::seed, pm.getSeed(), Integer.MIN_VALUE);
@@ -257,17 +259,19 @@ public class JeddictChatModelBuilder {
         try {
             if (streamModel != null) {
                 handler.setHandle(handle);
-                streamModel.generate(messages, handler);
+                streamModel.chat(messages, handler);
             } else {
-                String response = model.generate(messages).content().text();
+                String response = model.chat(messages).aiMessage().text();
                 CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
                 handle.finish();
                 return response;
             }
         } catch (Exception e) {
             String errorMessage = e.getMessage();
-            if (e.getCause() != null
-                    && e.getCause() instanceof dev.ai4j.openai4j.OpenAiHttpException) {
+            if (e.getCause() != null ) {
+                //
+                // let's pretend it is a JSON object, if not, ignore it
+                //
                 JSONObject jsonObject = new JSONObject(e.getCause().getMessage());
                 if (jsonObject.has("error") && jsonObject.getJSONObject("error").has("message")) {
                     errorMessage = jsonObject.getJSONObject("error").getString("message");

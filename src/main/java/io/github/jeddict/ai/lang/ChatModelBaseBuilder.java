@@ -83,14 +83,6 @@ public interface ChatModelBaseBuilder<T> {
     ChatModelBaseBuilder<T> topP(final Double topP);
 
     /**
-     * Sets the maximum number of retry attempts for failed requests.
-     *
-     * @param maxRetries The maximum number of retries
-     * @return The builder instance
-     */
-    ChatModelBaseBuilder<T> maxRetries(final Integer maxRetries);
-
-    /**
      * Sets the maximum number of tokens in the output.
      *
      * @param maxOutputTokens The maximum number of output tokens

@@ -16,7 +16,7 @@
 package io.github.jeddict.ai.lang.impl;
 
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import io.github.jeddict.ai.lang.ChatModelStreamingBuilder;
 import java.time.Duration;
 import java.util.Map;
@@ -74,13 +74,7 @@ public class AnthropicStreamingBuilder implements ChatModelStreamingBuilder {
         builder.topP(topP);
         return this;
     }
-
-    @Override
-    public ChatModelStreamingBuilder maxRetries(final Integer maxRetries) {
-        //NOOP
-        return this;
-    }
-
+    
     @Override
     public ChatModelStreamingBuilder maxOutputTokens(final Integer maxOutputTokens) {
         //NOOP
@@ -155,7 +149,7 @@ public class AnthropicStreamingBuilder implements ChatModelStreamingBuilder {
     }
 
     @Override
-    public StreamingChatLanguageModel build() {
+    public StreamingChatModel build() {
         return builder.build();
     }
 }

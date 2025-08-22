@@ -24,6 +24,8 @@ import static com.sun.source.tree.Tree.Kind.ENUM;
 import static com.sun.source.tree.Tree.Kind.INTERFACE;
 import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
 import io.github.jeddict.ai.completion.Action;
@@ -93,6 +95,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -136,6 +139,8 @@ import org.openide.windows.WindowManager;
  * @author Shiwani Gupta
  */
 public class AssistantChatManager extends JavaFix {
+
+    private static final Logger LOGGER = Logger.getLogger(AssistantChatManager.class.getCanonicalName());
 
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
     public static final String ASSISTANT_CHAT_MANAGER_KEY = "ASSISTANT_CHAT_MANAGER_KEY";
@@ -254,10 +259,12 @@ public class AssistantChatManager extends JavaFix {
                     displayHtmlContent(fileName, name + " AI Assistant");
                     JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
                         @Override
-                        public void onComplete(String textResponse) {
-                            Response response = new Response(null, textResponse, messageContextCopy);
-                            sourceCode = EditorUtil.updateEditors(null, getProject(), topComponent, response, getContextFiles());
-                            responseHistory.add(response);
+                        public void onCompleteResponse(ChatResponse response) {
+                            super.onCompleteResponse(response);
+
+                            final Response r = new Response(null, response.aiMessage().text(), messageContextCopy);
+                            sourceCode = EditorUtil.updateEditors(null, getProject(), topComponent, r, getContextFiles());
+                            responseHistory.add(r);
                             currentResponseIndex = responseHistory.size() - 1;
                         }
                     };
@@ -276,7 +283,7 @@ public class AssistantChatManager extends JavaFix {
                         }
                     }
                     if (response != null && !response.isEmpty()) {
-                        handler.onComplete(response);
+                        handler.onCompleteResponse(ChatResponse.builder().aiMessage(new AiMessage(response)).build());
                     }
                 });
 
@@ -901,30 +908,29 @@ public class AssistantChatManager extends JavaFix {
                 Set<FileObject> messageContextCopy = new HashSet<>(messageContext);
                 handler = new JeddictStreamHandler(topComponent) {
                     @Override
-                    public void onComplete(String textResponse) {
-                        Response response = new Response(question, textResponse, messageContextCopy);
+                    public void onCompleteResponse(ChatResponse response) {
+                        super.onCompleteResponse(response);
+
+                        final String textResponse = response.aiMessage().text();
+                        final Response r = new Response(question, textResponse, messageContextCopy);
                         if (responseHistory.isEmpty() || !textResponse.equals(responseHistory.get(responseHistory.size() - 1))) {
-                            responseHistory.add(response);
+                            responseHistory.add(r);
                             currentResponseIndex = responseHistory.size() - 1;
                         }
                         SwingUtilities.invokeLater(() -> {
                             BiConsumer<String, Set<FileObject>> queryUpdate = (newQuery, messageContext) -> {
                                 handleQuestion(newQuery, messageContext, false);
                             };
-//                            parser.flush();
-//                            parser.shutdown();
-//                            topComponent.lastRemove();
                             if (codeReview) {
-                                List<Review> reviews = parseReviewsFromYaml(response.getBlocks().get(0).getContent());
+                                List<Review> reviews = parseReviewsFromYaml(r.getBlocks().get(0).getContent());
                                 String web = convertReviewsToHtml(reviews);
                                 topComponent.setReviews(reviews);
-                                response.getBlocks().clear();
-                                response.getBlocks().add(new Block("web", web));
+                                r.getBlocks().clear();
+                                r.getBlocks().add(new Block("web", web));
                             }
-                            sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, response, getContextFiles());
+                            sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, r, getContextFiles());
 
                             stopLoading();
-//                            saveButton.setVisible(sourceCode != null);
                             updateButtons(prevButton, nextButton);
                             buttonPanelAdapter.componentResized(null);
                         });
@@ -992,7 +998,7 @@ public class AssistantChatManager extends JavaFix {
                 }
 
                 if (response != null && !response.isEmpty()) {
-                    handler.onComplete(response);
+                    handler.onCompleteResponse(ChatResponse.builder().aiMessage(new AiMessage(response)).build());
                 }
 
                 questionPane.setText("");
