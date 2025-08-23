@@ -719,7 +719,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         return enhanced;
     }
 
-    public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage, List<String> images, Response previousChatResponse) {
+    public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage, List<String> images, List<Response> previousChatResponse) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output. ")
                 .append("""
@@ -753,7 +753,7 @@ public class JeddictChatModel extends JeddictChatModelBuilder {
         return answer;
     }
 
-    public String generateCodeReviewSuggestions(String gitDiffOutput, String query, List<String> images, Response previousChatResponse) {
+    public String generateCodeReviewSuggestions(String gitDiffOutput, String query, List<String> images, List<Response> previousChatResponse) {
 
         String prompt = """
 Instructions:
@@ -791,7 +791,7 @@ Expected YAML format:
         return generate(null, pm.getPrompts().get("codereview") + '\n' + prompt, images, previousChatResponse);
     }
 
-    public String assistDbMetadata(String dbMetadata, String query, List<String> images, Response previousChatResponse) {
+    public String assistDbMetadata(String dbMetadata, String query, List<String> images, List<Response> previousChatResponse) {
         StringBuilder dbPrompt = new StringBuilder("You are an API server that provides assistance. ");
 
         dbPrompt.append("Given the following database schema metadata:\n")
@@ -866,7 +866,7 @@ Expected YAML format:
 
     public String generateDescription(
             Project project, String source, String methodContent, List<String> images,
-            Response previousChatResponse, String userQuery) {
+            List<Response> previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
         String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
@@ -893,7 +893,7 @@ Expected YAML format:
 
     public String agent(
             Project project, String source, String methodContent, List<String> images,
-            Response previousChatResponse, String userQuery) {
+            List<Response> previousChatResponse, String userQuery) {
 
         String projectMap = String.join("\n", getSourceFilesRelativePath(project));
         String sessionRules = pm.getSessionRules();
@@ -953,7 +953,7 @@ Instructions:
     public String generateTestCase(
             Project project,
             String projectContent, String classContent, String methodContent,
-            Response previousChatResponse, String userQuery) {
+            List<Response> previousChatResponse, String userQuery) {
 
         StringBuilder promptBuilder = new StringBuilder();
         StringBuilder promptExtend = new StringBuilder();
