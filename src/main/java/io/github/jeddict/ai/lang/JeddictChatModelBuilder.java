@@ -198,8 +198,8 @@ public class JeddictChatModelBuilder {
         return generateInternal(project, prompt, null, null);
     }
 
-    public String generate(final Project project, final String prompt, List<String> images, Response prevRes) {
-        return generateInternal(project, prompt, images, prevRes);
+    public String generate(final Project project, final String prompt, List<String> images, List<Response> responseHistory) {
+        return generateInternal(project, prompt, images, responseHistory);
     }
 
     public UserMessage buildUserMessage(String prompt, List<String> imageBase64Urls) {
@@ -217,7 +217,7 @@ public class JeddictChatModelBuilder {
         return UserMessage.from(parts.toArray(new Content[0]));
     }
 
-    private String generateInternal(Project project, String prompt, List<String> images, Response prevRes) {
+    private String generateInternal(Project project, String prompt, List<String> images, List<Response> responseHistory) {
         if (model == null && handler == null) {
             JOptionPane.showMessageDialog(null,
                     "AI assistance model not intitalized.",
@@ -242,8 +242,13 @@ public class JeddictChatModelBuilder {
         if (systemMessage != null && !systemMessage.trim().isEmpty()) {
             messages.add(SystemMessage.from(systemMessage));
         }
-        if (prevRes != null) {
-            messages.add(AiMessage.from(prevRes.toString()));
+
+        // add conversation history (multiple responses)
+        if (responseHistory != null && !responseHistory.isEmpty()) {
+            for (Response res : responseHistory) {
+                messages.add(UserMessage.from(res.getQuery()));
+                messages.add(AiMessage.from(res.toString()));
+            }
         }
 
         if (images != null && !images.isEmpty()) {
@@ -304,6 +309,7 @@ public class JeddictChatModelBuilder {
                         "Error in AI Assistance",
                         JOptionPane.ERROR_MESSAGE);
             }
+            handle.finish();
         }
         return null;
     }
