@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.lang.impl;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import io.github.jeddict.ai.lang.ChatModelBuilder;
 import io.github.jeddict.ai.models.LMStudioChatModel;
 import java.time.Duration;
@@ -155,7 +155,7 @@ public class LMStudioBuilder implements ChatModelBuilder {
     }
 
     @Override
-    public ChatLanguageModel build() {
+    public ChatModel build() {
         return builder.build();
     }
 }

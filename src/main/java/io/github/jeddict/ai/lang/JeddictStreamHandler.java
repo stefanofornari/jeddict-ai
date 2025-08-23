@@ -16,10 +16,12 @@
 package io.github.jeddict.ai.lang;
 
 import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.model.StreamingResponseHandler;
-import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.response.TokenHandler;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
@@ -33,20 +35,18 @@ import org.netbeans.api.progress.ProgressHandle;
  *
  * @author Shiwani Gupta
  */
-public abstract class JeddictStreamHandler implements StreamingResponseHandler<AiMessage> {
+public abstract class JeddictStreamHandler implements StreamingChatResponseHandler {
 
     private final AssistantChat topComponent;
     private boolean init = true;
     private JTextArea textArea;
     private ProgressHandle handle;
     private boolean complete;
-//    protected MarkdownStreamParser parser;
     private static final Logger LOGGER = Logger.getLogger(JeddictStreamHandler.class.getName());
 
 
     public JeddictStreamHandler(AssistantChat topComponent) {
         this.topComponent = topComponent;
-//        parser = new MarkdownStreamParser(block -> {}, topComponent);
     }
 
     public ProgressHandle getProgressHandle() {
@@ -58,16 +58,16 @@ public abstract class JeddictStreamHandler implements StreamingResponseHandler<A
     }
 
     @Override
-    public void onNext(String token) {
+    public void onPartialResponse(String partialResponse) {
+        LOGGER.finest(() -> "partial response received: " + partialResponse);
         if (init) {
             topComponent.clear();
             textArea = topComponent.createTextAreaPane();
-            textArea.setText(token);
+            textArea.setText(partialResponse);
             init = false;
         } else {
-            textArea.append(token);
+            textArea.append(partialResponse);
         }
-//        parser.processToken(token);
     }
 
     public boolean isComplete() {
@@ -76,15 +76,25 @@ public abstract class JeddictStreamHandler implements StreamingResponseHandler<A
 
     @Override
     public void onError(Throwable throwable) {
+        LOGGER.finest(() -> "error received: " + throwable);
         complete = true;
         // Log the error with timestamp and thread info
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         String threadName = Thread.currentThread().getName();
         LOGGER.log(Level.SEVERE, "Error occurred at {0} on thread [{1}]", new Object[] { timestamp, threadName });
         LOGGER.log(Level.SEVERE, "Exception in JeddictStreamHandler", throwable);
+
+        //
+        // Build the error message
+        //
+        final StringWriter w = new StringWriter();
+            w.append("An error occurred: " + throwable.getMessage());
+            w.append("\n\nMore details:\n\n");
+            throwable.printStackTrace(new PrintWriter(w));
+        final String error = w.toString();
+
         // Update UI on the Event Dispatch Thread
         SwingUtilities.invokeLater(() -> {
-            final String error =  "[Error] An error occurred: " + throwable.getMessage();
             if (textArea != null) {
                 textArea.append("\n\n" + error);
             } else {
@@ -94,27 +104,26 @@ public abstract class JeddictStreamHandler implements StreamingResponseHandler<A
                 errorArea.setText(error);
                 textArea = errorArea;
             }
-            onComplete(error);
+
+            onCompleteResponse(
+                ChatResponse.builder().aiMessage(new AiMessage(error)).build()
+            );
+        });
+    }
+
+    @Override
+    public void onCompleteResponse(ChatResponse completeResponse) {
+        LOGGER.finest(() -> "complete response received: " + completeResponse);
+        complete = true;
+        SwingUtilities.invokeLater(() -> {
+            String response = completeResponse.aiMessage().text();
+            if (response != null && !response.isEmpty()) {
+                CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
+            }
             if (handle != null) {
                 handle.finish();
             }
         });
     }
-
-    @Override
-    public void onComplete(Response<AiMessage> out) {
-        complete = true;
-        SwingUtilities.invokeLater(() -> {
-            String response = out.content().text();
-            if (response != null && !response.isEmpty()) {
-                CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
-                onComplete(response);
-                handle.finish();
-            }
-        });
-    }
-
-    public abstract void onComplete(String response);
-
 
 }
