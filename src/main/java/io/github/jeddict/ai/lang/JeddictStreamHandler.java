@@ -119,6 +119,8 @@ public abstract class JeddictStreamHandler implements StreamingChatResponseHandl
             String response = completeResponse.aiMessage().text();
             if (response != null && !response.isEmpty()) {
                 CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
+            }
+            if (handle != null) {
                 handle.finish();
             }
         });
