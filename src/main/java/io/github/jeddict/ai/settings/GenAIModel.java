@@ -193,8 +193,8 @@ public class GenAIModel {
             "sonar",
             new GenAIModel(
                 PERPLEXITY,
-                "Lightweight, cost-effective search model",
-                "Quick facts, news updates, simple Q&A, high-volume applications",
+                "sonar",
+                "Lightweight, cost-effective search model (quick facts, news updates, simple Q&A, high-volume applications)",
                 1, 1
             )
         );
@@ -202,8 +202,8 @@ public class GenAIModel {
             "sonar-pro",
             new GenAIModel(
                 PERPLEXITY,
-                "Advanced search with deeper content understanding",
-                "Complex queries, competitive analysis, detailed research",
+                "sonar-pro",
+                "Advanced search with deeper content understanding (complex queries, competitive analysis, detailed research)",
                 3, 15
             )
         );
@@ -211,8 +211,8 @@ public class GenAIModel {
             "sonar-reasoning",
             new GenAIModel(
                 PERPLEXITY,
-                "Quick problem-solving with step-by-step logic and search",
-                "Logic puzzles, math problems, transparent reasoning",
+                "sonar-reasoning",
+                "Quick problem-solving with step-by-step logic and search (logic puzzles, math problems, transparent reasoning)",
                 1, 5
             )
         );
@@ -220,8 +220,8 @@ public class GenAIModel {
             "sonar-reasoning-pro",
             new GenAIModel(
                 PERPLEXITY,
-                "Enhanced multi-step reasoning with web search",
-                "Complex problem-solving, research analysis, strategic planning",
+                "sonar-reasoning-pro",
+                "Enhanced multi-step reasoning with web search (complex problem-solving, research analysis, strategic planning)",
                 2, 8
             )
         );
@@ -229,8 +229,8 @@ public class GenAIModel {
             "sonar-deep-research",
             new GenAIModel(
                 PERPLEXITY,
-                "Exhaustive research and detailed report generation with search",
-                "Academic research, market analysis, comprehensive reports",
+                "sonar-deep-research",
+                "Exhaustive research and detailed report generation with search (academic research, market analysis, comprehensive reports)",
                 2, 8
             )
         );

@@ -284,8 +284,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         providerLocationPane.add(providerLocationLabel);
 
         providerLocationField.setHorizontalAlignment(javax.swing.JTextField.LEFT);
-        providerLocationField.setText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.text")); // NOI18N
-        providerLocationField.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.toolTipText")); // NOI18N
+        providerLocationField.setToolTipText("Base URL of the API endpoint");
         providerLocationField.setAlignmentX(0.0F);
         providerLocationField.setAlignmentY(0.0F);
         providerLocationField.setMaximumSize(new java.awt.Dimension(32767, 32));
@@ -361,8 +360,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
 
         modelLabel.setFont(modelLabel.getFont());
         modelLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        org.openide.awt.Mnemonics.setLocalizedText(modelLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelLabel.text")); // NOI18N
-        modelLabel.setToolTipText(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelLabel.toolTipText")); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(modelLabel, "Model:");
         modelLabel.setAlignmentY(0.0F);
         modelLabel.setMaximumSize(new java.awt.Dimension(32767, 32767));
         modelLabel.setMinimumSize(new java.awt.Dimension(300, 17));
@@ -426,15 +424,15 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         modelHelp.setFont(modelHelp.getFont());
         modelHelp.setForeground(new java.awt.Color(100, 100, 100));
         modelHelp.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        org.openide.awt.Mnemonics.setLocalizedText(modelHelp, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelHelp.text")); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(modelHelp, "Model description if available");
         modelHelp.setVerticalAlignment(javax.swing.SwingConstants.BOTTOM);
         modelHelp.setAlignmentY(0.0F);
         modelHelp.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
-        modelHelp.setMaximumSize(new java.awt.Dimension(32767, 32));
-        modelHelp.setPreferredSize(new java.awt.Dimension(300, 32));
+        modelHelp.setMaximumSize(new java.awt.Dimension(32767, 64));
+        modelHelp.setMinimumSize(new java.awt.Dimension(177, 364));
+        modelHelp.setPreferredSize(new java.awt.Dimension(300, 64));
         modelHelp.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         modelHelpPane.add(modelHelp);
-        modelHelp.getAccessibleContext().setAccessibleName(org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.modelHelp.AccessibleContext.accessibleName")); // NOI18N
 
         modelChildPane.add(modelHelpPane);
 
@@ -449,7 +447,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
         activationPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         optionsLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        org.openide.awt.Mnemonics.setLocalizedText(optionsLabel, org.openide.util.NbBundle.getMessage(AIAssistancePanel.class, "AIAssistancePanel.optionsLabel.text")); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(optionsLabel, "Options");
         optionsLabel.setAlignmentX(1.0F);
         optionsLabel.setAlignmentY(0.0F);
         optionsLabel.setMaximumSize(new java.awt.Dimension(32767, 30));
@@ -1105,7 +1103,7 @@ final class AIAssistancePanel extends javax.swing.JPanel {
     private void modelComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modelComboBoxActionPerformed
         String selectedContext = (String) modelComboBox.getSelectedItem();
         if (selectedContext != null && getModel(selectedContext) != null) {
-            modelHelp.setText(getModel(selectedContext).getDescription());
+            modelHelp.setText("<html><p>" + getModel(selectedContext).getDescription() + "</p></html>");
         } else {
             modelHelp.setText("");
         }
@@ -1411,9 +1409,6 @@ final class AIAssistancePanel extends javax.swing.JPanel {
                 && !providerLocationField.getText().isEmpty()) {
             GroqModelFetcher fetcher = new GroqModelFetcher();
             models = fetcher.fetchModels(providerLocationField.getText(), new String(apiKeyField.getPassword()));
-        }  else if (selectedProvider == GenAIProvider.PERPLEXITY) {
-            PerplexityModelFetcher fetcher = new PerplexityModelFetcher();
-            models = fetcher.getModels();
         }
 
         if (models == null) {
