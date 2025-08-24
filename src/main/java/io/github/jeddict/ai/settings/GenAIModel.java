@@ -21,6 +21,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.DEEPSEEK;
 import static io.github.jeddict.ai.settings.GenAIProvider.GOOGLE;
 import static io.github.jeddict.ai.settings.GenAIProvider.MISTRAL;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
+import static io.github.jeddict.ai.settings.GenAIProvider.PERPLEXITY;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,7 +72,7 @@ public class GenAIModel {
         // -----------------------------
         // OpenAI
         // -----------------------------
-        
+
         // GPT‑5 family (added; pricing frequently updated—left 0.0 intentionally)
         MODELS.put("gpt-5-mini", new GenAIModel(OPEN_AI, "gpt-5-mini",
                 "Fast & capable general‑purpose model.",
@@ -174,7 +175,7 @@ public class GenAIModel {
                 "8x22B model for advanced conversational applications.", 0.25, 0.75));
         MODELS.put("mistralai/Mistral-7B-Instruct-v0.3", new GenAIModel(DEEPINFRA, "mistralai/Mistral-7B-Instruct-v0.3",
                 "7B instruct model optimized for general tasks.", 0.15, 0.45));
-       
+
         // -----------------------------
         // DeepSeek (official API)
         // -----------------------------
@@ -184,6 +185,56 @@ public class GenAIModel {
         MODELS.put("deepseek-reasoner", new GenAIModel(DEEPSEEK, "deepseek-reasoner",
                 "DeepSeek‑R1 (reasoner) — hybrid CoT output; standard pricing shown.",
                 0.55, 2.19)); // input (cache miss), output per 1M tokens
+
+        // -----------------------------
+        // Perplexity
+        // -----------------------------
+        MODELS.put(
+            "sonar",
+            new GenAIModel(
+                PERPLEXITY,
+                "Lightweight, cost-effective search model",
+                "Quick facts, news updates, simple Q&A, high-volume applications",
+                1, 1
+            )
+        );
+        MODELS.put(
+            "sonar-pro",
+            new GenAIModel(
+                PERPLEXITY,
+                "Advanced search with deeper content understanding",
+                "Complex queries, competitive analysis, detailed research",
+                3, 15
+            )
+        );
+        MODELS.put(
+            "sonar-reasoning",
+            new GenAIModel(
+                PERPLEXITY,
+                "Quick problem-solving with step-by-step logic and search",
+                "Logic puzzles, math problems, transparent reasoning",
+                1, 5
+            )
+        );
+        MODELS.put(
+            "sonar-reasoning-pro",
+            new GenAIModel(
+                PERPLEXITY,
+                "Enhanced multi-step reasoning with web search",
+                "Complex problem-solving, research analysis, strategic planning",
+                2, 8
+            )
+        );
+        MODELS.put(
+            "sonar-deep-research",
+            new GenAIModel(
+                PERPLEXITY,
+                "Exhaustive research and detailed report generation with search",
+                "Academic research, market analysis, comprehensive reports",
+                2, 8
+            )
+        );
+
     }
 
     private final GenAIProvider provider;
