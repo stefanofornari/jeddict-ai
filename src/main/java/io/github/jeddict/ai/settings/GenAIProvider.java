@@ -17,8 +17,9 @@ package io.github.jeddict.ai.settings;
 
 import io.github.jeddict.ai.models.GPT4AllModelFetcher;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +41,7 @@ public enum GenAIProvider {
     MISTRAL("https://docs.mistral.ai/getting-started/models/models_overview/", "https://console.mistral.ai/api-keys/"),
     OLLAMA("https://ollama.com/models", ""),
     ANTHROPIC("https://docs.anthropic.com/en/docs/about-claude/models", "https://console.anthropic.com/settings/keys"),
+    PERPLEXITY("https://docs.perplexity.ai/getting-started/models", "https://www.perplexity.ai/account/api/keys"),
     LM_STUDIO("https://lmstudio.ai/models", ""),
     GPT4ALL("https://docs.gpt4all.io/gpt4all_desktop/models.html", "");
 
@@ -97,13 +99,19 @@ public enum GenAIProvider {
             return models;
 
         }
-        Set<String> models = new HashSet<>();
+        Set<String> models = new TreeSet<>();
         for (Map.Entry<String, GenAIModel> entry : GenAIModel.MODELS.entrySet()) {
             if (entry.getValue().getProvider() == provider) {
                 models.add(entry.getKey());
             }
         }
         return models;
+    }
+
+    public static GenAIProvider[] sortedValues() {
+        GenAIProvider[] providers = values();
+        Arrays.sort(providers, Comparator.comparing(GenAIProvider::name));
+        return providers;
     }
 
 }

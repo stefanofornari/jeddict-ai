@@ -52,6 +52,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.LM_STUDIO;
 import static io.github.jeddict.ai.settings.GenAIProvider.MISTRAL;
 import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
+import static io.github.jeddict.ai.settings.GenAIProvider.PERPLEXITY;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -100,7 +101,7 @@ public class JeddictChatModelBuilder {
                     case GOOGLE -> {
                         streamModel = buildModel(new GoogleStreamingBuilder(), modelName);
                     }
-                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI,COPILOT_PROXY -> {
+                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI, COPILOT_PROXY, PERPLEXITY -> {
                         streamModel = buildModel(new OpenAiStreamingBuilder(), modelName);
                     }
                     case MISTRAL -> {
@@ -125,7 +126,7 @@ public class JeddictChatModelBuilder {
                     case GOOGLE -> {
                         model = buildModel(new GoogleBuilder(), modelName);
                     }
-                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI,COPILOT_PROXY -> {
+                    case OPEN_AI, DEEPINFRA, DEEPSEEK, GROQ, CUSTOM_OPEN_AI, COPILOT_PROXY, PERPLEXITY -> {
                         model = buildModel(new OpenAiBuilder(), modelName);
                     }
                     case MISTRAL -> {
@@ -308,6 +309,7 @@ public class JeddictChatModelBuilder {
                         "AI assistance failed to generate the requested response: " + errorMessage,
                         "Error in AI Assistance",
                         JOptionPane.ERROR_MESSAGE);
+                handler.onError(e);
             }
             handle.finish();
         }
