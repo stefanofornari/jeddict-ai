@@ -78,11 +78,9 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileWriter;
@@ -479,6 +477,7 @@ public class AssistantChatManager extends JavaFix {
         leftButtonPanel.add(openInBrowserButton);
 
         Set<String> modelsByProvider = getModelsByProvider(pm.getProvider());
+
         modelsByProvider.add(pm.getModelName());
         models = createStyledComboBox(modelsByProvider.toArray(new String[0]));
         models.setSelectedItem(pm.getChatModel() != null ? pm.getChatModel() : pm.getModel());
@@ -913,7 +912,7 @@ public class AssistantChatManager extends JavaFix {
                     responseHistory.remove(responseHistory.size() - 1);
                     currentResponseIndex = currentResponseIndex - 1;
                 }
-                
+
                 int historyCount = pm.getConversationContext();
                 List<Response> prevChatResponses;
                 if (historyCount == -1) {
