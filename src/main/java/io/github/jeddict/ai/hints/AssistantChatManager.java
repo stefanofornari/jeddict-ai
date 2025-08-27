@@ -990,10 +990,10 @@ public class AssistantChatManager extends JavaFix {
                     }
                     List<String> threadScopeImgages = getImageFilesContext(mainThreadContext);
 
-                    Set<FileObject> fitleredMessageContext = new HashSet<>(messageContext);
-                    fitleredMessageContext.removeAll(mainThreadContext);
-                    String messageScopeContent = getTextFilesContext(fitleredMessageContext);
-                    List<String> messageScopeImgages = getImageFilesContext(fitleredMessageContext);
+                    Set<FileObject> filteredMessageContext = new HashSet<>(messageContext);
+                    filteredMessageContext.removeAll(mainThreadContext);
+                    String messageScopeContent = getTextFilesContext(filteredMessageContext);
+                    List<String> messageScopeImgages = getImageFilesContext(filteredMessageContext);
                     List<String> images = new ArrayList<>();
                     images.addAll(threadScopeImgages);
                     images.addAll(messageScopeImgages);
