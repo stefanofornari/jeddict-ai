@@ -19,12 +19,12 @@ import io.github.jeddict.ai.components.diff.DiffView;
 import io.github.jeddict.ai.components.diff.FileStreamSource;
 import static io.github.jeddict.ai.util.FileUtil.createTempFileObject;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
+import java.awt.event.ContainerAdapter;
+import java.awt.event.ContainerEvent;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
 import java.util.logging.Logger;
-import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import org.netbeans.api.diff.StreamSource;
@@ -64,7 +64,7 @@ import org.openide.util.Exceptions;
         //
         // diff between arbitrarily content and a source file
         //
-        DiffPanel diff = new DiffPanel(leftStream, rightEditableStream);
+        DiffView diff = new DiffView(leftStream, rightEditableStream);
         TopComponent tc = new TopComponent();
         tc.setName("difftopcomponent");
         tc.setDisplayName("Diff Viewer");
@@ -166,24 +166,32 @@ public class DiffUtil {
         JEditorPane editorPane, StreamSource leftSource, StreamSource rightSource
     ) {
         try {
-            JPanel editorParent = (JPanel) editorPane.getParent();
-            JPanel diffPanel = new JPanel();
-            diffPanel.setLayout(new BorderLayout());
+            final JPanel editorParent = (JPanel) editorPane.getParent();
+            final DiffView diffView = (rightSource instanceof FileStreamSource)
+                                    ? new DiffView(leftSource, (FileStreamSource)rightSource)
+                                    : new DiffView(leftSource, rightSource)
+                                    ;
 
-            diffPanel.add(new DiffView(leftSource, rightSource), BorderLayout.CENTER);
-            JButton closeButton = new JButton("Hide Diff View");
-            closeButton.setPreferredSize(new Dimension(30, 30));
-            closeButton.setContentAreaFilled(false);
-
-            closeButton.addActionListener(e1 -> {
-                diffPanel.setVisible(false);
-                editorPane.setVisible(true);
-                editorParent.revalidate();
-                editorParent.repaint();
+            //
+            // When the diffView is closed, it removes itself from its parent
+            // component, so we can show againthe nswer from the agent
+            //
+            editorParent.addContainerListener(new ContainerAdapter() {
+                @Override
+                public void componentRemoved(ContainerEvent e) {
+                    LOG.finest(() -> "removing " + e.getChild() + " from " + editorParent);
+                    if (e.getChild() == diffView) {
+                        editorPane.setVisible(true);
+                    }
+                }
             });
-            diffPanel.add(closeButton, BorderLayout.NORTH);
+
+            //
+            // Add the diffView to the parent just after the text provided by
+            // the agent and then hide the text
+            //
             int index = editorParent.getComponentZOrder(editorPane);
-            editorParent.add(diffPanel, index + 1);
+            editorParent.add(diffView, BorderLayout.CENTER, index + 1);
             editorPane.setVisible(false);
             editorParent.revalidate();
             editorParent.repaint();

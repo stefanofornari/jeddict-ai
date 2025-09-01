@@ -30,7 +30,6 @@ import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.util.Exceptions;
-import org.openide.util.ImageUtilities;
 
 /**
  * A DiffView nspired  by org.netbeans.modules.diff.builtin.SingleDiffPanel
@@ -92,9 +91,8 @@ public class DiffView extends JPanel implements PropertyChangeListener {
         btnPrev = new javax.swing.JButton();
         jSeparator1 = new javax.swing.JToolBar.Separator();
         btnSave = new javax.swing.JButton();
+        btnClose = new javax.swing.JButton();
         sourceDiffPanel = new javax.swing.JPanel();
-
-        setLayout(new java.awt.BorderLayout());
 
         actionsToolbar.setRollover(true);
 
@@ -125,7 +123,7 @@ public class DiffView extends JPanel implements PropertyChangeListener {
         actionsToolbar.add(btnPrev);
         actionsToolbar.add(jSeparator1);
 
-        btnSave.setIcon(ImageUtilities.loadIcon("/org/openide/resources/actions/save.png"));
+        btnSave.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/save.png"))); // NOI18N
         org.openide.awt.Mnemonics.setLocalizedText(btnSave, org.openide.util.NbBundle.getMessage(DiffView.class, "DiffView.btnSave.text")); // NOI18N
         btnSave.setToolTipText(org.openide.util.NbBundle.getMessage(DiffView.class, "DiffView.btnSave.toolTipText")); // NOI18N
         btnSave.setEnabled(false);
@@ -139,10 +137,38 @@ public class DiffView extends JPanel implements PropertyChangeListener {
         });
         actionsToolbar.add(btnSave);
 
-        add(actionsToolbar, java.awt.BorderLayout.NORTH);
+        btnClose.setFont(new java.awt.Font("Fira Sans", 1, 18)); // NOI18N
+        btnClose.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/close.png"))); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(btnClose, org.openide.util.NbBundle.getMessage(DiffView.class, "DiffView.btnClose.text")); // NOI18N
+        btnClose.setToolTipText(org.openide.util.NbBundle.getMessage(DiffView.class, "DiffView.btnClose.toolTipText")); // NOI18N
+        btnClose.setActionCommand(org.openide.util.NbBundle.getMessage(DiffView.class, "DiffView.btnClose.actionCommand")); // NOI18N
+        btnClose.setFocusable(false);
+        btnClose.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        btnClose.setLabel(org.openide.util.NbBundle.getMessage(DiffView.class, "DiffView.btnClose.label")); // NOI18N
+        btnClose.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        btnClose.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCloseActionPerformed(evt);
+            }
+        });
+        actionsToolbar.add(btnClose);
 
         sourceDiffPanel.setLayout(new java.awt.BorderLayout());
-        add(sourceDiffPanel, java.awt.BorderLayout.CENTER);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(sourceDiffPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 531, Short.MAX_VALUE)
+            .addComponent(actionsToolbar, javax.swing.GroupLayout.DEFAULT_SIZE, 531, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(actionsToolbar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(sourceDiffPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 371, Short.MAX_VALUE))
+        );
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNextActionPerformed
@@ -169,6 +195,12 @@ public class DiffView extends JPanel implements PropertyChangeListener {
         LOG.finest(() -> "btnSaveActionPerformed " + evt);
         saveBase();
     }//GEN-LAST:event_btnSaveActionPerformed
+
+    private void btnCloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
+        LOG.finest(() -> "btnCloseActionPerformed " + evt);
+
+        getParent().remove(this);
+    }//GEN-LAST:event_btnCloseActionPerformed
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
@@ -205,6 +237,9 @@ public class DiffView extends JPanel implements PropertyChangeListener {
 
     private void refreshComponents() {
         LOG.finest("refreshComponent - change " + ctrl.getDifferenceIndex() + " of " + ctrl.getDifferenceCount());
+        LOG.finest(
+            () -> "refreshComponent - " + (baseSource.getClass()) + " " + isEditable() + " " + isModified()
+        );
         btnNext.setEnabled(ctrl.getDifferenceIndex() < ctrl.getDifferenceCount() - 1);
         btnPrev.setEnabled(ctrl.getDifferenceIndex() > 0);
         btnSave.setEnabled(isModified());
@@ -252,6 +287,7 @@ public class DiffView extends JPanel implements PropertyChangeListener {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JToolBar actionsToolbar;
+    private javax.swing.JButton btnClose;
     private javax.swing.JButton btnNext;
     private javax.swing.JButton btnPrev;
     private javax.swing.JButton btnSave;
