@@ -15,33 +15,90 @@
  */
 package io.github.jeddict.ai.util;
 
+import io.github.jeddict.ai.components.diff.DiffView;
+import io.github.jeddict.ai.components.diff.FileStreamSource;
 import static io.github.jeddict.ai.util.FileUtil.createTempFileObject;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
-import org.netbeans.api.diff.Diff;
-import org.netbeans.api.diff.DiffView;
 import org.netbeans.api.diff.StreamSource;
-import org.netbeans.modules.diff.builtin.SingleDiffPanel;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 
 /**
  *
  * @author Gaurav Gupta
+ *
+ * Example of how to use DiffPanel
+ *
+    try {
+        final String leftString = "Hello\nthis is Stefano\nand not\nSimona";
+        final String rightString = "Hello\nthis is Simona\nand not\nStefano";
+
+        final StreamSource leftStream = StreamSource.createSource(
+                "Left",
+                "Left",
+                "text/java",
+                new StringReader(leftString)
+        );
+
+        final StreamSource rightStream = StreamSource.createSource(
+                "Right",
+                "Right",
+                "text/java",
+                new StringReader(rightString)
+        );
+
+        FileObject leftFile = createTempFileObject("left", leftString);
+        FileObject rightFile = createTempFileObject("right", rightString);
+
+        final FileStreamSource leftEditableStream = new FileStreamSource(leftFile);
+        final FileStreamSource rightEditableStream = new FileStreamSource(rightFile);
+
+        //
+        // diff between arbitrarily content and a source file
+        //
+        DiffPanel diff = new DiffPanel(leftStream, rightEditableStream);
+        TopComponent tc = new TopComponent();
+        tc.setName("difftopcomponent");
+        tc.setDisplayName("Diff Viewer");
+        tc.setLayout(new BorderLayout());
+        tc.add(diff, BorderLayout.CENTER);
+        tc.open();
+        tc.requestActive();
+    } catch (IOException x) {
+        Exceptions.printStackTrace(x);
+    }
  */
 public class DiffUtil {
 
+    private static final Logger LOG = Logger.getLogger(DiffUtil.class.getCanonicalName());
+
+    /**
+     * This is for the action inside the AI Assistant chat window. It shows the
+     * diff between the code (class/method) provided by the assistant (the
+     * modified source) and the original file (the base source).
+     *
+     * @param classSignature
+     * @param fileObject
+     * @param signature
+     * @param editorPane
+     * @param cachedMethodSignatures
+     */
     public static void diffAction(boolean classSignature, FileObject fileObject, String signature, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
+        LOG.finest(
+            "diff between provided content and " + fileObject +
+            " with classSignature " + classSignature +
+            " and signature " + signature
+        );
+
         try {
-            JPanel editorParent = (JPanel) editorPane.getParent();
-            JPanel diffPanel = new JPanel();
-            diffPanel.setLayout(new BorderLayout());
             FileObject source;
             if (classSignature) {
                 source = createTempFileObject(fileObject.getName(), cachedMethodSignatures.get(signature));
@@ -49,51 +106,71 @@ public class DiffUtil {
                 source = createTempFileObject(fileObject.getName(), fileObject.asText());
                 SourceUtil.updateMethod(source, signature, cachedMethodSignatures.get(signature));
             }
-            SingleDiffPanel sdp = new SingleDiffPanel(source, fileObject, null);
-            diffPanel.add(sdp, BorderLayout.CENTER);
-
-            JButton closeButton = new JButton("Hide Diff View");
-            closeButton.setPreferredSize(new Dimension(30, 30));
-            closeButton.setContentAreaFilled(false);
-
-            closeButton.addActionListener(e1 -> {
-                diffPanel.setVisible(false);
-                editorPane.setVisible(true);
-                editorParent.revalidate();
-                editorParent.repaint();
-            });
-            diffPanel.add(closeButton, BorderLayout.NORTH);
-            int index = editorParent.getComponentZOrder(editorPane);
-            editorParent.add(diffPanel, index + 1);
-            editorPane.setVisible(false);
-            editorParent.revalidate();
-            editorParent.repaint();
-        } catch (IOException ex) {
-            Exceptions.printStackTrace(ex);
+            createDiffPanel(editorPane, new FileStreamSource(source), new FileStreamSource(fileObject));
+        } catch (IOException x) {
+            Exceptions.printStackTrace(x);
         }
     }
 
-    public static void diffActionWithSelected(String origin, FileObject fileObject, JEditorPane editorPane) {
+    /**
+     * This is for the action inside the AI Assistant chat window. It shows the
+     * diff between the code provided by the assistant (the modified source) and
+     * the text highlighted in a text component (the base source).
+     *
+     * @param selectedText
+     * @param focusedFile
+     * @param editorPane
+     */
+    public static void diffActionWithSelected(String selectedText, FileObject focusedFile, JEditorPane editorPane) {
+        LOG.finest("diff between selected content and " + focusedFile);
+        final StreamSource left = StreamSource.createSource(
+                "Proposed change",
+                "Proposed change",
+                focusedFile.getMIMEType(),
+                new StringReader(editorPane.getText())
+        );
+        final StreamSource right = StreamSource.createSource(
+                "Original in " + focusedFile.getNameExt(),
+                "Original in " + focusedFile.getNameExt(),
+                focusedFile.getMIMEType(),
+                new StringReader(selectedText.trim())
+        );
+
+        createDiffPanel(editorPane, left, right);
+    }
+
+    /**
+     * This is the action after picking a file in the project component, It
+     * shows the diff between the class provided by the assistant (the modified
+     * source) and the selected file (the base source)
+     *
+     * @param modifiedSource
+     * @param sourceFile
+     * @param editorPane
+     */
+    public static void diffWithOriginal(
+        String modifiedSource, FileObject sourceFile, JEditorPane editorPane
+    ) {
+        LOG.finest("diff between modified source and base " + ((sourceFile != null) ? sourceFile.getPath() : "null"));
+        final StreamSource modified = StreamSource.createSource(
+                "Modified " + sourceFile.getNameExt(),
+                "Modified " + sourceFile.getNameExt(),
+                sourceFile.getMIMEType(),
+                new StringReader(modifiedSource)
+        );
+
+        createDiffPanel(editorPane, modified, new FileStreamSource(sourceFile));
+    }
+
+    private static void createDiffPanel(
+        JEditorPane editorPane, StreamSource leftSource, StreamSource rightSource
+    ) {
         try {
             JPanel editorParent = (JPanel) editorPane.getParent();
             JPanel diffPanel = new JPanel();
             diffPanel.setLayout(new BorderLayout());
 
-            StreamSource ss1 = StreamSource.createSource(
-                    "Source",
-                    fileObject.getNameExt(),
-                    "text/java",
-                    new StringReader(origin.trim())
-            );
-            StreamSource ss2 = StreamSource.createSource(
-                    "Target",
-                    "AI Generated",
-                    "text/java",
-                    new StringReader(editorPane.getText())
-            );
-            DiffView diffView = Diff.getDefault().createDiff(ss2, ss1);
-            diffPanel.add(diffView.getComponent(), BorderLayout.CENTER);
-
+            diffPanel.add(new DiffView(leftSource, rightSource), BorderLayout.CENTER);
             JButton closeButton = new JButton("Hide Diff View");
             closeButton.setPreferredSize(new Dimension(30, 30));
             closeButton.setContentAreaFilled(false);
@@ -110,9 +187,8 @@ public class DiffUtil {
             editorPane.setVisible(false);
             editorParent.revalidate();
             editorParent.repaint();
-        } catch (IOException ex) {
-            Exceptions.printStackTrace(ex);
+        } catch (IOException x) {
+            Exceptions.printStackTrace(x);
         }
     }
-
 }
