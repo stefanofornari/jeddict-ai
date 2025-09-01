@@ -27,6 +27,7 @@ import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.review.Review;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.ColorUtil;
+import io.github.jeddict.ai.util.DiffUtil;
 import static io.github.jeddict.ai.util.DiffUtil.diffAction;
 import static io.github.jeddict.ai.util.DiffUtil.diffActionWithSelected;
 import static io.github.jeddict.ai.util.EditorUtil.getBackgroundColorFromMimeType;
@@ -105,7 +106,7 @@ import org.openide.windows.TopComponent;
  * @author Shiwani Gupta
  */
 public class AssistantChat extends TopComponent {
-    
+
     private List<Review> reviews;
     public static final ImageIcon icon = new ImageIcon(AssistantChat.class.getResource("/icons/logo16.png"));
     public static final ImageIcon logoIcon = new ImageIcon(AssistantChat.class.getResource("/icons/logo28.png"));
@@ -135,7 +136,7 @@ public class AssistantChat extends TopComponent {
     }
 
     public void lastRemove() {
-        parentPanel.remove(parentPanel.getComponentCount()-1);
+        parentPanel.remove(parentPanel.getComponentCount() - 1);
     }
 
     public void clear() {
@@ -198,7 +199,7 @@ public class AssistantChat extends TopComponent {
     }
 
     public JEditorPane createUserQueryPane(BiConsumer<String, Set<FileObject>> queryUpdate, String content, Set<FileObject> messageContext) {
-        
+
         Consumer<FileObject> callback = file -> {
             if (!messageContext.contains(file)) {
                 messageContext.add(file);
@@ -212,7 +213,7 @@ public class AssistantChat extends TopComponent {
                 filePanel.repaint();
             }
         };
-        
+
         queryPane = new JEditorPane();
         queryPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
         queryPane.setText(content);
@@ -282,24 +283,24 @@ public class AssistantChat extends TopComponent {
     private JPanel filePanel;
     private MessageContextComponentAdapter filePanelAdapter;
 
-public JEditorPane createHtmlPane(String content) {
-    JEditorPane editorPane = new JEditorPane();
-    addEditorPaneRespectingTextArea(editorPane);
-    MarkdownPane.createHtmlPane(editorPane, content, this);
-    return editorPane;
-}
-
-private void addEditorPaneRespectingTextArea(JComponent component) {
-    int count = parentPanel.getComponentCount();
-    if (count > 0) {
-        Component lastComponent = parentPanel.getComponent(count - 1);
-        if (lastComponent instanceof JTextArea) {
-            parentPanel.add(component, count - 1);
-            return;
-        }
+    public JEditorPane createHtmlPane(String content) {
+        JEditorPane editorPane = new JEditorPane();
+        addEditorPaneRespectingTextArea(editorPane);
+        MarkdownPane.createHtmlPane(editorPane, content, this);
+        return editorPane;
     }
-    parentPanel.add(component);
-}
+
+    private void addEditorPaneRespectingTextArea(JComponent component) {
+        int count = parentPanel.getComponentCount();
+        if (count > 0) {
+            Component lastComponent = parentPanel.getComponent(count - 1);
+            if (lastComponent instanceof JTextArea) {
+                parentPanel.add(component, count - 1);
+                return;
+            }
+        }
+        parentPanel.add(component);
+    }
 
     public JTextArea createTextAreaPane() {
         JTextArea textArea = new JTextArea();
@@ -799,7 +800,11 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
             JMenuItem diffMethodItem = new JMenuItem("Diff " + menuSubText + fileObject.getName());
             diffMethodItem.addActionListener(e -> {
                 SwingUtilities.invokeLater(() -> {
-                    diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
+                    if (classSignature) {
+                        DiffUtil.diffWithOriginal(cachedMethodSignatures.get(signature), fileObject, editorPane);
+                    } else {
+                        diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
+                    }
                 });
             });
             if (fileObject.getName().equals(signature)) {
@@ -822,11 +827,10 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
         return count;
     }
 
-    
     public List<Review> getReviews() {
         return reviews;
     }
-    
+
     public void setReviews(List<Review> reviews) {
         this.reviews = reviews;
     }
