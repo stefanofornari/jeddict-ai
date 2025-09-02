@@ -15,20 +15,35 @@
  */
 package io.github.jeddict.ai.agent;
 
+import io.github.jeddict.ai.util.DiffUtil;
+import java.io.File;
+import javax.swing.JEditorPane;
+
 import org.netbeans.api.project.Project;
 import org.openide.filesystems.FileObject;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
+import java.util.logging.Logger;
+import javax.swing.SwingUtilities;
+import org.netbeans.api.diff.StreamSource;
 
 public class FileActionExecutor {
 
-    public static void applyFileActionsToProject(Project project, FileAction action) throws Exception {
-        FileObject projectDir = project.getProjectDirectory();
-        String relativePath = action.getPath().replace("\\", "/");
-        FileObject targetFile = projectDir.getFileObject(relativePath);
-        String[] pathParts = relativePath.split("/");
-        String fileName = pathParts[pathParts.length - 1];
+    /**
+     * Logger for the {@code FileActionExecutor}.
+     */
+    public static final Logger LOG = Logger.getLogger(FileActionExecutor.class.getCanonicalName());
+
+    public static void applyFileActionsToProject(JEditorPane blockPane, Project project, FileAction action) throws Exception {
+        LOG.finest("action " + action.getAction() + " with content >" + action.getContent() + "<");
+
+        final FileObject projectDir = project.getProjectDirectory();
+        final String relativePath = action.getPath().replace("\\", "/");
+        final FileObject targetFile = projectDir.getFileObject(relativePath);
+        final String[] pathParts = relativePath.split("/");
+        final String fileName = pathParts[pathParts.length - 1];
 
         FileObject parentFolder = projectDir;
         for (int i = 0; i < pathParts.length - 1; i++) {
@@ -41,23 +56,35 @@ public class FileActionExecutor {
 
         switch (action.getAction()) {
             case "create" -> {
-                if (targetFile == null) {
-                    targetFile = parentFolder.createData(fileName);
-                }
-                writeContentToFile(targetFile, action.getContent());
+                FileObject realTarget = (targetFile == null)
+                                      ? parentFolder.createData(fileName)
+                                      : targetFile;
+                //writeContentToFile(realFile, action.getContent());
             }
             case "update" -> {
                 if (targetFile != null) {
-                    writeContentToFile(targetFile, action.getContent());
+                    //writeContentToFile(targetFile, action.getContent());
+                    final StreamSource left = StreamSource.createSource(
+                        "latest", "Assistant Code", targetFile.getMIMEType(), new StringReader(action.getContent())
+                    );
+                    final StreamSource right = StreamSource.createSource(
+                        "original", targetFile.toString(), targetFile.getMIMEType(), new File(targetFile.getPath())
+                    );
+
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            DiffUtil.diffWithOriginal(action.getContent(), targetFile, blockPane);
+                        }
+                    });
                 } else {
                     // If not found, treat update as create
-                    targetFile = parentFolder.createData(fileName);
-                    writeContentToFile(targetFile, action.getContent());
+                    // writeContentToFile(parentFolder.createData(fileName), action.getContent());
                 }
             }
             case "delete" -> {
                 if (targetFile != null) {
-                    targetFile.delete();
+                    //targetFile.delete();
                 }
             }
             default -> {

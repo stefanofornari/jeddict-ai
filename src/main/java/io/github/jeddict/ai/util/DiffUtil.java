@@ -98,6 +98,23 @@ public class DiffUtil {
             " and signature " + signature
         );
 
+        //
+        // BUG: the code in cachedMethodSignatures is the result of the parsing
+        // and printing of the chat's code; this can be different than what is
+        // in the actual file. For example, let's say we ask the AI to format
+        // the code below without going into new lines:
+        //
+        // public void method() {
+        //  doSomething();
+        // }
+        //
+        // The AI would return
+        //
+        // public void method() { doSomething(); }
+        //
+        // Then the parser (com.github.javaparser) will format the code
+        // prettyfying it, which will reintroduce new lines and indentation.
+        // The diff will then not show any difference.
         try {
             FileObject source;
             if (classSignature) {
