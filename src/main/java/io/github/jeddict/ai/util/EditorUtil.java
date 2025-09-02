@@ -439,7 +439,7 @@ public class EditorUtil {
             }
             .highlight {
                 color: #007bff;
-            }     
+            }
         </style>
       </head>
       <body>

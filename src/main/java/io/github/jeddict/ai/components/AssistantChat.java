@@ -105,7 +105,7 @@ import org.openide.windows.TopComponent;
  * @author Shiwani Gupta
  */
 public class AssistantChat extends TopComponent {
-    
+
     private List<Review> reviews;
     public static final ImageIcon icon = new ImageIcon(AssistantChat.class.getResource("/icons/logo16.png"));
     public static final ImageIcon logoIcon = new ImageIcon(AssistantChat.class.getResource("/icons/logo28.png"));
@@ -135,7 +135,7 @@ public class AssistantChat extends TopComponent {
     }
 
     public void lastRemove() {
-        parentPanel.remove(parentPanel.getComponentCount()-1);
+        parentPanel.remove(parentPanel.getComponentCount() - 1);
     }
 
     public void clear() {
@@ -198,7 +198,7 @@ public class AssistantChat extends TopComponent {
     }
 
     public JEditorPane createUserQueryPane(BiConsumer<String, Set<FileObject>> queryUpdate, String content, Set<FileObject> messageContext) {
-        
+
         Consumer<FileObject> callback = file -> {
             if (!messageContext.contains(file)) {
                 messageContext.add(file);
@@ -212,7 +212,7 @@ public class AssistantChat extends TopComponent {
                 filePanel.repaint();
             }
         };
-        
+
         queryPane = new JEditorPane();
         queryPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
         queryPane.setText(content);
@@ -282,24 +282,24 @@ public class AssistantChat extends TopComponent {
     private JPanel filePanel;
     private MessageContextComponentAdapter filePanelAdapter;
 
-public JEditorPane createHtmlPane(String content) {
-    JEditorPane editorPane = new JEditorPane();
-    addEditorPaneRespectingTextArea(editorPane);
-    MarkdownPane.createHtmlPane(editorPane, content, this);
-    return editorPane;
-}
-
-private void addEditorPaneRespectingTextArea(JComponent component) {
-    int count = parentPanel.getComponentCount();
-    if (count > 0) {
-        Component lastComponent = parentPanel.getComponent(count - 1);
-        if (lastComponent instanceof JTextArea) {
-            parentPanel.add(component, count - 1);
-            return;
-        }
+    public JEditorPane createHtmlPane(String content) {
+        JEditorPane editorPane = new JEditorPane();
+        addEditorPaneRespectingTextArea(editorPane);
+        MarkdownPane.createHtmlPane(editorPane, content, this);
+        return editorPane;
     }
-    parentPanel.add(component);
-}
+
+    private void addEditorPaneRespectingTextArea(JComponent component) {
+        int count = parentPanel.getComponentCount();
+        if (count > 0) {
+            Component lastComponent = parentPanel.getComponent(count - 1);
+            if (lastComponent instanceof JTextArea) {
+                parentPanel.add(component, count - 1);
+                return;
+            }
+        }
+        parentPanel.add(component);
+    }
 
     public JTextArea createTextAreaPane() {
         JTextArea textArea = new JTextArea();
@@ -586,17 +586,53 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
         StaticJavaParser.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
         Map<JEditorPane, Map<String, String>> editorMethodSignCache = new HashMap<>();
         Map<JEditorPane, Map<String, String>> editorMethodCache = new HashMap<>();
+
+        //
+        // Parse all files in context and all code blocks in the editors to
+        // extract method/class/interface signatures and code and create context
+        // menus to diff each block.
+        //
+        // NOTES (TODO):
+        // 1. this code should probably be refactored breaking it in smaller
+        //    pieces at least, but most importantly to separate the collection
+        //    logic and the logic to create the menu
+        // 2. the main loop processes multiple times the EditorPane components,
+        //    they should probably be separated into two same-level loops
+        // 3. the loops to fill cachedMethodSignatures and editorMethodCache
+        //    can probably be combined into one
+        // 4. before changing this logic, a unit test to drive the collection
+        //    logic should be first created.
+        // 5. the code captured from the editor panes is actually the one
+        //    produced by the parser (classDecl.toString(), edMethod.toString(),
+        //    which is not necessarily exactly the same as the code provided by
+        //    the AI
+        // 6. it is not fully clear why here the context files are parsed with
+        //    StaticJavaParser instead of using NetBeans JavaSource
+        // 7. editors are processed only if they contain java code; this is a
+        //    limitation that can probably be removed as we should be able to
+        //    do some diffs even for files other than java
+        //
+        //
         for (FileObject fileObject : context) {
             if (!fileObject.getExt().equalsIgnoreCase("java")) {
                 continue;
             }
+            //
+            // Parse the file and extract all method declarations
+            //
             try (InputStream stream = fileObject.getInputStream()) {
                 String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
                 CompilationUnit cu = StaticJavaParser.parse(content);
                 List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
 
+                //
+                // Save all method signatures (excluding anonymous inner class
+                // methods) in map fileMethodSignatures with the signature as
+                // key and the method code size (method.toString().length()) as
+                // value
+                //
                 Map<String, Integer> fileMethodSignatures = new HashMap<>();
-                for (MethodDeclaration method : cu.findAll(MethodDeclaration.class)) {
+                for (MethodDeclaration method : methods) {
                     if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
                         continue; // Skip anonymous inner class method
                     }
@@ -607,6 +643,10 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
                     fileMethodSignatures.put(signature, method.toString().length());
                 }
 
+                //
+                // Count the methods overloads and save the counters in map
+                // fileMethods<method name, count>
+                //
                 Map<String, Long> fileMethods = new HashMap<>();
                 for (MethodDeclaration method : methods) {
                     if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
@@ -616,6 +656,22 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
                     fileMethods.put(methodName, fileMethods.getOrDefault(methodName, 0L) + 1);
                 }
 
+                //
+                // For each EditoPane (i.e. code block) collect the method,
+                // class and interface signatures parsing the block first as a
+                // method, if it fails, as a class, if it fails as an interface.
+                // For each element the corresponding code is also saved in the
+                // map cachedMethodSignatures<signature, code>.
+                // Do the same with just the method/class/interface name, saving
+                // name and code in map cachedMethods<name, code>.
+                // (note that the two steps above are done in two separate loops,
+                // they can probbly be merged into one.
+                //
+                // Once the cachedMethodSignatures and cachedMethods are filled,
+                // loop through the signatures found in the context files (saved
+                // in fileMethodSignatures and fileMethods) and create context
+                // manues to diff block and file code.
+                //
                 for (int i = 0; i < parentPanel.getComponentCount(); i++) {
                     if (parentPanel.getComponent(i) instanceof JEditorPane) {
                         JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
@@ -688,6 +744,14 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
                                 return methodSignatures;
                             });
 
+                            //
+                            // First check if there is any full signature match
+                            // in fileMethodSignatures and if there is, create a
+                            // context menu to diff it; if no context menu have
+                            // been created on the full signature, check method/class/interface
+                            // names.
+                            // Then create a menu item to diff with the file
+                            //
                             try {
                                 int menuCreationCount = 0;
                                 for (Entry<String, Integer> signature : fileMethodSignatures.entrySet()) {
@@ -717,6 +781,9 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
             }
         }
 
+        //
+        // Create the menu to diff with selected text
+        //
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
                 if (menuItems.get(editorPane) == null) {
@@ -747,6 +814,9 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
             }
         }
 
+        //
+        // Add the menus to the relevant edito's context menu
+        //
         for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
             JPopupMenu mainMenu = menus.get(entry.getKey());
             if (mainMenu != null) {
@@ -799,7 +869,11 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
             JMenuItem diffMethodItem = new JMenuItem("Diff " + menuSubText + fileObject.getName());
             diffMethodItem.addActionListener(e -> {
                 SwingUtilities.invokeLater(() -> {
-                    diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
+                    //if (classSignature) {
+                    //    DiffUtil.diffWithOriginal(cachedMethodSignatures.get(signature), fileObject, editorPane);
+                    //} else {
+                        diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
+                    //}
                 });
             });
             if (fileObject.getName().equals(signature)) {
@@ -822,11 +896,10 @@ private void addEditorPaneRespectingTextArea(JComponent component) {
         return count;
     }
 
-    
     public List<Review> getReviews() {
         return reviews;
     }
-    
+
     public void setReviews(List<Review> reviews) {
         this.reviews = reviews;
     }
