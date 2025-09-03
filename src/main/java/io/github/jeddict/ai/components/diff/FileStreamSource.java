@@ -30,7 +30,7 @@ import org.openide.util.lookup.Lookups;
  * A StreamSource on top of a FileObject. This class provides basic implementation
  * of the StreamSource which uses a FileObject to read the content.
  *
- * TODO: allow to provide a title (i.e. file ptah relative to the project root
+ * TODO: allow to provide a title (i.e. file path relative to the project root
  *
  */
 public class FileStreamSource extends StreamSource {
