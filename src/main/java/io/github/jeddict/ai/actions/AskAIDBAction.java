@@ -91,7 +91,7 @@ public final class AskAIDBAction extends AbstractAction implements ContextAwareA
      * The context-aware action that opens the AI chat window for the selected
      * database connection.
      */
-    private static final class ContextAction extends BaseContextAction {
+    private static final class ContextAction extends BaseMenuAction {
 
         private final DatabaseConnection connection;
 

@@ -23,12 +23,13 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.actions.Presenter;
 
 /**
- * A base class for context-aware actions that are presented as popup menu items.
+ * A base class for actions to be added to a menu and display the Jeddic logo
+ * as icon.
  * This class provides common functionality for setting the action's name, icon,
  * and enabled state.In particular getPopupPresenter() is the key to get the icon
  * showed next to the action name (see https://netbeans.apache.org/wiki/main/netbeansdevelopperfaq/DevFaqAddIconToContextMenu).
  */
-public abstract class BaseContextAction extends AbstractAction implements Presenter.Popup {
+public abstract class BaseMenuAction extends AbstractAction implements Presenter.Popup {
 
     @StaticResource
     private static final String ICON = "icons/logo16.png";
@@ -39,12 +40,21 @@ public abstract class BaseContextAction extends AbstractAction implements Presen
      * @param name the name of the action.
      * @param enable true to enable the action, false to disable it.
      */
-    public BaseContextAction(final String name, final boolean enable) {
+    public BaseMenuAction(final String name, final boolean enable) {
         super(name);
         setEnabled(enable);
 
-        putValue(SMALL_ICON, ImageUtilities.loadImageIcon(ICON, false));
-        putValue("iconBase", ICON);
+        String icon = getIcon();
+        putValue(SMALL_ICON, ImageUtilities.loadImageIcon(icon, false));
+        putValue("iconBase", icon);
+    }
+
+    /**
+     * Returns the icon to use for the action. Subclasses can overload this
+     * method to set a different icon than ICON
+     */
+    public String getIcon() {
+        return ICON;
     }
 
     /**
