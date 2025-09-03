@@ -49,14 +49,14 @@ import org.openide.util.NbBundle;
     displayName = "#CTL_AIAssistantPopupAction",
     lazy = false,
     iconInMenu = true,
-    iconBase = "icons/logo16.png"
+    iconBase = "icons/logo24.png"
 )
 @ActionReferences({
     @ActionReference(path = "Editors/Popup", position = 101),
     @ActionReference(path = "Shortcuts", name = "C-QUOTE")
 })
 @NbBundle.Messages("CTL_AIAssistantPopupAction=AI Assistant")
-public final class AIAssistantPopupAction extends BaseContextAction implements ActionListener {
+public final class AIAssistantPopupAction extends BaseMenuAction implements ActionListener {
 
     /**
      * Constructs a new AIAssistantPopupAction.
