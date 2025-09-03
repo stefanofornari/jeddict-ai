@@ -54,7 +54,7 @@ import org.openide.util.NbBundle.Messages;
     @ActionReference(path = "Projects/package/Actions", position = 100),
     @ActionReference(path = "Loaders/text/x-java/Actions", position=100),
     @ActionReference(path = "Loaders/folder/any/Actions", position = 300),
-    @ActionReference(path = "Toolbars/Build", position = 100)})
+})
 @Messages({"CTL_AskAIPackageAction=AI Assistant"})
 public final class AskAIPackageAction extends AbstractAction implements ContextAwareAction {
 
@@ -94,7 +94,7 @@ public final class AskAIPackageAction extends AbstractAction implements ContextA
      * The context-aware action that opens the AI chat window for the selected
      * package or file.
      */
-    private static final class ContextAction extends BaseContextAction {
+    private static final class ContextAction extends BaseMenuAction {
 
         private final List<FileObject> selectedFileObjects;
 

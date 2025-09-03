@@ -21,7 +21,7 @@ import org.netbeans.api.project.Project;
  * A base class for context-aware actions that are specific to projects. This
  * class provides a project instance to its subclasses.
  */
-public abstract class BaseProjectContextAction extends BaseContextAction {
+public abstract class BaseProjectContextAction extends BaseMenuAction {
     protected Project project;
 
     /**

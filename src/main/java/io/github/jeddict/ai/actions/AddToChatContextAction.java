@@ -134,7 +134,7 @@ public final class AddToChatContextAction extends AbstractAction implements Cont
      * The context-aware action that adds the selected files to the chat
      * session.
      */
-    private static final class ContextAction extends BaseContextAction {
+    private static final class ContextAction extends BaseMenuAction {
 
         private final List<FileObject> files;
 
