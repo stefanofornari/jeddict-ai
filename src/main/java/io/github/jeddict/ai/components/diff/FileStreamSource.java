@@ -39,9 +39,6 @@ public class FileStreamSource extends StreamSource {
 
     /**
      * Constructs a FileStreamSource for a given FileObject.
-     *
-     *  TODO: allow to provide a title (i.e. file ptah relative to the project root
-     *
      */
     public FileStreamSource(FileObject fileObject) {
         if (fileObject == null) {
