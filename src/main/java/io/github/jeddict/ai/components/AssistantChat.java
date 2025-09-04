@@ -21,6 +21,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import io.github.jeddict.ai.agent.FileAction;
 import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
 import io.github.jeddict.ai.components.mermaid.MermaidPane;
 import io.github.jeddict.ai.response.Block;
@@ -67,6 +68,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -105,6 +107,8 @@ import org.openide.windows.TopComponent;
  * @author Shiwani Gupta
  */
 public class AssistantChat extends TopComponent {
+
+    private final static Logger LOG = Logger.getLogger(AssistantChat.class.getCanonicalName());
 
     private List<Review> reviews;
     public static final ImageIcon icon = new ImageIcon(AssistantChat.class.getResource("/icons/logo16.png"));
@@ -377,6 +381,15 @@ public class AssistantChat extends TopComponent {
         addContextMenu(sourcePane);
         addEditorPaneRespectingTextArea(pane);
         return pane;
+    }
+
+    public ActionPane createActionPane(FileAction action) {
+        LOG.finest(() -> "createActionPane for action " + action + " in project " + project);
+        ActionPane actionPane = new ActionPane(project, action);
+        JEditorPane sourcePane = actionPane.createPane();
+        addContextMenu(sourcePane);
+        addEditorPaneRespectingTextArea(actionPane);
+        return actionPane;
     }
 
     private void addContextMenu(JEditorPane editorPane) {
