@@ -14,7 +14,7 @@ public class FileActionExecutor {
 
     public static void applyFileActionsToProject(Project project, FileAction action) throws Exception {
         FileObject projectDir = project.getProjectDirectory();
-            String relativePath = action.getPath().replace("\\", "/");
+            String relativePath = action.path().replace("\\", "/");
             FileObject targetFile = projectDir.getFileObject(relativePath);
             String[] pathParts = relativePath.split("/");
             String fileName = pathParts[pathParts.length - 1];
@@ -28,20 +28,20 @@ public class FileActionExecutor {
                 parentFolder = subFolder;
             }
 
-            switch (action.getAction()) {
+            switch (action.action()) {
                 case "create" -> {
                     if (targetFile == null) {
                         targetFile = parentFolder.createData(fileName);
                     }
-                    writeContentToFile(targetFile, action.getContent());
+                    writeContentToFile(targetFile, action.content());
                 }
                 case "update" -> {
                     if (targetFile != null) {
-                        writeContentToFile(targetFile, action.getContent());
+                        writeContentToFile(targetFile, action.content());
                     } else {
                         // If not found, treat update as create
                         targetFile = parentFolder.createData(fileName);
-                        writeContentToFile(targetFile, action.getContent());
+                        writeContentToFile(targetFile, action.content());
                     }
                 }
                 case "delete" -> {
@@ -50,7 +50,7 @@ public class FileActionExecutor {
                     }
                 }
                 default -> {
-                    System.err.println("Unknown action: " + action.getAction());
+                    System.err.println("Unknown action: " + action.content());
                 }
             }
     }
