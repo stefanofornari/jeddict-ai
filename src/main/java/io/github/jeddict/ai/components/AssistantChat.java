@@ -694,7 +694,7 @@ public class AssistantChat extends TopComponent {
                                                 .forEach(classDecl -> {
                                                     classes.add(classDecl.getNameAsString());
                                                     if (classesCount == 1 || classDecl.isPublic()) {
-                                                        methodSignatures.put(classDecl.getNameAsString(), aiCu.toString());
+                                                        methodSignatures.put(classDecl.getNameAsString(), editorPane.getText());
                                                     } else {
                                                         methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
                                                     }
@@ -715,7 +715,7 @@ public class AssistantChat extends TopComponent {
                                                     .forEach(classDecl -> {
                                                         classes.add(classDecl.getNameAsString());
                                                         if (classesCount == 1 || classDecl.isPublic()) {
-                                                            methodSignatures.put(classDecl.getNameAsString(), aiCu.toString());
+                                                            methodSignatures.put(classDecl.getNameAsString(), editorPane.getText());
                                                         } else {
                                                             methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
                                                         }
