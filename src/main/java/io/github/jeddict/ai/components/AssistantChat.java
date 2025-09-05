@@ -688,15 +688,18 @@ public class AssistantChat extends TopComponent {
                                     methodSignatures.put(signature, editorPane.getText());
                                 } catch (Exception e) {
                                     try {
-
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        edCu.findAll(ClassOrInterfaceDeclaration.class)
+                                        CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
+                                        int classesCount = aiCu.findAll(ClassOrInterfaceDeclaration.class).size();
+                                        aiCu.findAll(ClassOrInterfaceDeclaration.class)
                                                 .forEach(classDecl -> {
                                                     classes.add(classDecl.getNameAsString());
-                                                    methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
+                                                    if (classesCount == 1 || classDecl.isPublic()) {
+                                                        methodSignatures.put(classDecl.getNameAsString(), aiCu.toString());
+                                                    } else {
+                                                        methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
+                                                    }
                                                 });
-//                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
-                                        List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
+                                        List<MethodDeclaration> edMethods = aiCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : edMethods) {
                                             String signature = edMethod.getNameAsString() + "("
                                                     + edMethod.getParameters().stream()
@@ -705,14 +708,23 @@ public class AssistantChat extends TopComponent {
                                             methodSignatures.put(signature, edMethod.toString());
                                         }
                                     } catch (Exception e1) {
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        edCu.findAll(ClassOrInterfaceDeclaration.class)
-                                                .forEach(classDecl -> {
-                                                    classes.add(classDecl.getNameAsString());
-                                                    methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
-                                                });
-                                        if (edCu.getTypes().isNonEmpty()) {
-                                            methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
+                                        try {
+                                            CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
+                                            int classesCount = aiCu.findAll(ClassOrInterfaceDeclaration.class).size();
+                                            aiCu.findAll(ClassOrInterfaceDeclaration.class)
+                                                    .forEach(classDecl -> {
+                                                        classes.add(classDecl.getNameAsString());
+                                                        if (classesCount == 1 || classDecl.isPublic()) {
+                                                            methodSignatures.put(classDecl.getNameAsString(), aiCu.toString());
+                                                        } else {
+                                                            methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
+                                                        }
+                                                    });
+                                            if (aiCu.getTypes().isNonEmpty()) {
+                                                methodSignatures.put(aiCu.getType(0).getNameAsString(), aiCu.toString());
+                                            }
+                                        } catch (Exception e2) {
+                                            // ignore
                                         }
                                     }
                                 }
@@ -727,17 +739,20 @@ public class AssistantChat extends TopComponent {
                                     methodSignatures.put(signature, editorPane.getText());
                                 } catch (Exception e) {
                                     try {
-//                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
+                                        CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
+                                        List<MethodDeclaration> edMethods = aiCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : edMethods) {
                                             String signature = edMethod.getNameAsString();
                                             methodSignatures.put(signature, edMethod.toString());
                                         }
                                     } catch (Exception e1) {
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        if (edCu.getTypes().isNonEmpty()) {
-                                            methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
+                                        try {
+                                            CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
+                                            if (aiCu.getTypes().isNonEmpty()) {
+                                                methodSignatures.put(aiCu.getType(0).getNameAsString(), aiCu.toString());
+                                            }
+                                        } catch (Exception e2) {
+                                            // ignore
                                         }
                                     }
                                 }
