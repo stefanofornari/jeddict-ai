@@ -899,11 +899,7 @@ public class AssistantChat extends TopComponent {
             JMenuItem diffMethodItem = new JMenuItem("Diff " + menuSubText + fileObject.getName());
             diffMethodItem.addActionListener(e -> {
                 SwingUtilities.invokeLater(() -> {
-                    //if (classSignature) {
-                    //    DiffUtil.diffWithOriginal(cachedMethodSignatures.get(signature), fileObject, editorPane);
-                    //} else {
                     diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
-                    //}
                 });
             });
             if (fileObject.getName().equals(signature)) {
