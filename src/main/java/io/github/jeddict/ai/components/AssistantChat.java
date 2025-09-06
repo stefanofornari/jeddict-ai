@@ -676,19 +676,20 @@ public class AssistantChat extends TopComponent {
                         if (editorPane.getEditorKit().getContentType().equals(JAVA_MIME)) {
                             Map<String, String> cachedMethodSignatures = editorMethodSignCache.computeIfAbsent(editorPane, ep -> {
                                 Map<String, String> snippetSignatures = new HashMap<>();
+                                String editorText = editorPane.getText();
+                                String[] lines = editorText.split("\n");
                                 try {
                                     // check if snippet is method otherwise throw exception
-                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
+                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
                                     String signature = aiMethod.getNameAsString() + "("
                                             + aiMethod.getParameters().stream()
                                                     .map(param -> param.getType().asString())
                                                     .collect(Collectors.joining(",")) + ")";
-                                    snippetSignatures.put(signature, editorPane.getText());
+                                    snippetSignatures.put(signature, editorText);
                                 } catch (Exception e1) {
                                     try {
-                                        String[] lines = editorPane.getText().split("\n");
-                                        CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
-                                        extractClasses(aiCu, editorPane.getText(), lines, snippetSignatures);
+                                        CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                        extractClasses(aiCu, editorText, lines, snippetSignatures);
                                         List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : aiMethods) {
                                             String signature = edMethod.getNameAsString() + "("
@@ -700,11 +701,10 @@ public class AssistantChat extends TopComponent {
                                         }
                                     } catch (Exception e2) {
                                         try {
-                                            String[] lines = editorPane.getText().split("\n");
-                                            CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
-                                            extractClasses(aiCu, editorPane.getText(), lines, snippetSignatures);
+                                            CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                            extractClasses(aiCu, editorText, lines, snippetSignatures);
                                             if (aiCu.getTypes().isNonEmpty()) {
-                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorPane.getText());
+                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorText);
                                             }
                                         } catch (Exception e3) {
                                             // ignore
@@ -716,14 +716,15 @@ public class AssistantChat extends TopComponent {
 
                             Map<String, String> cachedMethods = editorMethodCache.computeIfAbsent(editorPane, ep -> {
                                 Map<String, String> snippetSignatures = new HashMap<>();
+                                String editorText = editorPane.getText();
+                                String[] lines = editorText.split("\n");
                                 try {
-                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
+                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
                                     String signature = aiMethod.getNameAsString();
-                                    snippetSignatures.put(signature, editorPane.getText());
+                                    snippetSignatures.put(signature, editorText);
                                 } catch (Exception e) {
                                     try {
-                                        String[] lines = editorPane.getText().split("\n");
-                                        CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
+                                        CompilationUnit aiCu = StaticJavaParser.parse(editorText);
                                         List<MethodDeclaration> edMethods = aiCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : edMethods) {
                                             String signature = edMethod.getNameAsString();
@@ -732,9 +733,9 @@ public class AssistantChat extends TopComponent {
                                         }
                                     } catch (Exception e1) {
                                         try {
-                                            CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
+                                            CompilationUnit aiCu = StaticJavaParser.parse(editorText);
                                             if (aiCu.getTypes().isNonEmpty()) {
-                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorPane.getText());
+                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorText);
                                             }
                                         } catch (Exception e2) {
                                             // ignore
