@@ -583,7 +583,7 @@ public class AssistantChat extends TopComponent {
         return count;
     }
 
-    public int getParseCodeEditor(List<FileObject> context) {
+    public void getParseCodeEditor(List<FileObject> context) {
         StaticJavaParser.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
         Map<JEditorPane, Map<String, String>> editorMethodSignCache = new HashMap<>();
         Map<JEditorPane, Map<String, String>> editorMethodCache = new HashMap<>();
@@ -603,13 +603,9 @@ public class AssistantChat extends TopComponent {
         //    can probably be combined into one
         // 4. before changing this logic, a unit test to drive the collection
         //    logic should be first created.
-        // 5. the code captured from the editor panes is actually the one
-        //    produced by the parser (classDecl.toString(), edMethod.toString(),
-        //    which is not necessarily exactly the same as the code provided by
-        //    the AI
-        // 6. it is not fully clear why here the context files are parsed with
+        // 5. it is not fully clear why here the context files are parsed with
         //    StaticJavaParser instead of using NetBeans JavaSource
-        // 7. editors are processed only if they contain java code; this is a
+        // 6. editors are processed only if they contain java code; this is a
         //    limitation that can probably be removed as we should be able to
         //    do some diffs even for files other than java
         //
@@ -761,10 +757,13 @@ public class AssistantChat extends TopComponent {
                 System.out.println("Error parsing file: " + fileObject.getName() + " - " + e.getMessage());
             }
         }
-
-        //
+    }
+    
+    /**
+     * Add the menus to the relevant editor's context menu
+     */
+    public void attachMenusToEditors() {
         // Create the menu to diff with selected text
-        //
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
                 menuItems.computeIfAbsent(editorPane, k -> new ArrayList<>());
@@ -791,9 +790,7 @@ public class AssistantChat extends TopComponent {
             }
         }
 
-        //
-        // Add the menus to the relevant edito's context menu
-        //
+   
         for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
             JPopupMenu mainMenu = menus.get(entry.getKey());
             if (mainMenu != null) {
@@ -813,7 +810,6 @@ public class AssistantChat extends TopComponent {
                 mainMenu.add(methodMenu);
             }
         }
-        return 0;
     }
 
     private boolean isAnonymousInnerMethod(MethodDeclaration method) {
