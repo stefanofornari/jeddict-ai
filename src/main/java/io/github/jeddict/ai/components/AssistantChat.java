@@ -681,22 +681,16 @@ public class AssistantChat extends TopComponent {
                                 try {
                                     // check if snippet is method otherwise throw exception
                                     MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
-                                    String signature = aiMethod.getNameAsString() + "("
-                                            + aiMethod.getParameters().stream()
-                                                    .map(param -> param.getType().asString())
-                                                    .collect(Collectors.joining(",")) + ")";
+                                    String signature = buildMethodSignature(aiMethod);
                                     snippetSignatures.put(signature, editorText);
                                 } catch (Exception e1) {
                                     try {
                                         CompilationUnit aiCu = StaticJavaParser.parse(editorText);
                                         extractClasses(aiCu, editorText, lines, snippetSignatures);
                                         List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
-                                        for (MethodDeclaration edMethod : aiMethods) {
-                                            String signature = edMethod.getNameAsString() + "("
-                                                    + edMethod.getParameters().stream()
-                                                            .map(param -> param.getType().asString())
-                                                            .collect(Collectors.joining(",")) + ")";
-                                            String methodSource = extractSource(lines, edMethod.getRange().orElse(null));
+                                        for (MethodDeclaration aiMethod : aiMethods) {
+                                            String signature = buildMethodSignature(aiMethod);
+                                            String methodSource = extractSource(lines, aiMethod.getRange().orElse(null));
                                             snippetSignatures.put(signature, methodSource);
                                         }
                                     } catch (Exception e2) {
