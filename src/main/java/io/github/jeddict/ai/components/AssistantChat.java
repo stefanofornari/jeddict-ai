@@ -690,8 +690,10 @@ public class AssistantChat extends TopComponent {
                                         List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration aiMethod : aiMethods) {
                                             String signature = buildMethodSignature(aiMethod);
-                                            String methodSource = extractSource(lines, aiMethod.getRange().orElse(null));
-                                            snippetSignatures.put(signature, methodSource);
+                                            aiMethod.getRange().ifPresent(range -> {
+                                                String methodSource = extractSource(lines, range.begin.line, range.end.line);
+                                                snippetSignatures.put(signature, methodSource);
+                                            });
                                         }
                                     } catch (Exception e2) {
                                         try {
@@ -720,10 +722,12 @@ public class AssistantChat extends TopComponent {
                                     try {
                                         CompilationUnit aiCu = StaticJavaParser.parse(editorText);
                                         List<MethodDeclaration> edMethods = aiCu.findAll(MethodDeclaration.class);
-                                        for (MethodDeclaration edMethod : edMethods) {
-                                            String signature = edMethod.getNameAsString();
-                                            String methodSource = extractSource(lines, edMethod.getRange().orElse(null));
-                                            snippetSignatures.put(signature, methodSource);
+                                        for (MethodDeclaration aiMethod : edMethods) {
+                                            String signature = aiMethod.getNameAsString();
+                                            aiMethod.getRange().ifPresent(range -> {
+                                                String methodSource = extractSource(lines, range.begin.line, range.end.line);
+                                                snippetSignatures.put(signature, methodSource);
+                                            });
                                         }
                                     } catch (Exception e1) {
                                         try {
@@ -848,18 +852,17 @@ public class AssistantChat extends TopComponent {
                     if (classesCount == 1 || classDecl.isPublic()) {
                         snippetSignatures.put(classDecl.getNameAsString(), source);
                     } else {
-                        String classSource = extractSource(lines, classDecl.getRange().orElse(null));
-                        snippetSignatures.put(classDecl.getNameAsString(), classSource);
+                        classDecl.getRange().ifPresent(range -> {
+                            String classSource = extractSource(lines, range.begin.line, range.end.line);
+                            snippetSignatures.put(classDecl.getNameAsString(), classSource);
+                        });
                     }
                 });
     }
 
-    private String extractSource(String[] lines, Range range) {
-        if (range == null) {
-            return "";
-        }
+    private String extractSource(String[] lines, int startLine, int endLine) {
         StringBuilder sb = new StringBuilder();
-        for (int i = range.begin.line - 1; i <= range.end.line - 1; i++) {
+        for (int i = startLine - 1; i <= endLine - 1; i++) {
             sb.append(lines[i]).append("\n");
         }
         return sb.toString();
