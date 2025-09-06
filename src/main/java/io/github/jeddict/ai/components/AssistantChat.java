@@ -827,21 +827,23 @@ public class AssistantChat extends TopComponent {
                         .collect(Collectors.joining(",")) + ")";
     }
 
-    private void extractClasses(CompilationUnit aiCu, String[] lines, Map<String, String> snippetSignatures, String source) {
-        int classesCount = aiCu.findAll(ClassOrInterfaceDeclaration.class).size();
-        aiCu.findAll(ClassOrInterfaceDeclaration.class)
-                .forEach(classDecl -> {
-                    if (classesCount == 1 || classDecl.isPublic()) {
-                        snippetSignatures.put(classDecl.getNameAsString(), source);
-                    } else {
-                        classDecl.getRange().ifPresent(range -> {
-                            String classSource = extractSource(lines, range.begin.line, range.end.line);
-                            snippetSignatures.put(classDecl.getNameAsString(), classSource);
-                        });
-                    }
+    private void extractClasses(CompilationUnit aiCu, String[] lines,
+            Map<String, String> snippetSignatures, String source) {
+        List<ClassOrInterfaceDeclaration> classDecls = aiCu.findAll(ClassOrInterfaceDeclaration.class);
+        int classesCount = classDecls.size();
+
+        for (ClassOrInterfaceDeclaration classDecl : classDecls) {
+            if (classesCount == 1 || classDecl.isPublic()) {
+                snippetSignatures.put(classDecl.getNameAsString(), source);
+            } else {
+                classDecl.getRange().ifPresent(range -> {
+                    String classSource = extractSource(lines, range.begin.line, range.end.line);
+                    snippetSignatures.put(classDecl.getNameAsString(), classSource);
                 });
+            }
+        }
     }
-    
+
     private void extractMethods(CompilationUnit aiCu, String[] lines, Map<String, String> snippetSignatures) {
         List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
         for (MethodDeclaration aiMethod : aiMethods) {
