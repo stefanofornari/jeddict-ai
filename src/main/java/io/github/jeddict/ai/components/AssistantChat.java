@@ -680,25 +680,16 @@ public class AssistantChat extends TopComponent {
                                 String[] lines = editorText.split("\n");
                                 try {
                                     // check if snippet is method otherwise throw exception
-                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
-                                    String signature = buildMethodSignature(aiMethod);
-                                    snippetSignatures.put(signature, editorText);
+                                    extractMethod(snippetSignatures, editorText);
                                 } catch (Exception e1) {
                                     try {
                                         CompilationUnit aiCu = StaticJavaParser.parse(editorText);
-                                        extractClasses(aiCu, editorText, lines, snippetSignatures);
-                                        List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
-                                        for (MethodDeclaration aiMethod : aiMethods) {
-                                            String signature = buildMethodSignature(aiMethod);
-                                            aiMethod.getRange().ifPresent(range -> {
-                                                String methodSource = extractSource(lines, range.begin.line, range.end.line);
-                                                snippetSignatures.put(signature, methodSource);
-                                            });
-                                        }
+                                        extractClasses(aiCu, lines, snippetSignatures, editorText);
+                                        extractMethods(aiCu, lines, snippetSignatures);
                                     } catch (Exception e2) {
                                         try {
                                             CompilationUnit aiCu = StaticJavaParser.parse(editorText);
-                                            extractClasses(aiCu, editorText, lines, snippetSignatures);
+                                            extractClasses(aiCu, lines, snippetSignatures, editorText);
                                             if (aiCu.getTypes().isNonEmpty()) {
                                                 snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorText);
                                             }
@@ -715,20 +706,11 @@ public class AssistantChat extends TopComponent {
                                 String editorText = editorPane.getText();
                                 String[] lines = editorText.split("\n");
                                 try {
-                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
-                                    String signature = aiMethod.getNameAsString();
-                                    snippetSignatures.put(signature, editorText);
+                                    extractMethod(snippetSignatures, editorText);
                                 } catch (Exception e) {
                                     try {
                                         CompilationUnit aiCu = StaticJavaParser.parse(editorText);
-                                        List<MethodDeclaration> edMethods = aiCu.findAll(MethodDeclaration.class);
-                                        for (MethodDeclaration aiMethod : edMethods) {
-                                            String signature = aiMethod.getNameAsString();
-                                            aiMethod.getRange().ifPresent(range -> {
-                                                String methodSource = extractSource(lines, range.begin.line, range.end.line);
-                                                snippetSignatures.put(signature, methodSource);
-                                            });
-                                        }
+                                        extractMethods(aiCu, lines, snippetSignatures);
                                     } catch (Exception e1) {
                                         try {
                                             CompilationUnit aiCu = StaticJavaParser.parse(editorText);
@@ -845,7 +827,7 @@ public class AssistantChat extends TopComponent {
                         .collect(Collectors.joining(",")) + ")";
     }
 
-    private void extractClasses(CompilationUnit aiCu, String source, String[] lines, Map<String, String> snippetSignatures) {
+    private void extractClasses(CompilationUnit aiCu, String[] lines, Map<String, String> snippetSignatures, String source) {
         int classesCount = aiCu.findAll(ClassOrInterfaceDeclaration.class).size();
         aiCu.findAll(ClassOrInterfaceDeclaration.class)
                 .forEach(classDecl -> {
@@ -859,7 +841,24 @@ public class AssistantChat extends TopComponent {
                     }
                 });
     }
-
+    
+    private void extractMethods(CompilationUnit aiCu, String[] lines, Map<String, String> snippetSignatures) {
+        List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
+        for (MethodDeclaration aiMethod : aiMethods) {
+            String signature = buildMethodSignature(aiMethod);
+            aiMethod.getRange().ifPresent(range -> {
+                String methodSource = extractSource(lines, range.begin.line, range.end.line);
+                snippetSignatures.put(signature, methodSource);
+            });
+        }
+    }
+    
+    private void extractMethod(Map<String, String> snippetSignatures, String editorText) {
+        MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
+        String signature = aiMethod.getNameAsString();
+        snippetSignatures.put(signature, editorText);
+    }
+   
     private String extractSource(String[] lines, int startLine, int endLine) {
         StringBuilder sb = new StringBuilder();
         for (int i = startLine - 1; i <= endLine - 1; i++) {
