@@ -16,6 +16,7 @@
 package io.github.jeddict.ai.components;
 
 import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.Range;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -633,13 +634,10 @@ public class AssistantChat extends TopComponent {
                 //
                 Map<String, Integer> fileMethodSignatures = new HashMap<>();
                 for (MethodDeclaration method : methods) {
-                    if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
+                    if (isAnonymousInnerMethod(method)) {
                         continue; // Skip anonymous inner class method
                     }
-                    String signature = method.getNameAsString() + "("
-                            + method.getParameters().stream()
-                                    .map(param -> param.getType().asString())
-                                    .collect(Collectors.joining(",")) + ")";
+                    String signature = buildMethodSignature(method);
                     fileMethodSignatures.put(signature, method.toString().length());
                 }
 
@@ -649,7 +647,7 @@ public class AssistantChat extends TopComponent {
                 //
                 Map<String, Long> fileMethods = new HashMap<>();
                 for (MethodDeclaration method : methods) {
-                    if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
+                    if (isAnonymousInnerMethod(method)) {
                         continue; // Skip anonymous inner class method
                     }
                     String methodName = method.getNameAsString();
@@ -676,87 +674,74 @@ public class AssistantChat extends TopComponent {
                     if (parentPanel.getComponent(i) instanceof JEditorPane) {
                         JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
                         if (editorPane.getEditorKit().getContentType().equals(JAVA_MIME)) {
-                            Set<String> classes = new HashSet<>();
                             Map<String, String> cachedMethodSignatures = editorMethodSignCache.computeIfAbsent(editorPane, ep -> {
-                                Map<String, String> methodSignatures = new HashMap<>();
+                                Map<String, String> snippetSignatures = new HashMap<>();
                                 try {
-                                    MethodDeclaration editorMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
-                                    String signature = editorMethod.getNameAsString() + "("
-                                            + editorMethod.getParameters().stream()
+                                    // check if snippet is method otherwise throw exception
+                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
+                                    String signature = aiMethod.getNameAsString() + "("
+                                            + aiMethod.getParameters().stream()
                                                     .map(param -> param.getType().asString())
                                                     .collect(Collectors.joining(",")) + ")";
-                                    methodSignatures.put(signature, editorPane.getText());
-                                } catch (Exception e) {
+                                    snippetSignatures.put(signature, editorPane.getText());
+                                } catch (Exception e1) {
                                     try {
+                                        String[] lines = editorPane.getText().split("\n");
                                         CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
-                                        int classesCount = aiCu.findAll(ClassOrInterfaceDeclaration.class).size();
-                                        aiCu.findAll(ClassOrInterfaceDeclaration.class)
-                                                .forEach(classDecl -> {
-                                                    classes.add(classDecl.getNameAsString());
-                                                    if (classesCount == 1 || classDecl.isPublic()) {
-                                                        methodSignatures.put(classDecl.getNameAsString(), editorPane.getText());
-                                                    } else {
-                                                        methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
-                                                    }
-                                                });
-                                        List<MethodDeclaration> edMethods = aiCu.findAll(MethodDeclaration.class);
-                                        for (MethodDeclaration edMethod : edMethods) {
+                                        extractClasses(aiCu, editorPane.getText(), lines, snippetSignatures);
+                                        List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
+                                        for (MethodDeclaration edMethod : aiMethods) {
                                             String signature = edMethod.getNameAsString() + "("
                                                     + edMethod.getParameters().stream()
                                                             .map(param -> param.getType().asString())
                                                             .collect(Collectors.joining(",")) + ")";
-                                            methodSignatures.put(signature, edMethod.toString());
+                                            String methodSource = extractSource(lines, edMethod.getRange().orElse(null));
+                                            snippetSignatures.put(signature, methodSource);
                                         }
-                                    } catch (Exception e1) {
+                                    } catch (Exception e2) {
                                         try {
+                                            String[] lines = editorPane.getText().split("\n");
                                             CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
-                                            int classesCount = aiCu.findAll(ClassOrInterfaceDeclaration.class).size();
-                                            aiCu.findAll(ClassOrInterfaceDeclaration.class)
-                                                    .forEach(classDecl -> {
-                                                        classes.add(classDecl.getNameAsString());
-                                                        if (classesCount == 1 || classDecl.isPublic()) {
-                                                            methodSignatures.put(classDecl.getNameAsString(), editorPane.getText());
-                                                        } else {
-                                                            methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
-                                                        }
-                                                    });
+                                            extractClasses(aiCu, editorPane.getText(), lines, snippetSignatures);
                                             if (aiCu.getTypes().isNonEmpty()) {
-                                                methodSignatures.put(aiCu.getType(0).getNameAsString(), aiCu.toString());
+                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorPane.getText());
                                             }
-                                        } catch (Exception e2) {
+                                        } catch (Exception e3) {
                                             // ignore
                                         }
                                     }
                                 }
-                                return methodSignatures;
+                                return snippetSignatures;
                             });
 
                             Map<String, String> cachedMethods = editorMethodCache.computeIfAbsent(editorPane, ep -> {
-                                Map<String, String> methodSignatures = new HashMap<>();
+                                Map<String, String> snippetSignatures = new HashMap<>();
                                 try {
-                                    MethodDeclaration editorMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
-                                    String signature = editorMethod.getNameAsString();
-                                    methodSignatures.put(signature, editorPane.getText());
+                                    MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
+                                    String signature = aiMethod.getNameAsString();
+                                    snippetSignatures.put(signature, editorPane.getText());
                                 } catch (Exception e) {
                                     try {
+                                        String[] lines = editorPane.getText().split("\n");
                                         CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
                                         List<MethodDeclaration> edMethods = aiCu.findAll(MethodDeclaration.class);
                                         for (MethodDeclaration edMethod : edMethods) {
                                             String signature = edMethod.getNameAsString();
-                                            methodSignatures.put(signature, edMethod.toString());
+                                            String methodSource = extractSource(lines, edMethod.getRange().orElse(null));
+                                            snippetSignatures.put(signature, methodSource);
                                         }
                                     } catch (Exception e1) {
                                         try {
                                             CompilationUnit aiCu = StaticJavaParser.parse(editorPane.getText());
                                             if (aiCu.getTypes().isNonEmpty()) {
-                                                methodSignatures.put(aiCu.getType(0).getNameAsString(), aiCu.toString());
+                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorPane.getText());
                                             }
                                         } catch (Exception e2) {
                                             // ignore
                                         }
                                     }
                                 }
-                                return methodSignatures;
+                                return snippetSignatures;
                             });
 
                             //
@@ -769,7 +754,7 @@ public class AssistantChat extends TopComponent {
                             //
                             try {
                                 int menuCreationCount = 0;
-                                for (Entry<String, Integer> signature : fileMethodSignatures.entrySet()) {
+                                for (Map.Entry<String, Integer> signature : fileMethodSignatures.entrySet()) {
                                     if (createEditorPaneMenus(fileObject, signature.getKey(), signature.getValue(), editorPane, cachedMethodSignatures)) {
                                         menuCreationCount++;
                                     }
@@ -801,29 +786,25 @@ public class AssistantChat extends TopComponent {
         //
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
-                if (menuItems.get(editorPane) == null) {
-                    menuItems.put(editorPane, new ArrayList<>());
-                }
-                if (editorPane.getEditorKit().getContentType().equals(JAVA_MIME)) {
+                menuItems.computeIfAbsent(editorPane, k -> new ArrayList<>());
+                if (JAVA_MIME.equals(editorPane.getEditorKit().getContentType())) {
                     JMenuItem diffMethodItem = new JMenuItem("Diff with Selected Snippet");
-                    diffMethodItem.addActionListener(e -> {
-                        SwingUtilities.invokeLater(() -> {
-                            JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
-                            String currentSelectedText = currenteditor.getSelectedText();
-                            final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
-                            DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
-                            if (currentDO != null) {
-                                FileObject focusedfile = currentDO.getPrimaryFile();
-                                if (focusedfile != null && !currentSelectedText.trim().isEmpty()) {
-                                    diffActionWithSelected(currentSelectedText, focusedfile, editorPane);
-                                } else {
-                                    JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
-                                }
+                    diffMethodItem.addActionListener(e -> SwingUtilities.invokeLater(() -> {
+                        JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
+                        String currentSelectedText = currenteditor.getSelectedText();
+                        final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
+                        DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
+                        if (currentDO != null) {
+                            FileObject focusedfile = currentDO.getPrimaryFile();
+                            if (focusedfile != null && currentSelectedText != null && !currentSelectedText.trim().isEmpty()) {
+                                diffActionWithSelected(currentSelectedText, focusedfile, editorPane);
                             } else {
                                 JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
                             }
-                        });
-                    });
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
+                        }
+                    }));
                     menuItems.get(editorPane).add(diffMethodItem);
                 }
             }
@@ -852,6 +833,41 @@ public class AssistantChat extends TopComponent {
             }
         }
         return 0;
+    }
+
+    private boolean isAnonymousInnerMethod(MethodDeclaration method) {
+        return method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr;
+    }
+
+    private String buildMethodSignature(MethodDeclaration method) {
+        return method.getNameAsString() + "("
+                + method.getParameters().stream()
+                        .map(param -> param.getType().asString())
+                        .collect(Collectors.joining(",")) + ")";
+    }
+
+    private void extractClasses(CompilationUnit aiCu, String source, String[] lines, Map<String, String> snippetSignatures) {
+        int classesCount = aiCu.findAll(ClassOrInterfaceDeclaration.class).size();
+        aiCu.findAll(ClassOrInterfaceDeclaration.class)
+                .forEach(classDecl -> {
+                    if (classesCount == 1 || classDecl.isPublic()) {
+                        snippetSignatures.put(classDecl.getNameAsString(), source);
+                    } else {
+                        String classSource = extractSource(lines, classDecl.getRange().orElse(null));
+                        snippetSignatures.put(classDecl.getNameAsString(), classSource);
+                    }
+                });
+    }
+
+    private String extractSource(String[] lines, Range range) {
+        if (range == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = range.begin.line - 1; i <= range.end.line - 1; i++) {
+            sb.append(lines[i]).append("\n");
+        }
+        return sb.toString();
     }
 
     private boolean createEditorPaneMenus(FileObject fileObject, String signature, Integer bodyLength, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
@@ -887,7 +903,7 @@ public class AssistantChat extends TopComponent {
                     //if (classSignature) {
                     //    DiffUtil.diffWithOriginal(cachedMethodSignatures.get(signature), fileObject, editorPane);
                     //} else {
-                        diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
+                    diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
                     //}
                 });
             });
