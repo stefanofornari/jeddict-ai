@@ -99,9 +99,11 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -119,6 +121,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.Document;
+import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
@@ -163,7 +166,7 @@ public class AssistantChatManager extends JavaFix {
     private String sourceCode;
     private Project projectContext;
     private Project project;
-    private final Set<FileObject> threadContext = new HashSet<>();
+    private final Set<FileObject> sessionContext = new HashSet<>();
     private final Set<FileObject> messageContext = new HashSet<>();
     private FileObject fileObject;
     private String commitChanges;
@@ -174,8 +177,8 @@ public class AssistantChatManager extends JavaFix {
         if (project == null) {
             if (projectContext != null) {
                 project = projectContext;
-            } else if (threadContext != null && !threadContext.isEmpty()) {
-                project = FileOwnerQuery.getOwner(threadContext.toArray(FileObject[]::new)[0]);
+            } else if (sessionContext != null && !sessionContext.isEmpty()) {
+                project = FileOwnerQuery.getOwner(sessionContext.toArray(FileObject[]::new)[0]);
             } else if (fileObject != null) {
                 project = FileOwnerQuery.getOwner(fileObject);
             } else if (messageContext != null && !messageContext.isEmpty()) {
@@ -211,13 +214,13 @@ public class AssistantChatManager extends JavaFix {
     public AssistantChatManager(Action action, List<FileObject> selectedFileObjects) {
         super(null);
         this.action = action;
-        this.threadContext.addAll(selectedFileObjects);
+        this.sessionContext.addAll(selectedFileObjects);
     }
 
     public AssistantChatManager(Action action, FileObject selectedFileObject) {
         super(null);
         this.action = action;
-        this.threadContext.add(selectedFileObject);
+        this.sessionContext.add(selectedFileObject);
     }
 
     @Override
@@ -646,7 +649,7 @@ public class AssistantChatManager extends JavaFix {
         questionPane.setEditorKit(createEditorKit("text/x-" + (type == null ? "java" : type)));
         Document doc = questionPane.getDocument();
         doc.putProperty(JEDDICT_EDITOR_CALLBACK, (Consumer<FileObject>) this::addFileTab);
-
+        
         questionScrollPane = new JScrollPane(questionPane);
         questionScrollPane.setBorder(BorderFactory.createEmptyBorder());
         questionScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -864,8 +867,8 @@ public class AssistantChatManager extends JavaFix {
         if (projectContext != null) {
             fileObjects.addAll(getProjectContextList());
         }
-        if (threadContext != null) {
-            fileObjects.addAll(getFilesContextList(threadContext));
+        if (sessionContext != null) {
+            fileObjects.addAll(getFilesContextList(sessionContext));
         }
         return fileObjects;
     }
@@ -954,54 +957,51 @@ public class AssistantChatManager extends JavaFix {
                     }
                 };
                 String response;
+                    boolean agentEnabled = actionComboBox.getSelectedItem() == AssistantAction.BUILD;
                 if (sqlCompletion != null) {
                     String context = sqlCompletion.getMetaData();
-                    String messageScopeContent = getTextFilesContext(messageContext);
+                    String messageScopeContent = getTextFilesContext(messageContext, project, agentEnabled);
                     if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
                         context = context + "\n\n Files:\n" + messageScopeContent;
                     }
-                    List<String> messageScopeImgages = getImageFilesContext(messageContext);
-                    response = new JeddictChatModel(handler, getModelName()).assistDbMetadata(context, question, messageScopeImgages, prevChatResponses);
+                    List<String> messageScopeImages = getImageFilesContext(messageContext);
+                    response = new JeddictChatModel(handler, getModelName()).assistDbMetadata(context, question, messageScopeImages, prevChatResponses);
                 } else if (commitMessage && commitChanges != null) {
                     String context = commitChanges;
-                    String messageScopeContent = getTextFilesContext(messageContext);
+                    String messageScopeContent = getTextFilesContext(messageContext, project, agentEnabled);
                     if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
                         context = context + "\n\n Files:\n" + messageScopeContent;
                     }
-                    List<String> messageScopeImgages = getImageFilesContext(messageContext);
-                    response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(context, question, messageScopeImgages, prevChatResponses);
+                    List<String> messageScopeImages = getImageFilesContext(messageContext);
+                    response = new JeddictChatModel(handler, getModelName()).generateCommitMessageSuggestions(context, question, messageScopeImages, prevChatResponses);
                 } else if (codeReview && commitChanges != null) {
                     String context = commitChanges;
-                    String messageScopeContent = getTextFilesContext(messageContext);
+                    String messageScopeContent = getTextFilesContext(messageContext, project, agentEnabled);
                     if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
                         context = context + "\n\n Files:\n" + messageScopeContent;
                     }
-                    List<String> messageScopeImgages = getImageFilesContext(messageContext);
-                    response = new JeddictChatModel(handler, getModelName()).generateCodeReviewSuggestions(context, question, messageScopeImgages, prevChatResponses);
-                } else if (projectContext != null || threadContext != null) {
-                    Set<FileObject> mainThreadContext;
-                    String threadScopeContent;
+                    List<String> messageScopeImages = getImageFilesContext(messageContext);
+                    response = new JeddictChatModel(handler, getModelName()).generateCodeReviewSuggestions(context, question, messageScopeImages, prevChatResponses);
+                } else if (projectContext != null || sessionContext != null) {
+                    Set<FileObject> mainSessionContext;
+                    String sessionScopeContent;
                     if (projectContext != null) {
-                        mainThreadContext = getProjectContextList();
-                        threadScopeContent = getProjectContext(mainThreadContext);
+                        mainSessionContext = getProjectContextList();
+                        sessionScopeContent = getProjectContext(mainSessionContext);
                     } else {
-                        mainThreadContext = this.threadContext;
-                        threadScopeContent = getTextFilesContext(mainThreadContext);
+                        mainSessionContext = this.sessionContext;
+                        sessionScopeContent = getTextFilesContext(mainSessionContext, project, agentEnabled);
                     }
-                    List<String> threadScopeImgages = getImageFilesContext(mainThreadContext);
+                    List<String> sessionScopeImages = getImageFilesContext(mainSessionContext);
 
                     Set<FileObject> fitleredMessageContext = new HashSet<>(messageContext);
-                    fitleredMessageContext.removeAll(mainThreadContext);
-                    String messageScopeContent = getTextFilesContext(fitleredMessageContext);
-                    List<String> messageScopeImgages = getImageFilesContext(fitleredMessageContext);
+                    fitleredMessageContext.removeAll(mainSessionContext);
+                    String messageScopeContent = getTextFilesContext(fitleredMessageContext, project, agentEnabled);
+                    List<String> messageScopeImages = getImageFilesContext(fitleredMessageContext);
                     List<String> images = new ArrayList<>();
-                    images.addAll(threadScopeImgages);
-                    images.addAll(messageScopeImgages);
-                    if (actionComboBox.getSelectedItem() == AssistantAction.BUILD) {
-                        response = new JeddictChatModel(handler, getModelName()).agent(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChatResponses, question);
-                    } else {
-                        response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), threadScopeContent + '\n' + messageScopeContent, null, images, prevChatResponses, question);
-                    }
+                    images.addAll(sessionScopeImages);
+                    images.addAll(messageScopeImages);
+                    response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), agentEnabled, sessionScopeContent + '\n' + messageScopeContent, null, images, prevChatResponses, question);
                 } else if (treePath == null) {
                     response = new JeddictChatModel(handler, getModelName()).generateDescription(getProject(), null, null, null, prevChatResponses, question);
                 } else if (action == Action.TEST) {
@@ -1049,7 +1049,7 @@ public class AssistantChatManager extends JavaFix {
     }
 
     public void addToSessionContext(List<FileObject> files) {
-        threadContext.addAll(files);
+        sessionContext.addAll(files);
     }
 
 }

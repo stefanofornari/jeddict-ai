@@ -867,6 +867,12 @@ Expected YAML format:
     public String generateDescription(
             Project project, String source, String methodContent, List<String> images,
             List<Response> previousChatResponse, String userQuery) {
+        return generateDescription(project, false, source, methodContent, images, previousChatResponse, userQuery);
+    }
+
+    public String generateDescription(
+            Project project, boolean agentEnabled, String source, String methodContent, List<String> images,
+            List<Response> previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
         String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
@@ -886,66 +892,7 @@ Expected YAML format:
         prompt.append("User Query:\n")
                 .append(userQuery);
 
-        String answer = generate(project, prompt.toString(), images, previousChatResponse);
-        System.out.println(answer);
-        return answer;
-    }
-
-    public String agent(
-            Project project, String source, String methodContent, List<String> images,
-            List<Response> previousChatResponse, String userQuery) {
-
-        String projectMap = String.join("\n", getSourceFilesRelativePath(project));
-        String sessionRules = pm.getSessionRules();
-        if (sessionRules != null && !sessionRules.isEmpty()) {
-            sessionRules = "\n\n" + sessionRules + "\n\n";
-        } else {
-            sessionRules = "";
-        }
-        if (source != null && !source.isEmpty()) {
-            source = "\n\n Existing Source: " + source + "\n\n";
-        } else {
-            source = "";
-        }
-        String prompt = """
-    You are an intelligent code generation assistant.
-
-    Your task is to generate or modify code based on a user query. The output must include a list of file actions (create, update, delete) with the full file path (relative to the project base directory) and the corresponding file content.
-
-    Assume the project base directory is: %s
-                            
-    Project Files are:
-    %s
-                        
-    %s
-
-    User query:
-    %s
-                            
-    %s
-
-Instructions:
-  - Do NOT add action for any build files (e.g., pom.xml, build.gradle, etc.).
-  - Interpret the user’s intent and break it down into one or more file operations.
-  - For each file that needs to be created, updated, or deleted:
-    - Start with a short natural-language description of what the file is or does.
-    - Then immediately follow it with:
-      1. A code block containing the full file content (use proper language tag like ```java).
-      2. Directly after the code block, include an `action` block in this format:
-         ```action
-         path=relative/path/to/file
-         action=create|update|delete
-         ```
-    - For delete actions, omit the code block and only include the `action` block.
-  - Ensure that each file’s content block is **immediately followed** by its corresponding action block.
-  - Ensure all code must be syntactically correct, valid, and follow standard conventions unless otherwise stated.
-
-    Respond in Markdown format as described above.                      
-                        
-    ]
-    """.formatted(project.getProjectDirectory().getPath(), projectMap, source, userQuery, sessionRules);
-
-        String answer = generate(project, prompt, images, previousChatResponse);
+        String answer = generate(project, agentEnabled, prompt.toString(), images, previousChatResponse);
         System.out.println(answer);
         return answer;
     }

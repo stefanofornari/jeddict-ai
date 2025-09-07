@@ -15,9 +15,6 @@
  */
 package io.github.jeddict.ai.util;
 
-import io.github.jeddict.ai.agent.FileAction;
-import io.github.jeddict.ai.agent.FileActionExecutor;
-import io.github.jeddict.ai.agent.FileActionParser;
 import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.response.Response;
@@ -152,20 +149,6 @@ public class EditorUtil {
                     }
                 }
             });
-        } else if (prevBlock != null && block != null && block.getType().equals("action")) {
-           FileAction action = FileActionParser.parse(block.getContent(), prevBlock.getContent());
-            code.append('\n').append(block.getContent()).append('\n');
-            pane = topComponent.createPane();
-            if (project != null) {
-                ((JEditorPane) pane).setText("> " + action.getAction() + " " + action.getPath());
-                try {
-                    FileActionExecutor.applyFileActionsToProject(project, action);
-                } catch (Exception ex) {
-                    Exceptions.printStackTrace(ex);
-                }
-            } else {
-                ((JEditorPane) pane).setText("> Project instance not found to " + action.getAction() + " " + action.getPath());
-            }
         } else {
             code.append('\n').append(block.getContent()).append('\n');
             String mimeType = getMimeType(block.getType());
