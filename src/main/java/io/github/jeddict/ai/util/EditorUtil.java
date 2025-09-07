@@ -104,6 +104,7 @@ public class EditorUtil {
             context.addAll(response.getMessageContext());
         }
         topComponent.getParseCodeEditor(context);
+        topComponent.attachMenusToEditors();
         return code.toString();
     }
 
