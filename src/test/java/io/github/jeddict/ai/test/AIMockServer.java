@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,8 +38,10 @@ import java.util.regex.Pattern;
  */
 public class AIMockServer {
 
+    private static final String DEFAULT_MOCK_FILE = "src/test/resources/mocks/default.txt";
+    private static final String ERROR_MOCK_FILE = "src/test/resources/mocks/error.txt";
     private static final Pattern MOCK_INSTRUCTION_PATTERN =
-            Pattern.compile("use mock\\s+(?:\"([^\"]+)\"|(\\\\S+))", Pattern.CASE_INSENSITIVE);
+        Pattern.compile("use mock\\s+(?:'([^']+)'|(\\S+))", Pattern.CASE_INSENSITIVE);
 
     public static void main(String[] args) throws IOException {
         int port = 8080;
@@ -62,46 +65,62 @@ public class AIMockServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if (!"POST".equals(exchange.getRequestMethod())) {
-                sendResponse(exchange, 405, "Method Not Allowed");
+                sendResponse(exchange, 405, "Method Not Allowed", "text/plain");
                 return;
             }
 
+            String error = "";
+
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+
             Matcher matcher = MOCK_INSTRUCTION_PATTERN.matcher(body);
 
+            Path mockPath = Path.of(DEFAULT_MOCK_FILE);
             if (matcher.find()) {
                 String mockFile = matcher.group(1); // Quoted file name
                 if (mockFile == null) {
                     mockFile = matcher.group(2); // Unquoted file name
                 }
-                Path mockPath = Path.of("src/test/resources/mocks").resolve(mockFile).normalize();
+                mockPath = Path.of("src/test/resources/mocks").resolve(mockFile).normalize();
+            }
 
-                if (!mockPath.startsWith(Path.of("src/test/resources/mocks"))) {
-                    sendResponse(exchange, 400, "Invalid mock file path: " + mockFile);
-                    return;
-                }
+            if (!Files.exists(mockPath)) {
+                error = "Mock file '" + mockPath + "' not found.";
+                mockPath = Path.of(ERROR_MOCK_FILE);
+            }
 
-                if (!Files.exists(mockPath)) {
-                    sendResponse(exchange, 404, "Mock file not found: " + mockFile);
-                    return;
-                }
+            try {
+                String mockContent = Files.readString(mockPath, StandardCharsets.UTF_8);
+                mockContent = mockContent.replaceAll("\\{error\\}", error);
+                String jsonResponse = String.format("{\n  \"id\": \"chatcmpl-%s\",\n  \"object\": \"chat.completion\",\n  \"created\": %d,\n  \"choices\": [{\n    \"index\": 0,\n    \"message\": {\n      \"role\": \"assistant\",\n      \"content\": \"%s\"\n    },\n    \"finish_reason\": \"stop\"\n  }],\n  \"usage\": {\n    \"prompt_tokens\": 9,\n    \"completion_tokens\": 12,\n    \"total_tokens\": 21\n  }\n}",
+                        UUID.randomUUID().toString(),
+                        System.currentTimeMillis() / 1000,
+                        escapeJson(mockContent)
+                );
 
-                try {
-                    String mockContent = Files.readString(mockPath, StandardCharsets.UTF_8);
-                    sendResponse(exchange, 200, mockContent);
-                } catch (IOException ex) {
-                    sendResponse(exchange, 500, "Error reading mock file: " + ex.getMessage());
-                }
-            } else {
-                sendResponse(exchange, 400, "No 'use mock <mock-file>' instruction found in POST body.");
+                sendResponse(exchange, 200, jsonResponse, "application/json");
+            } catch (IOException ex) {
+                sendResponse(exchange, 500, "Error reading mock file: " + ex.getMessage(), "text/plain");
             }
         }
 
-        private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-            exchange.sendResponseHeaders(statusCode, response.getBytes().length);
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+        private void sendResponse(HttpExchange exchange, int statusCode, String response, String contentType) throws IOException {
+            exchange.getResponseHeaders().set("Content-Type", contentType + "; charset=utf-8");
+            byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(statusCode, responseBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(responseBytes);
+            }
+        }
+
+        private String escapeJson(String text) {
+            return text.replace("\\", "\\\\")
+                       .replace("\"", "\\\"")
+                       .replace("\b", "\\b")
+                       .replace("\f", "\\f")
+                       .replace("\n", "\\n")
+                       .replace("\r", "\\r")
+                       .replace("\t", "\\t");
         }
     }
 }
