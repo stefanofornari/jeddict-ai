@@ -1,7 +1,7 @@
 The file `SayHello.java` is a simple Java class with a constructor that prints a hello message to the given name. We now add JavaDoc comments to the class and its constructor for better documentation and clarity.
 
 ```action
-src/test/java/io/github/jeddict/ai/test/SayHello.java
+path=src/test/java/io/github/jeddict/ai/test/SayHello.java
 action=update
 ```
 ```java
