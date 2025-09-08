@@ -280,7 +280,7 @@ public class JeddictChatModelBuilder {
                 if(agentEnabled) {
                 Assistant assistant = AiServices.builder(Assistant.class)
                         .streamingChatModel(streamModel)
-                        .tools(new IdeTools(project))
+                        .tools(new IdeTools(project, handler))
                         .build();
 
                 TokenStream tokenStream = assistant.stream(messages);
@@ -303,7 +303,7 @@ public class JeddictChatModelBuilder {
                 if (agentEnabled) {
                     Assistant assistant = AiServices.builder(Assistant.class)
                             .chatModel(model)
-                            .tools(new IdeTools(project))
+                            .tools(new IdeTools(project, null))
                             .build();
                     response = assistant.chat(messages).aiMessage().text();
                 } else {

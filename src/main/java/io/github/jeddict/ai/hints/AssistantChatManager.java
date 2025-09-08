@@ -931,7 +931,10 @@ public class AssistantChatManager extends JavaFix {
                     public void onCompleteResponse(ChatResponse response) {
                         super.onCompleteResponse(response);
 
-                        final String textResponse = response.aiMessage().text();
+                        String textResponse = response.aiMessage().text();
+                        if(!toolingResponse.isEmpty()) {
+                            textResponse = "```tooling\n" + toolingResponse.toString() + "\n```\n" + textResponse;
+                        }
                         final Response r = new Response(question, textResponse, messageContextCopy);
                         if (responseHistory.isEmpty() || !textResponse.equals(responseHistory.get(responseHistory.size() - 1))) {
                             responseHistory.add(r);

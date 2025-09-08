@@ -42,6 +42,8 @@ public abstract class JeddictStreamHandler implements StreamingChatResponseHandl
     private JTextArea textArea;
     private ProgressHandle handle;
     private boolean complete;
+    protected final StringBuilder toolingResponse = new StringBuilder();
+
     private static final Logger LOGGER = Logger.getLogger(JeddictStreamHandler.class.getName());
 
 
@@ -57,9 +59,14 @@ public abstract class JeddictStreamHandler implements StreamingChatResponseHandl
         this.handle = handle;
     }
 
+    public void onToolingResponse(String resposne) {
+        toolingResponse.append(resposne);
+        onPartialResponse(resposne);
+    }
+
     @Override
     public void onPartialResponse(String partialResponse) {
-        LOGGER.finest(() -> "partial response received: " + partialResponse);
+        LOGGER.finest(() -> "partial response: " + partialResponse);
         if (init) {
             topComponent.clear();
             textArea = topComponent.createTextAreaPane();
