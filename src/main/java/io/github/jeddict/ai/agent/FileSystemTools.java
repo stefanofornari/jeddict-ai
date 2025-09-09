@@ -52,19 +52,6 @@ public class FileSystemTools {
     }
 
     /**
-     * Logs the current action to the {@link JeddictStreamHandler}, if available.
-     *
-     * @param action the action being performed (e.g., "Reading", "Updating")
-     * @param path   the file path on which the action is performed
-     */
-    private void say(String action, String path) {
-        if (handler != null && path != null) {
-            String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-            handler.onToolingResponse(action + " " + fileName + "\n");
-        }
-    }
-
-    /**
      * Reads the raw content of a file on disk.
      *
      * @param path the file path relative to the project
@@ -72,7 +59,7 @@ public class FileSystemTools {
      */
     @Tool("Read the content of a file by path")
     public String readFile(String path) {
-        say("Reading", path);
+        log("Reading", path);
         try {
             return FileUtil.readContent(project, path);
         } catch (IOException e) {
@@ -89,7 +76,7 @@ public class FileSystemTools {
      */
     @Tool("Search for a regex pattern in a file by path")
     public String searchInFile(String path, String pattern) {
-        say("Searching", path);
+        log("Searching", path);
         try {
             String content = FileUtil.readContent(project, path);
             Matcher m = Pattern.compile(pattern).matcher(content);
@@ -112,7 +99,7 @@ public class FileSystemTools {
      */
     @Tool("Read the text content of a file in NetBeans by path")
     public String readFileContent(String path) {
-        say("Opening", path);
+        log("Opening", path);
         return FileUtil.withDocument(project, path, doc -> doc.getText(0, doc.getLength()), false);
     }
 
@@ -125,7 +112,7 @@ public class FileSystemTools {
      */
     @Tool("Replace the full content of a file by path with new text")
     public String replaceFileContent(String path, String newContent) {
-        say("Updating", path);
+        log("Updating", path);
         return FileUtil.withDocument(project, path, doc -> {
             try {
                 doc.remove(0, doc.getLength());
@@ -147,7 +134,7 @@ public class FileSystemTools {
      */
     @Tool("Insert text at a given offset in a file by path")
     public String insertTextInFile(String path, int offset, String newText) {
-        say("Inserting text into", path);
+        log("Inserting text into", path);
         return FileUtil.withDocument(project, path, doc -> {
             try {
                 doc.insertString(offset, newText, null);
@@ -168,7 +155,7 @@ public class FileSystemTools {
      */
     @Tool("Insert a line of code at a given line number (0-based) in a file by path")
     public String insertLineInFile(String path, int lineNumber, String lineText) {
-        say("Adding line to", path);
+        log("Adding line to", path);
         return FileUtil.withDocument(project, path, doc -> {
             try {
                 Element root = doc.getDefaultRootElement();
@@ -196,7 +183,7 @@ public class FileSystemTools {
      */
     @Tool("Get the number of lines in a file by path")
     public String countLinesInFile(String path) {
-        say("📄 Counting lines in", path);
+        log("📄 Counting lines in", path);
         return FileUtil.withDocument(project, path, doc -> "File has "
                 + doc.getDefaultRootElement().getElementCount() + " lines.", false);
     }
@@ -210,7 +197,7 @@ public class FileSystemTools {
      */
     @Tool("Create a new file at the given path with optional content")
     public String createFile(String path, String content) {
-        say("Creating", path);
+        log("Creating", path);
         try {
             Path filePath = FileUtil.resolvePath(project, path);
             if (Files.exists(filePath)) {
@@ -233,7 +220,7 @@ public class FileSystemTools {
      */
     @Tool("Delete a file at the given path")
     public String deleteFile(String path) {
-        say("🗑️ Deleting", path);
+        log("🗑️ Deleting", path);
         try {
             Path filePath = FileUtil.resolvePath(project, path);
             if (!Files.exists(filePath)) {
@@ -255,7 +242,7 @@ public class FileSystemTools {
      */
     @Tool("List all files and directories inside a given directory path")
     public String listFilesInDirectory(String path) {
-        say("📂 Listing", path);
+        log("📂 Listing", path);
         try {
             Path dirPath = FileUtil.resolvePath(project, path);
             if (!Files.exists(dirPath) || !Files.isDirectory(dirPath)) {
@@ -282,7 +269,7 @@ public class FileSystemTools {
      */
     @Tool("Create a new directory at the given path")
     public String createDirectory(String path) {
-        say("Creating", path);
+        log("Creating", path);
         try {
             Path dirPath = FileUtil.resolvePath(project, path);
             if (Files.exists(dirPath)) {
@@ -304,7 +291,7 @@ public class FileSystemTools {
      */
     @Tool("Delete a directory at the given path (must be empty)")
     public String deleteDirectory(String path) {
-        say("🗑️ Deleting", path);
+        log("🗑️ Deleting", path);
         try {
             Path dirPath = FileUtil.resolvePath(project, path);
             if (!Files.exists(dirPath)) {
@@ -318,6 +305,20 @@ public class FileSystemTools {
             return "Directory deleted";
         } catch (IOException e) {
             return "Directory delete failed: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Logs the current action to the {@link JeddictStreamHandler}, if
+     * available.
+     *
+     * @param action the action being performed (e.g., "Reading", "Updating")
+     * @param path the file path on which the action is performed
+     */
+    private void log(String action, String path) {
+        if (handler != null && path != null) {
+            String fileName = java.nio.file.Paths.get(path).getFileName().toString();
+            handler.onToolingResponse(action + " " + fileName + "\n");
         }
     }
 }

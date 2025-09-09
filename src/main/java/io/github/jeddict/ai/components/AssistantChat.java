@@ -306,12 +306,15 @@ public class AssistantChat extends TopComponent {
         JTextArea textArea = new JTextArea();
         textArea.setEditable(false);
         Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
+        Font emojiFont = new Font("Segoe UI Emoji", newFont.getStyle(), newFont.getSize());
         java.awt.Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
         java.awt.Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
-
-        textArea.setFont(newFont);
+        textArea.setFont(emojiFont);
         textArea.setForeground(textColor);
         textArea.setBackground(backgroundColor);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
         parentPanel.add(textArea);
         return textArea;
     }
