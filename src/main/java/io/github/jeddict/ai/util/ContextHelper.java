@@ -39,21 +39,40 @@ public class ContextHelper {
 
     private final static PreferencesManager pm = PreferencesManager.getInstance();
 
-    public static String getProjectContext(Set<FileObject> projectContext) {
+    public static String getProjectContext(Set<FileObject> projectContext, Project project, boolean agentEnabled) {
+        String projectDir = project.getProjectDirectory().getPath();
+        Path projectPath = Paths.get(projectDir).toAbsolutePath().normalize();
+
         StringBuilder inputForAI = new StringBuilder();
+        if (agentEnabled) {
+            inputForAI.append("\nProject Dir: \n").append(projectDir).append("\n");
+            inputForAI.append("\nProject Files: \n");
+        }
         for (FileObject file : projectContext) {
-            try {
-                String text = getLatestContent(file);
-                if (text != null) {
-                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                        text = removeJavadoc(text);
-                    }
-                    inputForAI.append("File: ").append(file.getNameExt()).append("\n");
-                    inputForAI.append(text);
-                    inputForAI.append("\n");
+            if (agentEnabled) {
+                Path filePath = Paths.get(file.getPath()).toAbsolutePath().normalize();
+                Path relativePath;
+                try {
+                    relativePath = projectPath.relativize(filePath);
+                } catch (IllegalArgumentException e) {
+                    relativePath = filePath;
                 }
-            } catch (Exception ex) {
-                Exceptions.printStackTrace(ex);
+                inputForAI.append(relativePath)
+                        .append("\n");
+            } else {
+                try {
+                    String text = getLatestContent(file);
+                    if (text != null) {
+                        if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                            text = removeJavadoc(text);
+                        }
+                        inputForAI.append("File: ").append(file.getNameExt()).append("\n");
+                        inputForAI.append(text);
+                        inputForAI.append("\n");
+                    }
+                } catch (Exception ex) {
+                    Exceptions.printStackTrace(ex);
+                }
             }
         }
 

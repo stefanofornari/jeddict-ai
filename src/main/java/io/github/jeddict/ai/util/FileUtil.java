@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.Function;
 import javax.swing.text.Document;
+import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
@@ -138,6 +140,39 @@ public class FileUtil {
             return result;
         } catch (Exception e) {
             return "Operation failed: " + e.getMessage();
+        }
+    }
+
+    
+    /**
+     * Executes an action on a JavaSource obtained from a file in the project.
+     *
+     * @param project  the NetBeans project
+     * @param path     relative path of the Java file
+     * @param action   function to run with JavaSource, returns a result
+     * @param modify   if true, will open the document in modification mode
+     * @param <T>      result type
+     * @return the result of the action, or error message if failed
+     */
+    public static <T> T withJavaSource(Project project, String path,
+                                       ThrowingFunction<JavaSource, T> action,
+                                       boolean modify) {
+        try {
+            Path filePath = resolvePath(project, path);
+            FileObject fo = org.openide.filesystems.FileUtil.toFileObject(filePath.toFile());
+            if (fo == null) {
+                return (T) ("File not found: " + path);
+            }
+
+            JavaSource javaSource = JavaSource.forFileObject(fo);
+            if (javaSource == null) {
+                return (T) ("Not a Java source file: " + path);
+            }
+
+            return action.apply(javaSource);
+
+        } catch (Exception e) {
+            return (T) ("JavaSource operation failed: " + e.getMessage());
         }
     }
 

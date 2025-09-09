@@ -28,7 +28,7 @@ import org.netbeans.api.project.Project;
  *
  * @author Gaurav Gupta
  */
-public class ProjectTools {
+public class ExecutionTools {
 
     private final Project project;
     private final JeddictStreamHandler handler;
@@ -36,7 +36,7 @@ public class ProjectTools {
     protected static PreferencesManager pm = PreferencesManager.getInstance();
     private LogPrinter log;
 
-    public ProjectTools(Project project, JeddictStreamHandler handler) {
+    public ExecutionTools(Project project, JeddictStreamHandler handler) {
         this.project = project;
         this.handler = handler;
         this.buildCommand = pm.getBuildCommand(project);
@@ -68,6 +68,7 @@ public class ProjectTools {
          if(log == null) {
                 log = new LogPrinter(project.getProjectDirectory().getName());
         }
+        log.show();
 
         try {
             Path projectDir = FileUtil.resolvePath(project, ".");
@@ -120,12 +121,6 @@ public class ProjectTools {
     private void log(String action, String message) {
         if (handler != null && message != null) {
             handler.onToolingResponse(action + " " + message + "\n");
-        }
-    }
-
-    private void log(String message) {
-        if (handler != null) {
-            handler.onToolingResponse(message + "\n");
         }
     }
 

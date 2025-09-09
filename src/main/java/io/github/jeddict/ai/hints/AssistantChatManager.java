@@ -1003,7 +1003,7 @@ public class AssistantChatManager extends JavaFix {
                     String sessionScopeContent;
                     if (projectContext != null) {
                         mainSessionContext = getProjectContextList();
-                        sessionScopeContent = getProjectContext(mainSessionContext);
+                        sessionScopeContent = getProjectContext(mainSessionContext, project, agentEnabled);
                     } else {
                         mainSessionContext = this.sessionContext;
                         sessionScopeContent = getTextFilesContext(mainSessionContext, project, agentEnabled);

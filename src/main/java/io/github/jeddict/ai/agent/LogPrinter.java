@@ -30,6 +30,9 @@ public class LogPrinter {
 
     public LogPrinter(String tabName) {
         io = IOProvider.getDefault().getIO(tabName, false);
+    }
+
+    public void show() {
         io.select();
     }
 

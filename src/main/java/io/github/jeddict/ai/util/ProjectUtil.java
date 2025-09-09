@@ -54,7 +54,7 @@ public class ProjectUtil {
                 new HashSet<>(PreferencesManager.getInstance().getExcludeDirs()));
         return sourceFiles;
     }
-    
+
     /**
      * Converts absolute FileObject paths to paths relative to the project's
      * root directory.
@@ -281,5 +281,21 @@ public class ProjectUtil {
             }
         }
         return null;
+    }
+
+    public static boolean isMavenProject(Project project) {
+        if (project == null) {
+            return false;
+        }
+        FileObject projectDir = project.getProjectDirectory();
+        return projectDir.getFileObject("pom.xml") != null;
+    }
+
+    public static boolean isGradleProject(Project project) {
+        if (project == null) {
+            return false;
+        }
+        FileObject projectDir = project.getProjectDirectory();
+        return projectDir.getFileObject("build.gradle") != null || projectDir.getFileObject("build.gradle.kts") != null;
     }
 }

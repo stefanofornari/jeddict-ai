@@ -132,7 +132,7 @@ public class FileSystemTools {
      * @param newText the text to insert
      * @return a status message
      */
-    @Tool("Insert text at a given offset in a file by path")
+//    @Tool("Insert text at a given offset in a file by path")
     public String insertTextInFile(String path, int offset, String newText) {
         log("Inserting text into", path);
         return FileUtil.withDocument(project, path, doc -> {
@@ -153,7 +153,7 @@ public class FileSystemTools {
      * @param lineText   the text of the new line
      * @return a status message
      */
-    @Tool("Insert a line of code at a given line number (0-based) in a file by path")
+//    @Tool("Insert a line of code at a given line number (0-based) in a file by path")
     public String insertLineInFile(String path, int lineNumber, String lineText) {
         log("Adding line to", path);
         return FileUtil.withDocument(project, path, doc -> {
@@ -181,7 +181,7 @@ public class FileSystemTools {
      * @param path the file path relative to the project
      * @return the number of lines, or an error message
      */
-    @Tool("Get the number of lines in a file by path")
+//    @Tool("Get the number of lines in a file by path")
     public String countLinesInFile(String path) {
         log("📄 Counting lines in", path);
         return FileUtil.withDocument(project, path, doc -> "File has "

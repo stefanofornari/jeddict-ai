@@ -29,7 +29,11 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import io.github.jeddict.ai.JeddictUpdateManager;
-import io.github.jeddict.ai.agent.ProjectTools;
+import io.github.jeddict.ai.agent.ExecutionTools;
+import io.github.jeddict.ai.agent.ExplorationTools;
+import io.github.jeddict.ai.agent.RefactoringTools;
+import io.github.jeddict.ai.agent.MavenTools;
+import io.github.jeddict.ai.agent.GradleTools;
 import io.github.jeddict.ai.lang.impl.AnthropicBuilder;
 import io.github.jeddict.ai.lang.impl.AnthropicStreamingBuilder;
 import io.github.jeddict.ai.lang.impl.GoogleBuilder;
@@ -59,6 +63,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import static io.github.jeddict.ai.settings.GenAIProvider.PERPLEXITY;
 import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.util.ProjectUtil;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -279,23 +284,23 @@ public class JeddictChatModelBuilder {
             if (streamModel != null) {
                 handler.setHandle(handle);
                 if(agentEnabled) {
-                Assistant assistant = AiServices.builder(Assistant.class)
-                        .streamingChatModel(streamModel)
-                            .tools(new FileSystemTools(project, handler), new ProjectTools(project, handler))
+                    Assistant assistant = AiServices.builder(Assistant.class)
+                            .streamingChatModel(streamModel)
+                            .tools(buildToolsList(project, handler).toArray())
                             .build();
 
-                TokenStream tokenStream = assistant.stream(messages);
-                tokenStream
-                        .onCompleteResponse(partial -> {
-                            handler.onCompleteResponse(partial);
-                        })
-                        .onPartialResponse(partial -> {
-                            handler.onPartialResponse(partial);
-                        })
-                        .onError(error -> {
-                            handler.onError(error);
-                        })
-                        .start();
+                    TokenStream tokenStream = assistant.stream(messages);
+                    tokenStream
+                            .onCompleteResponse(partial -> {
+                                handler.onCompleteResponse(partial);
+                            })
+                            .onPartialResponse(partial -> {
+                                handler.onPartialResponse(partial);
+                            })
+                            .onError(error -> {
+                                handler.onError(error);
+                            })
+                            .start();
                 } else {
                     streamModel.chat(messages, handler);
                 }
@@ -304,7 +309,7 @@ public class JeddictChatModelBuilder {
                 if (agentEnabled) {
                     Assistant assistant = AiServices.builder(Assistant.class)
                             .chatModel(model)
-                            .tools(new FileSystemTools(project, null), new ProjectTools(project, null))
+                            .tools(buildToolsList(project, null).toArray())
                             .build();
                     response = assistant.chat(messages).aiMessage().text();
                 } else {
@@ -356,6 +361,20 @@ public class JeddictChatModelBuilder {
             handle.finish();
         }
         return null;
+    }
+    
+    private List<Object> buildToolsList(Project project, JeddictStreamHandler handler) {
+        List<Object> toolsList = new ArrayList<>();
+        toolsList.add(new FileSystemTools(project, handler));
+        toolsList.add(new ExecutionTools(project, handler));
+        toolsList.add(new ExplorationTools(project, handler));
+//        toolsList.add(new RefactoringTools(project, handler));
+//        if (ProjectUtil.isMavenProject(project)) {
+//            toolsList.add(new MavenTools(project, handler));
+//        } else if (ProjectUtil.isGradleProject(project)) {
+//            toolsList.add(new GradleTools(project, handler));
+//        }
+        return toolsList;
     }
 
 }
