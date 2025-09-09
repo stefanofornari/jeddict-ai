@@ -15,7 +15,7 @@
  */
 package io.github.jeddict.ai.lang;
 
-import io.github.jeddict.ai.agent.IdeTools;
+import io.github.jeddict.ai.agent.FileSystemTools;
 import io.github.jeddict.ai.agent.Assistant;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -280,7 +280,7 @@ public class JeddictChatModelBuilder {
                 if(agentEnabled) {
                 Assistant assistant = AiServices.builder(Assistant.class)
                         .streamingChatModel(streamModel)
-                        .tools(new IdeTools(project, handler))
+                        .tools(new FileSystemTools(project, handler))
                         .build();
 
                 TokenStream tokenStream = assistant.stream(messages);
@@ -303,7 +303,7 @@ public class JeddictChatModelBuilder {
                 if (agentEnabled) {
                     Assistant assistant = AiServices.builder(Assistant.class)
                             .chatModel(model)
-                            .tools(new IdeTools(project, null))
+                            .tools(new FileSystemTools(project, null))
                             .build();
                     response = assistant.chat(messages).aiMessage().text();
                 } else {
