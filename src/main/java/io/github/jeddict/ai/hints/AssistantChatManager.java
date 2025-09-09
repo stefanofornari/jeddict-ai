@@ -495,7 +495,16 @@ public class AssistantChatManager extends JavaFix {
 
         AssistantAction[] options = AssistantAction.values();
         actionComboBox = createStyledComboBox(options);
-        actionComboBox.setSelectedItem(AssistantAction.ASK);
+        String lastAction = pm.getAssistantAction();
+        if (lastAction != null) {
+            try {
+                actionComboBox.setSelectedItem(AssistantAction.valueOf(lastAction));
+            } catch (IllegalArgumentException ex) {
+                actionComboBox.setSelectedItem(AssistantAction.ASK);
+            }
+        } else {
+            actionComboBox.setSelectedItem(AssistantAction.ASK);
+        }
         actionComboBox.setToolTipText("<html><b>Chat</b> – for general queries<br><b>Agent</b> – for file/project generation actions</html>");
         actionComboBox.addActionListener(e -> {
             AssistantAction selectedAction = (AssistantAction) actionComboBox.getSelectedItem();
@@ -555,6 +564,10 @@ public class AssistantChatManager extends JavaFix {
                         actionComboBox.setSelectedItem(AssistantAction.ASK);
                     }
                 }
+            }
+            selectedAction = (AssistantAction) actionComboBox.getSelectedItem();
+            if (selectedAction != null) {
+                pm.setAssistantAction(selectedAction.name());
             }
         });
         leftButtonPanel.add(actionComboBox);

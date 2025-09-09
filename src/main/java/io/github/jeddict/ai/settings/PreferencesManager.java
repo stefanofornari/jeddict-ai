@@ -59,6 +59,7 @@ public class PreferencesManager {
     private static final String BUILD_COMMAND_PREFERENCE = "buildCommand";
     private static final String TEST_COMMAND_PREFERENCE = "testCommand";
     private static final String SESSION_RULES_PREFERENCE = "sessionRules";
+    private static final String ASSISTANT_ACTION_PREFERENCE = "assistantAction";
     private static final String TEMPERATURE_PREFERENCE = "temperature";
     private static final String TOP_P_PREFERENCE = "topP";
     private static final String STREAM_PREFERENCE = "stream";
@@ -712,6 +713,16 @@ public class PreferencesManager {
 
     public void setTestCommand(Project project, String command) {
         preferences.put(project.getProjectDirectory().getName() + "-" + TEST_COMMAND_PREFERENCE, command);
+    }
+    
+    public String getAssistantAction() {
+        return preferences.get(ASSISTANT_ACTION_PREFERENCE, "");
+    }
+
+    public void setAssistantAction(String action) {
+        if (action != null) {
+            preferences.put(ASSISTANT_ACTION_PREFERENCE, action.trim());
+        }
     }
 
     public String getSessionRules() {
