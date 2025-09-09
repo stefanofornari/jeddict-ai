@@ -34,6 +34,7 @@ public class ProjectTools {
     private final JeddictStreamHandler handler;
     private final String buildCommand, testCommand;
     protected static PreferencesManager pm = PreferencesManager.getInstance();
+    private LogPrinter log;
 
     public ProjectTools(Project project, JeddictStreamHandler handler) {
         this.project = project;
@@ -64,6 +65,9 @@ public class ProjectTools {
     private String runCommand(String goals, String actionLabel) {
         log(actionLabel, project.getProjectDirectory().getNameExt());
         StringBuilder fullLog = new StringBuilder();
+         if(log == null) {
+                log = new LogPrinter(project.getProjectDirectory().getName());
+        }
 
         try {
             Path projectDir = FileUtil.resolvePath(project, ".");
@@ -87,7 +91,7 @@ public class ProjectTools {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     fullLog.append(line).append("\n");
-                    log(line); // stream line to AI agent
+                    log.print(line);
                 }
             }
 
