@@ -93,7 +93,7 @@ public class FileSystemToolsTest extends ToolsTest {
         String expectedContent = "This is a test file content for real file testing.";
         String result = fileSystemTools.readFile (path);
         String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Reading " + fileName));
+        assertTrue(handler.getResponses().contains("Reading file " + fileName));
         assertEquals(expectedContent, result);
     }
 
@@ -129,7 +129,7 @@ public class FileSystemToolsTest extends ToolsTest {
         String result = fileSystemTools.readFile (path);
 
         String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Reading " + fileName));
+        assertTrue(handler.getResponses().contains("Reading file" + fileName));
         assertTrue(result.startsWith("Could not read file:"));
     }
 
