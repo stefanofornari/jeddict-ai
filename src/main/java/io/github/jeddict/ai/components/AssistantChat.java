@@ -17,6 +17,7 @@ package io.github.jeddict.ai.components;
 
 import io.github.jeddict.ai.components.actions.ActionPane;
 import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.Range;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -597,7 +598,7 @@ public class AssistantChat extends TopComponent {
         return count;
     }
 
-    public int getParseCodeEditor(List<FileObject> context) {
+    public void getParseCodeEditor(List<FileObject> context) {
         StaticJavaParser.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
         Map<JEditorPane, Map<String, String>> editorMethodSignCache = new HashMap<>();
         Map<JEditorPane, Map<String, String>> editorMethodCache = new HashMap<>();
@@ -617,13 +618,9 @@ public class AssistantChat extends TopComponent {
         //    can probably be combined into one
         // 4. before changing this logic, a unit test to drive the collection
         //    logic should be first created.
-        // 5. the code captured from the editor panes is actually the one
-        //    produced by the parser (classDecl.toString(), edMethod.toString(),
-        //    which is not necessarily exactly the same as the code provided by
-        //    the AI
-        // 6. it is not fully clear why here the context files are parsed with
+        // 5. it is not fully clear why here the context files are parsed with
         //    StaticJavaParser instead of using NetBeans JavaSource
-        // 7. editors are processed only if they contain java code; this is a
+        // 6. editors are processed only if they contain java code; this is a
         //    limitation that can probably be removed as we should be able to
         //    do some diffs even for files other than java
         //
@@ -648,13 +645,10 @@ public class AssistantChat extends TopComponent {
                 //
                 Map<String, Integer> fileMethodSignatures = new HashMap<>();
                 for (MethodDeclaration method : methods) {
-                    if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
+                    if (isAnonymousInnerMethod(method)) {
                         continue; // Skip anonymous inner class method
                     }
-                    String signature = method.getNameAsString() + "("
-                            + method.getParameters().stream()
-                                    .map(param -> param.getType().asString())
-                                    .collect(Collectors.joining(",")) + ")";
+                    String signature = buildMethodSignature(method);
                     fileMethodSignatures.put(signature, method.toString().length());
                 }
 
@@ -664,7 +658,7 @@ public class AssistantChat extends TopComponent {
                 //
                 Map<String, Long> fileMethods = new HashMap<>();
                 for (MethodDeclaration method : methods) {
-                    if (method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr) {
+                    if (isAnonymousInnerMethod(method)) {
                         continue; // Skip anonymous inner class method
                     }
                     String methodName = method.getNameAsString();
@@ -691,72 +685,55 @@ public class AssistantChat extends TopComponent {
                     if (parentPanel.getComponent(i) instanceof JEditorPane) {
                         JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
                         if (editorPane.getEditorKit().getContentType().equals(JAVA_MIME)) {
-                            Set<String> classes = new HashSet<>();
                             Map<String, String> cachedMethodSignatures = editorMethodSignCache.computeIfAbsent(editorPane, ep -> {
-                                Map<String, String> methodSignatures = new HashMap<>();
+                                Map<String, String> snippetSignatures = new HashMap<>();
+                                String editorText = editorPane.getText();
+                                String[] lines = editorText.split("\n");
                                 try {
-                                    MethodDeclaration editorMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
-                                    String signature = editorMethod.getNameAsString() + "("
-                                            + editorMethod.getParameters().stream()
-                                                    .map(param -> param.getType().asString())
-                                                    .collect(Collectors.joining(",")) + ")";
-                                    methodSignatures.put(signature, editorPane.getText());
-                                } catch (Exception e) {
+                                    // check if snippet is method otherwise throw exception
+                                    extractMethod(snippetSignatures, editorText);
+                                } catch (Exception e1) {
                                     try {
-
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        edCu.findAll(ClassOrInterfaceDeclaration.class)
-                                                .forEach(classDecl -> {
-                                                    classes.add(classDecl.getNameAsString());
-                                                    methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
-                                                });
-//                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
-                                        List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
-                                        for (MethodDeclaration edMethod : edMethods) {
-                                            String signature = edMethod.getNameAsString() + "("
-                                                    + edMethod.getParameters().stream()
-                                                            .map(param -> param.getType().asString())
-                                                            .collect(Collectors.joining(",")) + ")";
-                                            methodSignatures.put(signature, edMethod.toString());
-                                        }
-                                    } catch (Exception e1) {
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        edCu.findAll(ClassOrInterfaceDeclaration.class)
-                                                .forEach(classDecl -> {
-                                                    classes.add(classDecl.getNameAsString());
-                                                    methodSignatures.put(classDecl.getNameAsString(), classDecl.toString());
-                                                });
-                                        if (edCu.getTypes().isNonEmpty()) {
-                                            methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
+                                        CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                        extractClasses(aiCu, lines, snippetSignatures, editorText);
+                                        extractMethods(aiCu, lines, snippetSignatures);
+                                    } catch (Exception e2) {
+                                        try {
+                                            CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                            extractClasses(aiCu, lines, snippetSignatures, editorText);
+                                            if (aiCu.getTypes().isNonEmpty()) {
+                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorText);
+                                            }
+                                        } catch (Exception e3) {
+                                            // ignore
                                         }
                                     }
                                 }
-                                return methodSignatures;
+                                return snippetSignatures;
                             });
 
                             Map<String, String> cachedMethods = editorMethodCache.computeIfAbsent(editorPane, ep -> {
-                                Map<String, String> methodSignatures = new HashMap<>();
+                                Map<String, String> snippetSignatures = new HashMap<>();
+                                String editorText = editorPane.getText();
+                                String[] lines = editorText.split("\n");
                                 try {
-                                    MethodDeclaration editorMethod = StaticJavaParser.parseMethodDeclaration(editorPane.getText());
-                                    String signature = editorMethod.getNameAsString();
-                                    methodSignatures.put(signature, editorPane.getText());
+                                    extractMethod(snippetSignatures, editorText);
                                 } catch (Exception e) {
                                     try {
-//                                        CompilationUnit edCu = StaticJavaParser.parse("class Tmp {" + editorPane.getText() + "}");
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        List<MethodDeclaration> edMethods = edCu.findAll(MethodDeclaration.class);
-                                        for (MethodDeclaration edMethod : edMethods) {
-                                            String signature = edMethod.getNameAsString();
-                                            methodSignatures.put(signature, edMethod.toString());
-                                        }
+                                        CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                        extractMethods(aiCu, lines, snippetSignatures);
                                     } catch (Exception e1) {
-                                        CompilationUnit edCu = StaticJavaParser.parse(editorPane.getText());
-                                        if (edCu.getTypes().isNonEmpty()) {
-                                            methodSignatures.put(edCu.getType(0).getNameAsString(), edCu.toString());
+                                        try {
+                                            CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                            if (aiCu.getTypes().isNonEmpty()) {
+                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorText);
+                                            }
+                                        } catch (Exception e2) {
+                                            // ignore
                                         }
                                     }
                                 }
-                                return methodSignatures;
+                                return snippetSignatures;
                             });
 
                             //
@@ -769,7 +746,7 @@ public class AssistantChat extends TopComponent {
                             //
                             try {
                                 int menuCreationCount = 0;
-                                for (Entry<String, Integer> signature : fileMethodSignatures.entrySet()) {
+                                for (Map.Entry<String, Integer> signature : fileMethodSignatures.entrySet()) {
                                     if (createEditorPaneMenus(fileObject, signature.getKey(), signature.getValue(), editorPane, cachedMethodSignatures)) {
                                         menuCreationCount++;
                                     }
@@ -795,43 +772,40 @@ public class AssistantChat extends TopComponent {
                 System.out.println("Error parsing file: " + fileObject.getName() + " - " + e.getMessage());
             }
         }
-
-        //
+    }
+    
+    /**
+     * Add the menus to the relevant editor's context menu
+     */
+    public void attachMenusToEditors() {
         // Create the menu to diff with selected text
-        //
         for (int i = 0; i < parentPanel.getComponentCount(); i++) {
             if (parentPanel.getComponent(i) instanceof JEditorPane editorPane) {
-                if (menuItems.get(editorPane) == null) {
-                    menuItems.put(editorPane, new ArrayList<>());
-                }
-                if (editorPane.getEditorKit().getContentType().equals(JAVA_MIME)) {
+                menuItems.computeIfAbsent(editorPane, k -> new ArrayList<>());
+                if (JAVA_MIME.equals(editorPane.getEditorKit().getContentType())) {
                     JMenuItem diffMethodItem = new JMenuItem("Diff with Selected Snippet");
-                    diffMethodItem.addActionListener(e -> {
-                        SwingUtilities.invokeLater(() -> {
-                            JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
-                            String currentSelectedText = currenteditor.getSelectedText();
-                            final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
-                            DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
-                            if (currentDO != null) {
-                                FileObject focusedfile = currentDO.getPrimaryFile();
-                                if (focusedfile != null && !currentSelectedText.trim().isEmpty()) {
-                                    diffActionWithSelected(currentSelectedText, focusedfile, editorPane);
-                                } else {
-                                    JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
-                                }
+                    diffMethodItem.addActionListener(e -> SwingUtilities.invokeLater(() -> {
+                        JTextComponent currenteditor = EditorRegistry.lastFocusedComponent();
+                        String currentSelectedText = currenteditor.getSelectedText();
+                        final StyledDocument currentDocument = (StyledDocument) currenteditor.getDocument();
+                        DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
+                        if (currentDO != null) {
+                            FileObject focusedfile = currentDO.getPrimaryFile();
+                            if (focusedfile != null && currentSelectedText != null && !currentSelectedText.trim().isEmpty()) {
+                                diffActionWithSelected(currentSelectedText, focusedfile, editorPane);
                             } else {
                                 JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
                             }
-                        });
-                    });
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
+                        }
+                    }));
                     menuItems.get(editorPane).add(diffMethodItem);
                 }
             }
         }
 
-        //
-        // Add the menus to the relevant edito's context menu
-        //
+   
         for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
             JPopupMenu mainMenu = menus.get(entry.getKey());
             if (mainMenu != null) {
@@ -851,7 +825,59 @@ public class AssistantChat extends TopComponent {
                 mainMenu.add(methodMenu);
             }
         }
-        return 0;
+    }
+
+    private boolean isAnonymousInnerMethod(MethodDeclaration method) {
+        return method.getParentNode().isPresent() && method.getParentNode().get() instanceof ObjectCreationExpr;
+    }
+
+    private String buildMethodSignature(MethodDeclaration method) {
+        return method.getNameAsString() + "("
+                + method.getParameters().stream()
+                        .map(param -> param.getType().asString())
+                        .collect(Collectors.joining(",")) + ")";
+    }
+
+    private void extractClasses(CompilationUnit aiCu, String[] lines,
+            Map<String, String> snippetSignatures, String source) {
+        List<ClassOrInterfaceDeclaration> classDecls = aiCu.findAll(ClassOrInterfaceDeclaration.class);
+        int classesCount = classDecls.size();
+
+        for (ClassOrInterfaceDeclaration classDecl : classDecls) {
+            if (classesCount == 1 || classDecl.isPublic()) {
+                snippetSignatures.put(classDecl.getNameAsString(), source);
+            } else {
+                classDecl.getRange().ifPresent(range -> {
+                    String classSource = extractSource(lines, range.begin.line, range.end.line);
+                    snippetSignatures.put(classDecl.getNameAsString(), classSource);
+                });
+            }
+        }
+    }
+
+    private void extractMethods(CompilationUnit aiCu, String[] lines, Map<String, String> snippetSignatures) {
+        List<MethodDeclaration> aiMethods = aiCu.findAll(MethodDeclaration.class);
+        for (MethodDeclaration aiMethod : aiMethods) {
+            String signature = buildMethodSignature(aiMethod);
+            aiMethod.getRange().ifPresent(range -> {
+                String methodSource = extractSource(lines, range.begin.line, range.end.line);
+                snippetSignatures.put(signature, methodSource);
+            });
+        }
+    }
+    
+    private void extractMethod(Map<String, String> snippetSignatures, String editorText) {
+        MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
+        String signature = aiMethod.getNameAsString();
+        snippetSignatures.put(signature, editorText);
+    }
+   
+    private String extractSource(String[] lines, int startLine, int endLine) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = startLine - 1; i <= endLine - 1; i++) {
+            sb.append(lines[i]).append("\n");
+        }
+        return sb.toString();
     }
 
     private boolean createEditorPaneMenus(FileObject fileObject, String signature, Integer bodyLength, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
@@ -884,11 +910,7 @@ public class AssistantChat extends TopComponent {
             JMenuItem diffMethodItem = new JMenuItem("Diff " + menuSubText + fileObject.getName());
             diffMethodItem.addActionListener(e -> {
                 SwingUtilities.invokeLater(() -> {
-                    //if (classSignature) {
-                    //    DiffUtil.diffWithOriginal(cachedMethodSignatures.get(signature), fileObject, editorPane);
-                    //} else {
-                        diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
-                    //}
+                    diffAction(classSignature, fileObject, signature, editorPane, cachedMethodSignatures);
                 });
             });
             if (fileObject.getName().equals(signature)) {

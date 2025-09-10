@@ -92,11 +92,9 @@ public class DiffUtil {
      * @param cachedMethodSignatures
      */
     public static void diffAction(boolean classSignature, FileObject fileObject, String signature, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
-        LOG.finest(
-            "diff between provided content and " + fileObject +
-            " with classSignature " + classSignature +
-            " and signature " + signature
-        );
+        LOG.finest(() -> "diff between provided content and " + fileObject +
+                " with classSignature " + classSignature +
+                " and signature " + signature);
 
         //
         // BUG: the code in cachedMethodSignatures is the result of the parsing
