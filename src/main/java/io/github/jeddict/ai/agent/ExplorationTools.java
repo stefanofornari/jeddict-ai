@@ -31,8 +31,6 @@ import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource.Phase;
 import org.netbeans.modules.refactoring.api.RefactoringSession;
-import org.netbeans.modules.refactoring.api.RenameRefactoring;
-import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 
 import javax.lang.model.element.TypeElement;
@@ -43,17 +41,31 @@ import java.io.IOException;
  * Tools for code-level operations in NetBeans projects.
  *
  * <p>
- * These tools use the NetBeans JavaSource and Refactoring APIs to let an AI
- * assistant explore code structure, format files, or prepare refactoring
- * tasks.</p>
+ * This class offers various methods for AI assistants to explore and analyze Java source code
+ * within a NetBeans project. It uses NetBeans JavaSource and Refactoring APIs to facilitate
+ * operations such as listing classes and methods, searching for symbols, and finding usages.
+ * These tools can be integrated into AI workflows to enhance automated code understanding,
+ * navigation, and refactoring assistance.
+ * </p>
  *
- * <p>
- * <b>Example (AI usage):</b></p>
+ * <p>Key functional capabilities include:</p>
+ * <ul>
+ *   <li>Listing all top-level classes declared in a Java file.</li>
+ *   <li>Listing all method signatures declared in a Java file.</li>
+ *   <li>Searching the entire project for a symbol by name (class, method, or field).</li>
+ *   <li>Finding all usages of a specified class, method, or field within the codebase.</li>
+ * </ul>
+ *
+ * <p><b>Example usage by an AI assistant:</b></p>
  * <pre>
- * assistant.listClassesInFile("src/main/java/com/example/MyClass.java");
- * // -> "Class: com.example.MyClass"
+ * ExplorationTools tools = new ExplorationTools(project, handler);
+ * String classes = tools.listClassesInFile("src/main/java/com/example/MyClass.java");
+ * System.out.println(classes); // Output: "Class: com.example.MyClass"
  * </pre>
+ *
+ * @author Gaurav Gupta
  */
+
 public class ExplorationTools {
 
     private final Project project;

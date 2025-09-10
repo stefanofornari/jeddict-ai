@@ -25,7 +25,17 @@ import java.nio.file.Path;
 import org.netbeans.api.project.Project;
 
 /**
- *
+ * This class provides tools to execute build and test commands in a project,
+ * streaming output and returning the full log of the command.
+ * 
+ * It supports different commands based on the operating system (Windows or Unix/Mac).
+ * The execution logs are streamed to a JeddictStreamHandler if available.
+ * 
+ * Usage:
+ * - Create an instance with the target project and a stream handler.
+ * - Invoke buildProject() to run the build command.
+ * - Invoke testProject() to run the test command.
+ * 
  * @author Gaurav Gupta
  */
 public class ExecutionTools {
