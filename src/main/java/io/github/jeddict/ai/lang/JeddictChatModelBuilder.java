@@ -15,6 +15,8 @@
  */
 package io.github.jeddict.ai.lang;
 
+import io.github.jeddict.ai.agent.FileSystemTools;
+import io.github.jeddict.ai.agent.Assistant;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
@@ -24,7 +26,14 @@ import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.TokenStream;
 import io.github.jeddict.ai.JeddictUpdateManager;
+import io.github.jeddict.ai.agent.ExecutionTools;
+import io.github.jeddict.ai.agent.ExplorationTools;
+import io.github.jeddict.ai.agent.RefactoringTools;
+import io.github.jeddict.ai.agent.MavenTools;
+import io.github.jeddict.ai.agent.GradleTools;
 import io.github.jeddict.ai.lang.impl.AnthropicBuilder;
 import io.github.jeddict.ai.lang.impl.AnthropicStreamingBuilder;
 import io.github.jeddict.ai.lang.impl.GoogleBuilder;
@@ -54,6 +63,7 @@ import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import static io.github.jeddict.ai.settings.GenAIProvider.PERPLEXITY;
 import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.util.ProjectUtil;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -196,11 +206,19 @@ public class JeddictChatModelBuilder {
     }
 
     public String generate(final Project project, final String prompt) {
-        return generateInternal(project, prompt, null, null);
+        return generateInternal(project, false, prompt, null, null);
     }
 
     public String generate(final Project project, final String prompt, List<String> images, List<Response> responseHistory) {
-        return generateInternal(project, prompt, images, responseHistory);
+        return generateInternal(project, false, prompt, images, responseHistory);
+    }
+
+    public String generate(final Project project, boolean agentEnabled, final String prompt) {
+        return generateInternal(project, agentEnabled, prompt, null, null);
+    }
+
+    public String generate(final Project project, boolean agentEnabled, final String prompt, List<String> images, List<Response> responseHistory) {
+        return generateInternal(project, agentEnabled, prompt, images, responseHistory);
     }
 
     public UserMessage buildUserMessage(String prompt, List<String> imageBase64Urls) {
@@ -218,7 +236,7 @@ public class JeddictChatModelBuilder {
         return UserMessage.from(parts.toArray(new Content[0]));
     }
 
-    private String generateInternal(Project project, String prompt, List<String> images, List<Response> responseHistory) {
+    private String generateInternal(Project project, boolean agentEnabled, String prompt, List<String> images, List<Response> responseHistory) {
         if (model == null && handler == null) {
             JOptionPane.showMessageDialog(null,
                     "AI assistance model not intitalized.",
@@ -265,9 +283,38 @@ public class JeddictChatModelBuilder {
         try {
             if (streamModel != null) {
                 handler.setHandle(handle);
-                streamModel.chat(messages, handler);
+                if(agentEnabled) {
+                    Assistant assistant = AiServices.builder(Assistant.class)
+                            .streamingChatModel(streamModel)
+                            .tools(buildToolsList(project, handler).toArray())
+                            .build();
+
+                    TokenStream tokenStream = assistant.stream(messages);
+                    tokenStream
+                            .onCompleteResponse(partial -> {
+                                handler.onCompleteResponse(partial);
+                            })
+                            .onPartialResponse(partial -> {
+                                handler.onPartialResponse(partial);
+                            })
+                            .onError(error -> {
+                                handler.onError(error);
+                            })
+                            .start();
+                } else {
+                    streamModel.chat(messages, handler);
+                }
             } else {
-                String response = model.chat(messages).aiMessage().text();
+                String response;
+                if (agentEnabled) {
+                    Assistant assistant = AiServices.builder(Assistant.class)
+                            .chatModel(model)
+                            .tools(buildToolsList(project, null).toArray())
+                            .build();
+                    response = assistant.chat(messages).aiMessage().text();
+                } else {
+                    response = model.chat(messages).aiMessage().text();
+                }
                 CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
                 handle.finish();
                 return response;
@@ -314,6 +361,20 @@ public class JeddictChatModelBuilder {
             handle.finish();
         }
         return null;
+    }
+    
+    private List<Object> buildToolsList(Project project, JeddictStreamHandler handler) {
+        List<Object> toolsList = new ArrayList<>();
+        toolsList.add(new FileSystemTools(project, handler));
+        toolsList.add(new ExecutionTools(project, handler));
+        toolsList.add(new ExplorationTools(project, handler));
+//        toolsList.add(new RefactoringTools(project, handler));
+//        if (ProjectUtil.isMavenProject(project)) {
+//            toolsList.add(new MavenTools(project, handler));
+//        } else if (ProjectUtil.isGradleProject(project)) {
+//            toolsList.add(new GradleTools(project, handler));
+//        }
+        return toolsList;
     }
 
 }

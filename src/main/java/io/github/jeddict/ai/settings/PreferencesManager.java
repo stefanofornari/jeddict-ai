@@ -56,7 +56,10 @@ public class PreferencesManager {
     private static final String CHAT_MODEL_PREFERENCE = "chatModel";
     private static final String GLOBAL_RULES_PREFERENCE = "globalRules";
     private static final String PROJECT_RULES_PREFERENCE = "projectRules";
+    private static final String BUILD_COMMAND_PREFERENCE = "buildCommand";
+    private static final String TEST_COMMAND_PREFERENCE = "testCommand";
     private static final String SESSION_RULES_PREFERENCE = "sessionRules";
+    private static final String ASSISTANT_ACTION_PREFERENCE = "assistantAction";
     private static final String TEMPERATURE_PREFERENCE = "temperature";
     private static final String TOP_P_PREFERENCE = "topP";
     private static final String STREAM_PREFERENCE = "stream";
@@ -624,6 +627,102 @@ public class PreferencesManager {
 
     public void setProjectRules(Project project, String message) {
         preferences.put(project.getProjectDirectory().getName() + "-" + PROJECT_RULES_PREFERENCE, message);
+    }
+    
+    /**
+     * Get the build command for the given project.
+     * <p>
+     * Preference is checked first. If not present, fallback to project type: -
+     * Maven: uses wrapper if available (`./mvnw clean install`) or `mvn clean
+     * install` - Gradle: uses wrapper if available (`./gradlew build`) or
+     * `gradle build` - Ant: `ant clean build`
+     *
+     * @param project the NetBeans project
+     * @return the build command, or null if unknown
+     */
+    public String getBuildCommand(Project project) {
+        return getCommand(project, BUILD_COMMAND_PREFERENCE, "build");
+    }
+
+    /**
+     * Get the test command for the given project.
+     * <p>
+     * Preference is checked first. If not present, fallback to project type: -
+     * Maven: uses wrapper if available (`./mvnw test`) or `mvn test` - Gradle:
+     * uses wrapper if available (`./gradlew test`) or `gradle test` - Ant: `ant
+     * test`
+     *
+     * @param project the NetBeans project
+     * @return the test command, or null if unknown
+     */
+    public String getTestCommand(Project project) {
+        return getCommand(project, TEST_COMMAND_PREFERENCE, "test");
+    }
+
+    /**
+     * Common helper for determining build/test command.
+     *
+     * @param project the NetBeans project
+     * @param preferenceKey the preference key suffix (build/test)
+     * @param commandType either "build" or "test"
+     * @return the command string, or null if unknown
+     */
+    private String getCommand(Project project, String preferenceKey, String commandType) {
+        String key = project.getProjectDirectory().getName() + "-" + preferenceKey;
+        String cmd = preferences.get(key, null);
+        if (cmd != null) {
+            return cmd;
+        }
+
+        try {
+            // Maven
+            if (project.getProjectDirectory().getFileObject("pom.xml") != null) {
+                if( commandType.equals("build")) {
+                     commandType = "install";
+                }
+                if (project.getProjectDirectory().getFileObject("mvnw") != null) {
+                    return "./mvnw " + commandType;
+                }
+                return "mvn " + commandType;
+            }
+
+            // Gradle
+            if (project.getProjectDirectory().getFileObject("build.gradle") != null
+                    || project.getProjectDirectory().getFileObject("build.gradle.kts") != null) {
+                if (project.getProjectDirectory().getFileObject("gradlew") != null) {
+                    return "./gradlew " + commandType;
+                }
+                return "gradle " + commandType;
+            }
+
+            // Ant
+            if (project.getProjectDirectory().getFileObject("build.xml") != null) {
+                return "ant " + commandType;
+            }
+
+        } catch (Exception e) {
+            // Fail silently
+        }
+
+        return null;
+    }
+
+    public void setBuildCommand(Project project, String command) {
+        preferences.put(project.getProjectDirectory().getName() + "-" + BUILD_COMMAND_PREFERENCE, command);
+    }
+
+    public void setTestCommand(Project project, String command) {
+        preferences.put(project.getProjectDirectory().getName() + "-" + TEST_COMMAND_PREFERENCE, command);
+    }
+    
+    public String getAssistantAction() {
+        return preferences.get(ASSISTANT_ACTION_PREFERENCE, "");
+    }
+
+    public void setAssistantAction(String action) {
+        if (action != null) {
+            preferences.put(ASSISTANT_ACTION_PREFERENCE, action.trim());
+        }
     }
 
     public String getSessionRules() {

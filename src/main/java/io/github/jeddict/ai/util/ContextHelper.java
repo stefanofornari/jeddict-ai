@@ -19,12 +19,15 @@ import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.FileUtil.getLatestContent;
 import static io.github.jeddict.ai.util.SourceUtil.removeJavadoc;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.netbeans.api.project.Project;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 
@@ -36,50 +39,89 @@ public class ContextHelper {
 
     private final static PreferencesManager pm = PreferencesManager.getInstance();
 
-    public static String getProjectContext(Set<FileObject> projectContext) {
-        StringBuilder inputForAI = new StringBuilder();
-        for (FileObject file : projectContext) {
-            try {
-                String text = getLatestContent(file);
-                if (text != null) {
-                    if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
-                        text = removeJavadoc(text);
-                    }
-                    inputForAI.append("File: ").append(file.getNameExt()).append("\n");
-                    inputForAI.append(text);
-                    inputForAI.append("\n");
-                }
-            } catch (Exception ex) {
-                Exceptions.printStackTrace(ex);
-            }
-        }
+    public static String getProjectContext(Set<FileObject> projectContext, Project project, boolean agentEnabled) {
+        String projectDir = project.getProjectDirectory().getPath();
+        Path projectPath = Paths.get(projectDir).toAbsolutePath().normalize();
 
-        return inputForAI.toString();
-    }
-    
-    public static String getTextFilesContext(Set<FileObject> scope) {
         StringBuilder inputForAI = new StringBuilder();
-        for (FileObject file : getFilesContextList(scope)) {
-            if (!file.getMIMEType().startsWith("image")) {
+        if (agentEnabled) {
+            inputForAI.append("\nProject Dir: \n").append(projectDir).append("\n");
+            inputForAI.append("\nProject Files: \n");
+        }
+        for (FileObject file : projectContext) {
+            if (agentEnabled) {
+                Path filePath = Paths.get(file.getPath()).toAbsolutePath().normalize();
+                Path relativePath;
+                try {
+                    relativePath = projectPath.relativize(filePath);
+                } catch (IllegalArgumentException e) {
+                    relativePath = filePath;
+                }
+                inputForAI.append(relativePath)
+                        .append("\n");
+            } else {
                 try {
                     String text = getLatestContent(file);
                     if (text != null) {
                         if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
                             text = removeJavadoc(text);
                         }
-                        inputForAI.append("File: ")
-                                .append(file.getNameExt())
-                                .append("\n")
-                                .append(text)
-                                .append("\n\n");
+                        inputForAI.append("File: ").append(file.getNameExt()).append("\n");
+                        inputForAI.append(text);
+                        inputForAI.append("\n");
                     }
                 } catch (Exception ex) {
                     Exceptions.printStackTrace(ex);
                 }
             }
         }
+
         return inputForAI.toString();
     }
+    
+    public static String getTextFilesContext(Set<FileObject> scope, Project project, boolean agentEnabled) {
+        String projectDir = project.getProjectDirectory().getPath();
+        StringBuilder inputForAI = new StringBuilder();
+        
+        if (agentEnabled) {
+            inputForAI.append("\nProject Dir: \n").append(projectDir).append("\n");
+            inputForAI.append("\nProject Files: \n");
+        }
+        Path projectPath = Paths.get(projectDir).toAbsolutePath().normalize();
+
+        for (FileObject file : getFilesContextList(scope)) {
+            if (agentEnabled) {
+                Path filePath = Paths.get(file.getPath()).toAbsolutePath().normalize();
+                Path relativePath;
+                try {
+                    relativePath = projectPath.relativize(filePath);
+                } catch (IllegalArgumentException e) {
+                    relativePath = filePath;
+                }
+                inputForAI.append(relativePath)
+                        .append("\n");
+            } else {
+                if (!file.getMIMEType().startsWith("image")) {
+                    try {
+                        String text = getLatestContent(file);
+                        if (text != null) {
+                            if ("java".equals(file.getExt()) && pm.isExcludeJavadocEnabled()) {
+                                text = removeJavadoc(text);
+                            }
+                            inputForAI.append("File: ")
+                                    .append(file.getNameExt())
+                                    .append("\n")
+                                    .append(text)
+                                    .append("\n\n");
+                        }
+                    } catch (Exception ex) {
+                        Exceptions.printStackTrace(ex);
+                    }
+                }
+            }
+        }
+    return inputForAI.toString();
+}
 
     public static List<String> getImageFilesContext(Set<FileObject> scope) {
         List<String> base64ImageUrls = new ArrayList<>();
