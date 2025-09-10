@@ -19,11 +19,14 @@ import io.github.jeddict.ai.agent.FileAction;
 import static io.github.jeddict.ai.components.AssistantChat.createEditorKit;
 import io.github.jeddict.ai.components.diff.DiffView;
 import io.github.jeddict.ai.components.diff.FileStreamSource;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.logging.Logger;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
@@ -56,6 +59,8 @@ public class ActionPane extends JTabbedPane {
      */
     public ActionPane(final Project project, final FileAction action) {
         this.ctrl = new ActionPaneController(project, action);
+        setPreferredSize(new Dimension(600, 600));
+        setBorder(BorderFactory.createLineBorder(Color.white, 5));
     }
 
     /**
@@ -68,9 +73,6 @@ public class ActionPane extends JTabbedPane {
     public JEditorPane createPane() {
         //
         // show two tabs, one with the provided source and one with the diff
-        //
-        //
-        // TODO: refactor and use DiffUtil?
         //
         final File file = new File(ctrl.fullActionPath);
         final FileObject fo = FileUtil.toFileObject(file);
