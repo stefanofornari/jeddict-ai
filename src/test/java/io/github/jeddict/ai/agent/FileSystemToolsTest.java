@@ -41,7 +41,7 @@ public class FileSystemToolsTest extends ToolsTest {
 
         String result = fileSystemTools.searchInFile(path, pattern);
         String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Searching " + fileName));
+        assertTrue(handler.getResponses().contains("Looking for '" + pattern + "' inside "  + fileName));
         assertTrue(result.contains("Match at"));
         assertTrue(result.contains("test file"));
     }
@@ -91,7 +91,7 @@ public class FileSystemToolsTest extends ToolsTest {
     public void testReadFile_Success() throws IOException {
         String path = "src/test/resources/testfile.txt";
         String expectedContent = "This is a test file content for real file testing.";
-        String result = fileSystemTools.readFile(path);
+        String result = fileSystemTools.readFile (path);
         String fileName = java.nio.file.Paths.get(path).getFileName().toString();
         assertTrue(handler.getResponses().contains("Reading " + fileName));
         assertEquals(expectedContent, result);
@@ -126,7 +126,7 @@ public class FileSystemToolsTest extends ToolsTest {
     public void testReadFile_Exception() throws IOException {
         String path = "nonexistentfile.txt";
 
-        String result = fileSystemTools.readFile(path);
+        String result = fileSystemTools.readFile (path);
 
         String fileName = java.nio.file.Paths.get(path).getFileName().toString();
         assertTrue(handler.getResponses().contains("Reading " + fileName));
@@ -141,7 +141,7 @@ public class FileSystemToolsTest extends ToolsTest {
         String result = fileSystemTools.searchInFile(path, pattern);
 
         String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Searching " + fileName));
+        assertTrue(handler.getResponses().contains("Looking for '" + pattern + "' inside " + fileName));
         assertEquals("No matches found.", result);
     }
 
