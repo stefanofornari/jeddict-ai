@@ -15,6 +15,7 @@
  */
 package io.github.jeddict.ai.components;
 
+import io.github.jeddict.ai.components.actions.ActionPane;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -138,7 +139,7 @@ public class AssistantChat extends TopComponent {
         add(parentPanel, BorderLayout.CENTER);
     }
 
-    public void lastRemove() {
+    public void removeLast() {
         parentPanel.remove(parentPanel.getComponentCount() - 1);
     }
 
@@ -389,6 +390,7 @@ public class AssistantChat extends TopComponent {
         JEditorPane sourcePane = actionPane.createPane();
         addContextMenu(sourcePane);
         addEditorPaneRespectingTextArea(actionPane);
+
         return actionPane;
     }
 
