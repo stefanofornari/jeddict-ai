@@ -60,7 +60,7 @@ public class FileSystemTools {
      */
     @Tool("Read the content of a file by path")
    public String readFile(String path) {
-        log("📖 Reading file from disk: ", path);
+        log("📖 Reading file", path);
         try {
             String content = FileUtil.readContent(project, path);
             return content;
