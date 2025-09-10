@@ -86,7 +86,7 @@ public class ActionPane extends JTabbedPane {
         // If the action is update but fo is null, it means that the file has
         // has been deleted, therefore we turn the update action into a create.
         //
-        final String realAction = ("update".equals(ctrl.action.action()) && (fo != null))
+        final String realAction = ("update".equals(ctrl.action.action()) && (fo == null))
             ? "create" : ctrl.action.action();
         if ("update".equals(realAction)) {
             addDiffTab(fo, mimeType);
