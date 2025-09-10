@@ -36,6 +36,7 @@ import org.openide.util.lookup.Lookups;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import java.io.IOException;
+import javax.lang.model.element.ElementKind;
 
 /**
  * Tools for code-level operations in NetBeans projects.
@@ -128,7 +129,7 @@ public class ExplorationTools {
                 for (Element element : cc.getTopLevelElements()) {
                     List<? extends Element> enclosed = element.getEnclosedElements();
                     enclosed.stream()
-                            .filter(e -> e.getKind().isExecutable())
+                            .filter(e -> e.getKind() == ElementKind.METHOD || e.getKind() == ElementKind.CONSTRUCTOR)
                             .forEach(m -> result.append("Method: ").append(m.toString()).append("\n"));
                 }
             }, true);
