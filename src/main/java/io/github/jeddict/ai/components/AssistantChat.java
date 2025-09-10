@@ -17,7 +17,6 @@ package io.github.jeddict.ai.components;
 
 import io.github.jeddict.ai.components.actions.ActionPane;
 import com.github.javaparser.ParserConfiguration;
-import com.github.javaparser.Range;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -63,10 +62,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -773,7 +770,7 @@ public class AssistantChat extends TopComponent {
             }
         }
     }
-    
+
     /**
      * Add the menus to the relevant editor's context menu
      */
@@ -805,7 +802,7 @@ public class AssistantChat extends TopComponent {
             }
         }
 
-   
+
         for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
             JPopupMenu mainMenu = menus.get(entry.getKey());
             if (mainMenu != null) {
@@ -865,13 +862,13 @@ public class AssistantChat extends TopComponent {
             });
         }
     }
-    
+
     private void extractMethod(Map<String, String> snippetSignatures, String editorText) {
         MethodDeclaration aiMethod = StaticJavaParser.parseMethodDeclaration(editorText);
         String signature = aiMethod.getNameAsString();
         snippetSignatures.put(signature, editorText);
     }
-   
+
     private String extractSource(String[] lines, int startLine, int endLine) {
         StringBuilder sb = new StringBuilder();
         for (int i = startLine - 1; i <= endLine - 1; i++) {
