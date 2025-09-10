@@ -59,11 +59,13 @@ public class FileSystemTools {
      * @return the file content, or an error message if it could not be read
      */
     @Tool("Read the content of a file by path")
-    public String readFile(String path) {
-        log("Reading", path);
+   public String readFile(String path) {
+        log("📖 Reading file from disk: ", path);
         try {
-            return FileUtil.readContent(project, path);
+            String content = FileUtil.readContent(project, path);
+            return content;
         } catch (IOException e) {
+            log("❌ Failed to read file: " + e.getMessage() + " in file: ", path);
             return "Could not read file: " + e.getMessage();
         }
     }
