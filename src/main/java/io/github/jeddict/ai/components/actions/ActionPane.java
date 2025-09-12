@@ -123,7 +123,7 @@ public class ActionPane extends JTabbedPane {
                     mimeType,
                     new StringReader(ctrl.action.content())
             );
-            final StreamSource right = new FileStreamSource(fo);
+            final FileStreamSource right = new FileStreamSource(fo);
 
             addTab("Diff", new DiffView(left, right));
         } catch (IOException x) {

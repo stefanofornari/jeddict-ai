@@ -32,7 +32,7 @@ import org.openide.loaders.DataObject;
 import org.openide.util.Exceptions;
 
 /**
- * A DiffView nspired  by org.netbeans.modules.diff.builtin.SingleDiffPanel
+ * A DiffView inspired by org.netbeans.modules.diff.builtin.SingleDiffPanel
  * which is an internal class and therefore a brittle dependency. It also
  * gives the basis to build specific functionality for Jeddict or cleaning
  * up the UI removed unused functionalities.
@@ -236,10 +236,9 @@ public class DiffView extends JPanel implements PropertyChangeListener {
     }
 
     private void refreshComponents() {
-        LOG.finest("refreshComponent - change " + ctrl.getDifferenceIndex() + " of " + ctrl.getDifferenceCount());
-        LOG.finest(
-            () -> "refreshComponent - " + (baseSource.getClass()) + " " + isEditable() + " " + isModified()
-        );
+        LOG.finest(() -> "change " + ctrl.getDifferenceIndex() + " of " + ctrl.getDifferenceCount());
+        LOG.finest(() -> "baseSource: " + baseSource + ", dataObject: " + dataObject);
+        LOG.finest(() -> (baseSource.getClass()) + " " + isEditable() + " " + isModified());
         btnNext.setEnabled(ctrl.getDifferenceIndex() < ctrl.getDifferenceCount() - 1);
         btnPrev.setEnabled(ctrl.getDifferenceIndex() > 0);
         btnSave.setEnabled(isModified());
