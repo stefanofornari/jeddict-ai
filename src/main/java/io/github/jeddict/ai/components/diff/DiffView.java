@@ -17,12 +17,17 @@ package io.github.jeddict.ai.components.diff;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.InputMap;
+import javax.swing.ActionMap;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import org.netbeans.api.diff.DiffController;
 import org.netbeans.api.diff.StreamSource;
 import org.openide.awt.UndoRedo;
@@ -30,7 +35,7 @@ import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.util.Exceptions;
-
+import org.openide.util.Utilities;
 /**
  * A DiffView inspired by org.netbeans.modules.diff.builtin.SingleDiffPanel
  * which is an internal class and therefore a brittle dependency. It also
@@ -51,6 +56,7 @@ public class DiffView extends JPanel implements PropertyChangeListener {
      */
     protected DiffView() {
         initComponents();
+        initKeyBindings();
     }
 
     public DiffView(final StreamSource modifiedSource, final StreamSource baseSource)
@@ -282,6 +288,26 @@ public class DiffView extends JPanel implements PropertyChangeListener {
         }
 
         return null;
+    }
+
+    /**
+     * Adds key bindings to invoke "save" with Ctrl-S.
+     */
+    private void initKeyBindings() {
+        // Save only if editable and modified
+        InputMap inputMap = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        ActionMap actionMap = getActionMap();
+
+        KeyStroke ctrlS = Utilities.stringToKey("D-S");
+        inputMap.put(ctrlS, "saveAction");
+        actionMap.put("saveAction", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (btnSave.isEnabled()) {
+                    btnSave.doClick();
+                }
+            }
+        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
