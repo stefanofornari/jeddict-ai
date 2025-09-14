@@ -930,7 +930,7 @@ Instructions:
   - For each file that needs to be created, updated, or deleted:
     - Start with a short natural-language description of what the file is or does.
     - Then immediately follow it with:
-      1. an `action` block in this format:
+      1. an `action` block in this format (note that both path= and action= are important):
          ```action
             path=relative/path/to/file
             action=create|update|delete
@@ -941,7 +941,7 @@ Instructions:
   - Ensure that each file’s action block is **immediately followed** by its corresponding code block.
   - All code must be syntactically correct, valid, and follow standard conventions unless otherwise stated.
 
-    Respond in Markdown format as described above.                      
+    Respond in Markdown format as described above.
 
     ]
     """.formatted(project.getProjectDirectory().getPath(), projectMap, source, userQuery, sessionRules);
