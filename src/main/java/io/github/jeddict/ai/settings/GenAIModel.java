@@ -223,7 +223,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claude-opus-4-1-20250805",
                 "Claude Opus 4.1 — frontier reasoning & coding.",
-                15.00, 75.00
+                15.00, 75.00,
+                true
             )
         );
         MODELS.put(
@@ -231,7 +232,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claude-opus-4-20250514",
                 "Claude Opus 4 — flagship model (2025-05-14).",
-                15.00, 75.00
+                15.00, 75.00,
+                true
             )
         );
         MODELS.put(
@@ -239,7 +241,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claude-sonnet-4-20250514",
                 "Claude Sonnet 4 — high‑performance reasoning.",
-                3.00, 15.00
+                3.00, 15.00,
+                true
             )
         );
         MODELS.put(
@@ -255,7 +258,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claude-3-5-haiku-20241022",
                 "Claude Haiku 3.5 — fast & compact.",
-                0.80, 4.00
+                0.80, 4.00,
+                true
             )
         );
         MODELS.put(
@@ -263,7 +267,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claude-3-haiku-20240307",
                 "Claude Haiku 3 — lightweight option.",
-                0.25, 1.25
+                0.25, 1.25,
+                true
             )
         );
         MODELS.put(
@@ -271,7 +276,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claude-3-5-sonnet-20240620",
                 "A sonnet model offering refined conversational capabilities.",
-                3.00, 15.00
+                3.00, 15.00,
+                true
             )
         );
         MODELS.put(
@@ -279,7 +285,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claude-3-5-sonnet-20241022",
                 "An upgraded sonnet model with enhanced reasoning and computer use capabilities.",
-                3.00, 15.00
+                3.00, 15.00,
+                true
             )
         );
         MODELS.put(
@@ -287,7 +294,8 @@ public record GenAIModel(
             new GenAIModel(
                 ANTHROPIC, "claud-3-7-sonnet-20250224",
                 "A hybrid reasoning model excelling in complex problem-solving, especially in math and coding.",
-                3.00, 15.00
+                3.00, 15.00,
+                true
             )
         );
 
