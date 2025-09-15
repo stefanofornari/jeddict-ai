@@ -163,7 +163,8 @@ public record GenAIModel(
             new GenAIModel(
                 OPEN_AI, "gpt-4.1-mini",
                 "Balanced for intelligence, speed, and cost.",
-                0.40, 1.60
+                0.40, 1.60,
+                true
             )
         );
         MODELS.put(
@@ -171,7 +172,8 @@ public record GenAIModel(
             new GenAIModel(
                 OPEN_AI, "gpt-4.1",
                 "Fast, intelligent, flexible GPT model.",
-                2.00, 8.00
+                2.00, 8.00,
+                true
             )
         );
         MODELS.put(
@@ -187,7 +189,8 @@ public record GenAIModel(
             new GenAIModel(
                 OPEN_AI, "gpt-4o",
                 "Flagship multimodal GPT‑4o (text+image).",
-                5.00, 15.00
+                5.00, 15.00,
+                true
             )
         );
         MODELS.put(
@@ -195,7 +198,8 @@ public record GenAIModel(
             new GenAIModel(
                 OPEN_AI, "gpt-4o-mini",
                 "Fast, affordable small model for focused tasks.",
-                0.150, 0.600
+                0.150, 0.600,
+                true
             )
         );
         MODELS.put(
@@ -203,7 +207,8 @@ public record GenAIModel(
             new GenAIModel(
                 OPEN_AI, "o4-mini",
                 "Faster, more affordable reasoning model.",
-                1.10, 4.40
+                1.10, 4.40,
+                true
             )
         );
         MODELS.put(
