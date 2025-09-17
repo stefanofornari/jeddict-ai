@@ -15,7 +15,6 @@
  */
 package io.github.jeddict.ai.lang;
 
-import io.github.jeddict.ai.agent.FileSystemTools;
 import io.github.jeddict.ai.agent.Assistant;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -29,11 +28,38 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import io.github.jeddict.ai.JeddictUpdateManager;
-import io.github.jeddict.ai.agent.ExecutionTools;
-import io.github.jeddict.ai.agent.ExplorationTools;
-import io.github.jeddict.ai.agent.RefactoringTools;
-import io.github.jeddict.ai.agent.MavenTools;
-import io.github.jeddict.ai.agent.GradleTools;
+import io.github.jeddict.ai.agent.tools.AbstractTool;
+import io.github.jeddict.ai.agent.tools.build.BuildProjectTool;
+import io.github.jeddict.ai.agent.tools.build.TestProjectTool;
+import io.github.jeddict.ai.agent.tools.code.FindUsagesTool;
+import io.github.jeddict.ai.agent.tools.code.ListClassesInFileTool;
+import io.github.jeddict.ai.agent.tools.code.ListMethodsInFileTool;
+import io.github.jeddict.ai.agent.tools.code.SearchSymbolTool;
+import io.github.jeddict.ai.agent.tools.fs.CreateDirectoryTool;
+import io.github.jeddict.ai.agent.tools.fs.CreateFileTool;
+import io.github.jeddict.ai.agent.tools.fs.DeleteDirectoryTool;
+import io.github.jeddict.ai.agent.tools.fs.DeleteFileTool;
+import io.github.jeddict.ai.agent.tools.fs.ListFilesInDirectoryTool;
+import io.github.jeddict.ai.agent.tools.fs.ReadFileTool;
+import io.github.jeddict.ai.agent.tools.fs.SearchInFileTool;
+import io.github.jeddict.ai.agent.tools.project.GraddleListDependenciesTool;
+import io.github.jeddict.ai.agent.tools.project.GradleAddDependencyTool;
+import io.github.jeddict.ai.agent.tools.project.GradleDependencyExistsTool;
+import io.github.jeddict.ai.agent.tools.project.MavenListDependenciesTool;
+import io.github.jeddict.ai.agent.tools.project.GradleRemoveDependencyTool;
+import io.github.jeddict.ai.agent.tools.project.GradleUpdateDependencyTool;
+import io.github.jeddict.ai.agent.tools.project.MavenAddDependencyTool;
+import io.github.jeddict.ai.agent.tools.project.MavenDependencyExistsTool;
+import io.github.jeddict.ai.agent.tools.project.MavenMavenDependencyTool;
+import io.github.jeddict.ai.agent.tools.project.MavenUpdateDependencyVersionTool;
+import io.github.jeddict.ai.agent.tools.code.FormatFileTool;
+import io.github.jeddict.ai.agent.tools.code.InsertLineAfterMethodTool;
+import io.github.jeddict.ai.agent.tools.code.InsertLineInFileTool;
+import io.github.jeddict.ai.agent.tools.code.MoveClassTool;
+import io.github.jeddict.ai.agent.tools.code.RenameClassTool;
+import io.github.jeddict.ai.agent.tools.code.RenameMethodTool;
+import io.github.jeddict.ai.agent.tools.code.ReplaceFileContentTool;
+import io.github.jeddict.ai.agent.tools.code.ReplaceSnippetByRegexTool;
 import io.github.jeddict.ai.lang.impl.AnthropicBuilder;
 import io.github.jeddict.ai.lang.impl.AnthropicStreamingBuilder;
 import io.github.jeddict.ai.lang.impl.GoogleBuilder;
@@ -63,7 +89,6 @@ import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import static io.github.jeddict.ai.settings.GenAIProvider.PERPLEXITY;
 import io.github.jeddict.ai.settings.PreferencesManager;
-import io.github.jeddict.ai.util.ProjectUtil;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +105,7 @@ import javax.swing.JTextField;
 import org.json.JSONObject;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.project.Project;
+import org.openide.filesystems.FileUtil;
 import org.openide.util.NbBundle;
 
 /**
@@ -286,7 +312,7 @@ public class JeddictChatModelBuilder {
                 if(agentEnabled) {
                     Assistant assistant = AiServices.builder(Assistant.class)
                             .streamingChatModel(streamModel)
-                            .tools(buildToolsList(project, handler).toArray())
+                            .tools(buildToolsList(project).toArray())
                             .build();
 
                     TokenStream tokenStream = assistant.stream(messages);
@@ -309,7 +335,7 @@ public class JeddictChatModelBuilder {
                 if (agentEnabled) {
                     Assistant assistant = AiServices.builder(Assistant.class)
                             .chatModel(model)
-                            .tools(buildToolsList(project, null).toArray())
+                            .tools(buildToolsList(project).toArray())
                             .build();
                     response = assistant.chat(messages).aiMessage().text();
                 } else {
@@ -362,18 +388,55 @@ public class JeddictChatModelBuilder {
         }
         return null;
     }
-    
-    private List<Object> buildToolsList(Project project, JeddictStreamHandler handler) {
-        List<Object> toolsList = new ArrayList<>();
-        toolsList.add(new FileSystemTools(project, handler));
-        toolsList.add(new ExecutionTools(project, handler));
-        toolsList.add(new ExplorationTools(project, handler));
-//        toolsList.add(new RefactoringTools(project, handler));
-//        if (ProjectUtil.isMavenProject(project)) {
-//            toolsList.add(new MavenTools(project, handler));
-//        } else if (ProjectUtil.isGradleProject(project)) {
-//            toolsList.add(new GradleTools(project, handler));
-//        }
+
+    private List<AbstractTool> buildToolsList(Project project) {
+        //
+        // TODO: make this automatic with some discoverability approach (maybe
+        // NB lookup registration?
+        //
+        final String basedir =
+            FileUtil.toPath(project.getProjectDirectory())
+            .toAbsolutePath().normalize()
+            .toString();
+
+        final List<AbstractTool> toolsList = new ArrayList<>();
+        toolsList.add(new ListClassesInFileTool(basedir));
+        toolsList.add(new ListMethodsInFileTool(basedir));
+        toolsList.add(new SearchSymbolTool(basedir, project.getLookup()));
+        toolsList.add(new FindUsagesTool(basedir));
+        toolsList.add(new BuildProjectTool(basedir, pm.getBuildCommand(project)));
+        toolsList.add(new TestProjectTool(basedir, pm.getTestCommand(project)));
+        toolsList.add(new CreateDirectoryTool(basedir));
+        toolsList.add(new CreateFileTool(basedir));
+        toolsList.add(new DeleteDirectoryTool(basedir));
+        toolsList.add(new DeleteFileTool(basedir));
+        toolsList.add(new InsertLineInFileTool(basedir));
+        toolsList.add(new ListFilesInDirectoryTool(basedir));
+        toolsList.add(new ReadFileTool(basedir));
+        toolsList.add(new ReplaceFileContentTool(basedir));
+        toolsList.add(new ReplaceSnippetByRegexTool(basedir));
+        toolsList.add(new SearchInFileTool(basedir));
+        toolsList.add(new GraddleListDependenciesTool(basedir));
+        toolsList.add(new GradleAddDependencyTool(basedir));
+        toolsList.add(new GradleDependencyExistsTool(basedir));
+        toolsList.add(new MavenListDependenciesTool(basedir));
+        toolsList.add(new GradleRemoveDependencyTool(basedir));
+        toolsList.add(new GradleUpdateDependencyTool(basedir));
+        toolsList.add(new MavenAddDependencyTool(basedir));
+        toolsList.add(new MavenDependencyExistsTool(basedir));
+        toolsList.add(new MavenMavenDependencyTool(basedir));
+        toolsList.add(new MavenUpdateDependencyVersionTool(basedir));
+        toolsList.add(new FormatFileTool(basedir));
+        toolsList.add(new InsertLineAfterMethodTool(basedir));
+        toolsList.add(new MoveClassTool(basedir));
+        toolsList.add(new RenameClassTool(basedir));
+        toolsList.add(new RenameMethodTool(basedir));
+
+        //
+        // The hanlder wants to know about tool execution
+        //
+        toolsList.forEach((tool) -> tool.addPropertyChangeListener(handler));
+
         return toolsList;
     }
 
