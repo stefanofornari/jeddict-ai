@@ -174,6 +174,18 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.netbeans.api</groupId>
+                            <artifactId>org-openide-util-lookup</artifactId>
+                            <version>RELEASE270</version>
+                        </path>
+                        <path>
+                            <groupId>org.netbeans.api</groupId>
+                            <artifactId>org-openide-awt</artifactId>
+                            <version>RELEASE270</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
@@ -185,6 +197,16 @@
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.4</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.4</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
