@@ -68,6 +68,19 @@ public class ExplorationTools extends AbstractCodeTool {
         this.lookup = lookup;
     }
 
+    /**
+     * List all top-level classes in a file.
+     *
+     * <p>
+     * <b>Example:</b></p>
+     * <pre>
+     * listClassesInFile("src/main/java/com/example/MyClass.java");
+     * // -> "Class: com.example.MyClass"
+     * </pre>
+     *
+     * @param path relative path to the Java file
+     * @return names of all top-level classes, or a message if none found
+     */
     @Tool("List all classes declared in a given Java file by path")
     public String listClassesInFile(String path) throws Exception {
         progress("Listing classes in " + path);
@@ -84,6 +97,19 @@ public class ExplorationTools extends AbstractCodeTool {
         }, false).toString();
     }
 
+    /**
+     * List all methods inside a class file.
+     *
+     * <p>
+     * <b>Example:</b></p>
+     * <pre>
+     * listMethodsInFile("src/main/java/com/example/MyClass.java");
+     * // -> "Method: public void sayHello()"
+     * </pre>
+     *
+     * @param path relative path to the Java file
+     * @return method signatures, or a message if none found
+     */
     @Tool("List all methods of a class in a given Java file by path")
     public String listMethodsInFile(String path) throws Exception {
         progress("Listing methods in " + path);
@@ -102,6 +128,16 @@ public class ExplorationTools extends AbstractCodeTool {
         }, false).toString();
     }
 
+    /**
+     * Search for a symbol (class, method, or field) in the whole project.
+     *
+     * <p>
+     * <b>Example:</b></p>
+     * <pre>
+     * searchSymbol("UserService");
+     * // -> "Found in: src/main/java/com/example/service/UserService.java"
+     * </pre>
+     */
     @Tool("Search for a symbol (class, method, or field) in the whole project")
     public String searchSymbol(String symbolName)
     throws Exception {
