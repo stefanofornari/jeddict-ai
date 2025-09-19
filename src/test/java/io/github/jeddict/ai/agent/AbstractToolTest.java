@@ -2,6 +2,7 @@ package io.github.jeddict.ai.agent;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ public class AbstractToolTest extends BaseTest {
     public void fullPath_returns_the_full_path_of_given_relative_path() {
         DummyTool tool = new DummyTool(projectDir);
 
-        then(tool.fullPath("relative").toString()).isEqualTo(projectDir + "/relative");
+        then(tool.fullPath("relative")).isEqualTo(Paths.get(projectDir, "relative"));
     }
 
     @Test
