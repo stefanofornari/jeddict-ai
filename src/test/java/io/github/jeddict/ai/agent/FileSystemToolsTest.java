@@ -15,134 +15,180 @@
  */
 package io.github.jeddict.ai.agent;
 
-import io.github.jeddict.ai.agent.ToolsTest.DummyHandler;
-import io.github.jeddict.ai.agent.ToolsTest.DummyProject;
-import static org.junit.jupiter.api.Assertions.*;
-import io.github.jeddict.ai.components.AssistantChat;
-import org.junit.jupiter.api.BeforeEach;
+import io.github.jeddict.ai.agent.BaseTest;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.BDDAssertions;
+import static org.assertj.core.api.BDDAssertions.then;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
 
-public class FileSystemToolsTest extends ToolsTest {
+public class FileSystemToolsTest extends BaseTest {
 
-    private FileSystemTools fileSystemTools;
-
-    @BeforeEach
-    public void setup() {
-        project = new DummyProject();
-        handler = new DummyHandler(new AssistantChat("Dummy", "Dummy", project));
-        fileSystemTools = new FileSystemTools(project, handler);
+    @AfterEach
+    public void afterEach() {
     }
 
     @Test
-    public void testSearchInFile_WithMatches() throws IOException {
-        String path = "src/test/resources/testfile.txt";
-        String pattern = "test file";
+    public void searchInFile_with_matches() throws Exception {
+        final String path = "folder/testfile.txt";
+        final String pattern = "test file";
 
-        String result = fileSystemTools.searchInFile(path, pattern);
-        String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Looking for '" + pattern + "' inside "  + fileName));
-        assertTrue(result.contains("Match at"));
-        assertTrue(result.contains("test file"));
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        final List<PropertyChangeEvent> events = new ArrayList<>();
+        tools.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                events.add(evt);
+            }
+        });
+
+        then(tools.searchInFile(path, pattern)).contains("Match at").contains("test file");
+        then(events).hasSize(1);
+        then(events.get(0).getPropertyName()).isEqualTo("progress");
+        then(events.get(0).getNewValue()).isEqualTo("🔎 Looking for '" + pattern + "' inside '" + path + "'");
     }
 
     @Test
-    public void testCreateFile_SuccessAndExists() {
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        String path = tmpDir + "/tempfile.txt";
-        String content = "Sample content.";
+    public void testSearchInFile_NoMatches() throws Exception {
+        final String path = "folder/testfile.txt";
+        final String pattern = "abc";
 
-        String createResult1 = fileSystemTools.createFile(path, content);
-        assertEquals("File created", createResult1);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        final List<PropertyChangeEvent> events = new ArrayList<>();
+        tools.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                events.add(evt);
+            }
+        });
 
-        String createResult2 = fileSystemTools.createFile(path, content);
-        assertTrue(createResult2.startsWith("File already exists:"));
-
-        fileSystemTools.deleteFile(path); // cleanup
+        then(tools.searchInFile(path, pattern)).isEqualTo("No matches found");
+        then(events).hasSize(1);
+        then(events.get(0).getPropertyName()).isEqualTo("progress");
+        then(events.get(0).getNewValue()).isEqualTo("🔎 Looking for '" + pattern + "' inside '" + path + "'");
     }
 
     @Test
-    public void testDeleteFile_SuccessAndNotFound() {
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        String path = tmpDir + "/tempfile.txt";
-        String content = "To be deleted.";
-        fileSystemTools.createFile(path, content);
+    public void createFile_with_and_without_existing_file() throws Exception {
+        final String path = "folder/newfile.txt";
+        final String content = "Sample content.";
 
-        String deleteResult1 = fileSystemTools.deleteFile(path);
-        assertEquals("File deleted", deleteResult1);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        then(tools.createFile(path, content)).isEqualTo("File created");
+        then(tools.createFile(path, content)).isEqualTo("File already exists: " + path);
 
-        String deleteResult2 = fileSystemTools.deleteFile(path);
-        assertTrue(deleteResult2.startsWith("File not found:"));
+        //
+        // TODO: logging
+        //
     }
 
     @Test
-    public void testListFilesInDirectory_SuccessAndNotFound() {
-        String existingDir = "src/test/resources/";
-        String nonExistingDir = "nonexistentdir";
+    public void deleteFile_success_and_not_found() throws Exception {
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        final String path = "folder/testfile.txt";
 
-        String listResult1 = fileSystemTools.listFilesInDirectory(existingDir);
-        assertTrue(listResult1.contains("testfile.txt") || listResult1.contains("tempfile.txt"));
+        final Path fileToDelete = Paths.get(projectDir, path);
+        then(fileToDelete).exists(); // just to make sure...
+        then(tools.deleteFile(path)).isEqualTo("File deleted");
+        then(fileToDelete).doesNotExist();
 
-        String listResult2 = fileSystemTools.listFilesInDirectory(nonExistingDir);
-        assertTrue(listResult2.startsWith("Directory not found:"));
+        then(tools.deleteFile(path)).isEqualTo("File not found: " + path);
+
+        //
+        // TODO: logging
+        //
     }
 
     @Test
-    public void testReadFile_Success() throws IOException {
-        String path = "src/test/resources/testfile.txt";
-        String expectedContent = "This is a test file content for real file testing.";
-        String result = fileSystemTools.readFile (path);
-        String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Reading file " + fileName));
-        assertEquals(expectedContent, result);
+    public void listFilesInDirectory_success_and_not_found() throws Exception {
+        final String existingDir = "folder";
+        final String nonExistingDir = "nonexistingdir";
+
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        then(tools.listFilesInDirectory(existingDir)).contains("testfile.txt");
+
+        then(tools.listFilesInDirectory(nonExistingDir)).isEqualTo("Directory not found: " + nonExistingDir);
+
+        //
+        // TODO: logging
+        //
     }
 
     @Test
-    public void testCreateDirectory_SuccessAndExists() {
-        String path = "src/test/resources/newdir";
+    public void readFile_success_and_failure() throws Exception {
+        final String pathOK = "folder/testfile.txt";
+        final Path fullPathOK = Paths.get(projectDir, pathOK);
+        final String expectedContent = FileUtils.readFileToString(fullPathOK.toFile(), "UTF8");
 
-        String createResult1 = fileSystemTools.createDirectory(path);
-        assertEquals("Directory created", createResult1);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        final List<PropertyChangeEvent> events = new ArrayList<>();
+        tools.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                events.add(evt);
+            }
+        });
 
-        String createResult2 = fileSystemTools.createDirectory(path);
-        assertTrue(createResult2.startsWith("Directory already exists:"));
+        //
+        // success
+        //
+        then(tools.readFile(pathOK)).isEqualTo(expectedContent);
+        then(events).hasSize(1);
+        then(events.get(0).getPropertyName()).isEqualTo("progress");
+        then(events.get(0).getNewValue()).isEqualTo("📖 Reading file " + pathOK);
 
-        fileSystemTools.deleteDirectory(path); // cleanup
+        //
+        // failure
+        //
+        final String pathKO = "nowhere.txt";
+        final Path fullPathKO = Paths.get(projectDir, pathKO);
+        events.clear();
+
+        BDDAssertions.thenThrownBy( () ->
+            tools.readFile(pathKO)
+        );
+        then(events).hasSize(2);
+        then(events.get(0).getPropertyName()).isEqualTo("progress");
+        then(events.get(0).getNewValue()).isEqualTo("📖 Reading file " + pathKO);
+        then(events.get(1).getPropertyName()).isEqualTo("progress");
+        then(events.get(1).getNewValue()).isEqualTo("❌ Failed to read file: " + fullPathKO);
     }
 
     @Test
-    public void testDeleteDirectory_SuccessAndNotFound() {
-        String path = "src/test/resources/newdir";
-        fileSystemTools.createDirectory(path);
+    public void createDirectory_success_and_exists() throws Exception {
+        final String path = "newdir";
 
-        String deleteResult1 = fileSystemTools.deleteDirectory(path);
-        assertEquals("Directory deleted", deleteResult1);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
 
-        String deleteResult2 = fileSystemTools.deleteDirectory(path);
-        assertTrue(deleteResult2.startsWith("Directory not found:"));
+        then(tools.createDirectory(path)).isEqualTo("Directory created");
+        then(tools.createDirectory(path)).isEqualTo("Directory already exists: " + path);
+
+        //
+        // TODO: logging
+        //
     }
 
     @Test
-    public void testReadFile_Exception() throws IOException {
-        String path = "nonexistentfile.txt";
+    public void deleteDirectory_success_and_not_found() throws Exception {
+        final String path = "newdir";
+        final Path fullPath = Paths.get(projectDir, path);
 
-        String result = fileSystemTools.readFile (path);
+        Files.createDirectories(fullPath);
 
-        String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Reading file " + fileName));
-        assertTrue(result.startsWith("Could not read file:"));
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+
+        then(tools.deleteDirectory(path)).isEqualTo("Directory deleted");
+        then(tools.deleteDirectory(path)).isEqualTo("Directory not found: " + path);
+
+        //
+        // TODO: logging
+        //
     }
-
-    @Test
-    public void testSearchInFile_NoMatches() throws IOException {
-        String path = "src/test/resources/testfile.txt";
-        String pattern = "abc";
-
-        String result = fileSystemTools.searchInFile(path, pattern);
-
-        String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-        assertTrue(handler.getResponses().contains("Looking for '" + pattern + "' inside " + fileName));
-        assertEquals("No matches found.", result);
-    }
-
 }

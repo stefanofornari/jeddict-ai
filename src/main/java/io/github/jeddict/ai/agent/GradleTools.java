@@ -16,14 +16,10 @@
 package io.github.jeddict.ai.agent;
 
 import dev.langchain4j.agent.tool.Tool;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.netbeans.api.project.Project;
 import org.openide.filesystems.FileObject;
-import io.github.jeddict.ai.lang.JeddictStreamHandler;
-import java.io.OutputStream;
 
 /**
  * Tool to manage dependencies in the build.gradle file.
@@ -31,35 +27,29 @@ import java.io.OutputStream;
  *
  * Author: Assistant
  */
-public class GradleTools {
+public class GradleTools extends AbstractBuildTool {
 
-    private final Project project;
-    private final JeddictStreamHandler handler;
-    private final static Logger logger = Logger.getLogger(GradleTools.class.getName());
-
-    public GradleTools(Project project, JeddictStreamHandler handler) {
-        this.project = project;
-        this.handler = handler;
+    public GradleTools(final String basedir) {
+        super(basedir, "build.gradle");
     }
 
-    @Tool("Add a dependency to the build.gradle file")
-    public String addDependency(String configuration, String dependencyNotation) {
-        log("Adding dependency", configuration + ":" + dependencyNotation);
+    @Tool(
+        name = "addGradleDependency",
+        value = "Add a dependency to the build.gradle file"
+    )
+    public String addDependency(String configuration, String dependencyNotation)
+    throws Exception {
+        progress("Adding dependency: " + configuration + ":" + dependencyNotation);
         try {
-            FileObject projectDir = project.getProjectDirectory();
-            FileObject gradleFile = projectDir.getFileObject("build.gradle");
-            if (gradleFile == null || !gradleFile.isValid()) {
-                log("build.gradle not found in project directory", null);
-                return "build.gradle not found in project directory";
-            }
+            final FileObject gradleFile = buildFile();
 
             // Read the existing content
-            String content = new String(gradleFile.asBytes());
+            String content = gradleFile.asText();
 
             String dependencyString = configuration + " '" + dependencyNotation + "'";
 
             if (content.contains(dependencyString)) {
-                log("Dependency already exists", dependencyString);
+                progress("Dependency already exists: " + dependencyString);
                 return "Dependency already exists in build.gradle";
             }
 
@@ -84,25 +74,24 @@ public class GradleTools {
                 os.write(updatedContent.getBytes());
             }
 
-            log("Dependency added successfully", dependencyString);
+            progress("Dependency added successfully: " + dependencyString);
             return "Dependency added successfully to build.gradle";
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error adding dependency to build.gradle", ex);
-            log("Failed to add dependency", ex.getMessage());
-            return "Failed to add dependency: " + ex.getMessage();
+        } catch (Exception e) {
+            progress("Failed to add dependency: " + e.getMessage());
+
+            throw e;
         }
     }
 
-    @Tool("Remove a dependency from the build.gradle file")
-    public String removeDependency(String configuration, String dependencyNotation) {
-        log("Removing dependency", configuration + ":" + dependencyNotation);
+    @Tool(
+        name = "removeGradleDependency",
+        value = "Remove a dependency from the build.gradle file"
+    )
+    public String removeDependency(String configuration, String dependencyNotation)
+    throws Exception {
+        progress("Removing dependency: " + configuration + ":" + dependencyNotation);
         try {
-            FileObject projectDir = project.getProjectDirectory();
-            FileObject gradleFile = projectDir.getFileObject("build.gradle");
-            if (gradleFile == null || !gradleFile.isValid()) {
-                log("build.gradle not found in project directory", null);
-                return "build.gradle not found in project directory";
-            }
+            final FileObject gradleFile = buildFile();
 
             // Read the existing content
             String content = new String(gradleFile.asBytes());
@@ -110,7 +99,7 @@ public class GradleTools {
             String dependencyString = configuration + " '" + dependencyNotation + "'";
 
             if (!content.contains(dependencyString)) {
-                log("Dependency not found", dependencyString);
+                progress("Dependency not found: " + dependencyString);
                 return "Dependency not found in build.gradle";
             }
 
@@ -123,25 +112,23 @@ public class GradleTools {
                 os.write(updatedContent.getBytes());
             }
 
-            log("Dependency removed successfully", dependencyString);
+            progress("Dependency removed successfully: " + dependencyString);
             return "Dependency removed successfully from build.gradle";
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error removing dependency from build.gradle", ex);
-            log("Failed to remove dependency", ex.getMessage());
-            return "Failed to remove dependency: " + ex.getMessage();
+        } catch (Exception e) {
+            progress("Failed to remove dependency: " + e.getMessage());
+
+            throw e;
         }
     }
 
-    @Tool("List all dependencies in the build.gradle file")
-    public String listDependencies() {
-        log("Listing dependencies", null);
+    @Tool(
+        name = "listGradleDependencies",
+        value = "List all dependencies in the build.gradle file"
+    )
+    public String listDependencies() throws Exception {
+        progress("Listing dependencies");
         try {
-            FileObject projectDir = project.getProjectDirectory();
-            FileObject gradleFile = projectDir.getFileObject("build.gradle");
-            if (gradleFile == null || !gradleFile.isValid()) {
-                log("build.gradle not found in project directory", null);
-                return "build.gradle not found in project directory";
-            }
+            final FileObject gradleFile = buildFile();
 
             // Read the existing content
             String content = new String(gradleFile.asBytes());
@@ -149,12 +136,12 @@ public class GradleTools {
             // Extract dependencies block
             int dependenciesIndex = content.indexOf("dependencies {");
             if (dependenciesIndex == -1) {
-                log("No dependencies section found in build.gradle", null);
+                progress("No dependencies section found in build.gradle");
                 return "No dependencies section found in build.gradle";
             }
             int endIndex = content.indexOf("}", dependenciesIndex);
             if (endIndex == -1) {
-                log("Malformed dependencies section in build.gradle", null);
+                progress("Malformed dependencies section in build.gradle");
                 return "Malformed dependencies section in build.gradle";
             }
 
@@ -168,28 +155,27 @@ public class GradleTools {
                 }
             }
 
-            log("Dependencies listed", null);
+            progress("Dependencies listed");
             if (dependencies.isEmpty()) {
                 return "No dependencies found in build.gradle";
             }
             return String.join("\n", dependencies);
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error listing dependencies from build.gradle", ex);
-            log("Failed to list dependencies", ex.getMessage());
-            return "Failed to list dependencies: " + ex.getMessage();
+        } catch (Exception e) {
+            progress("Failed to list dependencies: " + e.getMessage());
+
+            throw e;
         }
     }
 
-    @Tool("Update a dependency in the build.gradle file")
-    public String updateDependency(String configuration, String oldDependencyNotation, String newDependencyNotation) {
-        log("Updating dependency", configuration + ":" + oldDependencyNotation + " -> " + newDependencyNotation);
+    @Tool(
+        name = "updateGradleDependency",
+        value = "Update a dependency in the build.gradle file"
+    )
+    public String updateDependency(String configuration, String oldDependencyNotation, String newDependencyNotation)
+    throws Exception {
+        progress("Updating dependency: " + configuration + ":" + oldDependencyNotation + " -> " + newDependencyNotation);
         try {
-            FileObject projectDir = project.getProjectDirectory();
-            FileObject gradleFile = projectDir.getFileObject("build.gradle");
-            if (gradleFile == null || !gradleFile.isValid()) {
-                log("build.gradle not found in project directory", null);
-                return "build.gradle not found in project directory";
-            }
+            final FileObject gradleFile = buildFile();
 
             // Read the existing content
             String content = new String(gradleFile.asBytes());
@@ -198,7 +184,7 @@ public class GradleTools {
             String newDependencyString = configuration + " '" + newDependencyNotation + "'";
 
             if (!content.contains(oldDependencyString)) {
-                log("Dependency not found", oldDependencyString);
+                progress("Dependency not found: " + oldDependencyString);
                 return "Dependency not found in build.gradle";
             }
 
@@ -209,25 +195,24 @@ public class GradleTools {
                 os.write(updatedContent.getBytes());
             }
 
-            log("Dependency updated successfully", newDependencyString);
+            progress("Dependency updated successfully: " + newDependencyString);
             return "Dependency updated successfully in build.gradle";
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error updating dependency in build.gradle", ex);
-            log("Failed to update dependency", ex.getMessage());
-            return "Failed to update dependency: " + ex.getMessage();
+        } catch (Exception e) {
+            progress("Failed to update dependency: " + e.getMessage());
+
+            throw e;
         }
     }
 
-    @Tool("Check if a dependency exists in the build.gradle file")
-    public boolean dependencyExists(String configuration, String dependencyNotation) {
-        log("Checking dependency existence", configuration + ":" + dependencyNotation);
+    @Tool(
+        name = "gradleDependencyExists",
+        value = "Check if a dependency exists in the build.gradle file"
+    )
+    public boolean dependencyExists(String configuration, String dependencyNotation)
+    throws Exception {
+        progress("Checking dependency existence: " + configuration + ":" + dependencyNotation);
         try {
-            FileObject projectDir = project.getProjectDirectory();
-            FileObject gradleFile = projectDir.getFileObject("build.gradle");
-            if (gradleFile == null || !gradleFile.isValid()) {
-                log("build.gradle not found in project directory", null);
-                return false;
-            }
+            final FileObject gradleFile = buildFile();
 
             // Read the existing content
             String content = new String(gradleFile.asBytes());
@@ -235,19 +220,12 @@ public class GradleTools {
             String dependencyString = configuration + " '" + dependencyNotation + "'";
 
             boolean exists = content.contains(dependencyString);
-            log(exists ? "Dependency exists" : "Dependency does not exist", dependencyString);
+            progress((exists ? "Dependency exists" : "Dependency does not exist") + ": " + dependencyString);
             return exists;
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error checking dependency existence in build.gradle", ex);
-            log("Failed to check dependency existence", ex.getMessage());
-            return false;
-        }
-    }
+        } catch (Exception e) {
+            progress("Failed to check dependency existence: " + e.getMessage());
 
-    private void log(String action, String detail) {
-        if (handler != null) {
-            String message = action + (detail != null ? (": " + detail) : "") + "\n";
-            handler.onToolingResponse(message);
+            throw e;
         }
     }
 

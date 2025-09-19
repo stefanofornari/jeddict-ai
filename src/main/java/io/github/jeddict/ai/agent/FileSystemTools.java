@@ -16,17 +16,15 @@
 package io.github.jeddict.ai.agent;
 
 import dev.langchain4j.agent.tool.Tool;
-import io.github.jeddict.ai.lang.JeddictStreamHandler;
-import io.github.jeddict.ai.util.FileUtil;
-
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.text.Element;
-
-import org.netbeans.api.project.Project;
+import org.apache.commons.io.file.PathUtils;
 
 /**
  * Collection of tools that expose file system and editor operations inside
@@ -35,23 +33,12 @@ import org.netbeans.api.project.Project;
  * These tools allow language models to read, modify, and manage project files
  * in a controlled and safe way.
  */
-public class FileSystemTools {
+public class FileSystemTools extends AbstractCodeTool {
 
-    private final Project project;
-    private final JeddictStreamHandler handler;
-
-    /**
-     * Creates a new {@code FileSystemTools } instance bound to the given
-     * project.
-     *
-     * @param project the NetBeans project in which these tools operate
-     * @param handler an optional stream handler for reporting actions
-     */
-    public FileSystemTools(Project project, JeddictStreamHandler handler) {
-        this.project = project;
-        this.handler = handler;
+    public FileSystemTools(final String basedir) {
+        super(basedir);
     }
-    
+
     /**
      * Reads the raw content of a file on disk.
      *
@@ -59,14 +46,14 @@ public class FileSystemTools {
      * @return the file content, or an error message if it could not be read
      */
     @Tool("Read the content of a file by path")
-   public String readFile(String path) {
-        log("📖 Reading file", path);
+    public String readFile(String path) throws Exception {
+        progress("📖 Reading file " + path);
         try {
-            String content = FileUtil.readContent(project, path);
+            String content = PathUtils.readString(fullPath(path), Charset.defaultCharset());
             return content;
         } catch (IOException e) {
-            log("❌ Failed to read file: " + e.getMessage() + " in file: ", path);
-            return "Could not read file: " + e.getMessage();
+            progress("❌ Failed to read file: " + e.getMessage());
+            throw e;
         }
     }
 
@@ -78,20 +65,16 @@ public class FileSystemTools {
      * @return all matches with their offsets, or a message if none were found
      */
     @Tool("Search for a regex pattern in a file by path")
-    public String searchInFile(String path, String pattern) {
-        log("🔎 Looking for '" + pattern + "' inside", path);
-        try {
-            String content = FileUtil.readContent(project, path);
-            Matcher m = Pattern.compile(pattern).matcher(content);
-            StringBuilder result = new StringBuilder();
-            while (m.find()) {
-                result.append("Match at ").append(m.start())
-                        .append(": ").append(m.group()).append("\n");
-            }
-            return result.length() > 0 ? result.toString() : "No matches found.";
-        } catch (IOException e) {
-            return "Search failed: " + e.getMessage();
+    public String searchInFile(String path, String pattern) throws Exception {
+        progress("🔎 Looking for '" + pattern + "' inside '" + path + "'");
+        String content = PathUtils.readString(Paths.get(basedir, path), Charset.defaultCharset());
+        Matcher m = Pattern.compile(pattern).matcher(content);
+        StringBuilder result = new StringBuilder();
+        while (m.find()) {
+            result.append("Match at ").append(m.start())
+                    .append(": ").append(m.group()).append("\n");
         }
+        return result.length() > 0 ? result.toString() : "No matches found";
     }
 
     /**
@@ -145,20 +128,21 @@ public class FileSystemTools {
      * @param lineText the text to insert as a new line
      * @return status message
      */
-    @Tool("Insert a line of text immediately after the specified method in the given file")
-    public String insertLineAfterMethod(String path, String methodName, String lineText) {
-        log("✏️ Inserting line after method '" + methodName + "' in file: ", path);
-        String content = FileUtil.withDocument(project, path, doc -> doc.getText(0, doc.getLength()), false);
+    @Tool("Insert a line of code at a given line number (0-based) in a file by path")
+    public String insertLineAfterMethod(String path, String methodName, String lineText)
+    throws Exception {
+        progress("✏️ Inserting line after method '" + methodName + "' in file: " + path);
+        String content = withDocument(path, doc -> doc.getText(0, doc.getLength()), false);
         if (content.startsWith("Could not")) {
-            log("❌ Failed to read file: ", path);
+            progress("❌ Failed to read file: " + path);
             return "Failed to read file: " + content;
         }
         int insertLine = findInsertionLineAfterMethod(content, methodName);
         if (insertLine < 0) {
-            log("⚠️ Method not found: " + methodName + " in file ", path);
+            progress("⚠️ Method not found: " + methodName + " in file " + path);
             return "Method not found: " + methodName;
         }
-        log("✅ Inserting text at line " + insertLine + " in file: ", path);
+        progress("✅ Inserting text at line " + insertLine + " in file: " + path);
         return insertLineInFile(path, insertLine, lineText);
     }
 
@@ -189,27 +173,28 @@ public class FileSystemTools {
      * @return a status message
      */
     @Tool("Replace parts of a file content by regex pattern with replacement text")
-    public String replaceSnippetByRegex(String path, String regexPattern, String replacement) {
-        log("🔄 Replacing text matching regex '" + regexPattern + "' in file: ", path);
+    public String replaceSnippetByRegex(String path, String regexPattern, String replacement)
+    throws Exception {
+        progress("🔄 Replacing text matching regex '" + regexPattern + "' in file: " + path);
 
-        return FileUtil.withDocument(project, path, doc -> {
+        return withDocument(path, doc -> {
             try {
                 String original = doc.getText(0, doc.getLength());
                 String modified = original.replaceAll(regexPattern, replacement);
 
                 if (original.equals(modified)) {
-                    log("⚠️ No matches found for regex '" + regexPattern + "' in file: ", path);
+                    progress("⚠️ No matches found for regex '" + regexPattern + "' in file: " + path);
                     return "No matches found for pattern.";
                 }
 
                 doc.remove(0, doc.getLength());
                 doc.insertString(0, modified, null);
 
-                log("✅ Replacement completed in file: ", path);
+                progress("✅ Replacement completed in file: " + path);
                 return "File snippet replaced successfully.";
             } catch (Exception e) {
-                log("❌ Replacement failed " + e.getMessage() + " in file: ", path);
-                return "Replacement failed: " + e.getMessage();
+                progress("❌ Replacement failed " + e.getMessage() + " in file: " + path);
+                throw e;
             }
         }, true);
     }
@@ -222,19 +207,20 @@ public class FileSystemTools {
      * @return a status message
      */
     @Tool("Replace the full content of a file by path with new text")
-    public String replaceFileContent(String path, String newContent) {
-        log("📝 Replacing entire content of file: ", path);
+    public String replaceFileContent(String path, String newContent)
+    throws Exception {
+        progress("📝 Replacing entire content of file: " + path);
 
-        return FileUtil.withDocument(project, path, doc -> {
+        return withDocument(path, doc -> {
             try {
                 doc.remove(0, doc.getLength());
                 doc.insertString(0, newContent, null);
 
-                log("✅ File content replaced successfully: ", path);
+                progress("✅ File content replaced successfully: " + path);
                 return "File updated";
             } catch (Exception e) {
-                log("❌ Failed to replace content " + e.getMessage() + " in file: ", path);
-                return "Update failed: " + e.getMessage();
+                progress("❌ Failed to replace content " + e.getMessage() + " in file: " + path);
+                throw e;
             }
         }, true);
     }
@@ -248,14 +234,15 @@ public class FileSystemTools {
      * @return a status message
      */
     @Tool("Insert a line of code at a given line number (0-based) in a file by path")
-    public String insertLineInFile(String path, int lineNumber, String lineText) {
-        log("✏️ Inserting line at " + lineNumber + " in file: ", path);
+    public String insertLineInFile(String path, int lineNumber, String lineText)
+    throws Exception {
+        progress("✏️ Inserting line at " + lineNumber + " in file: " + path);
 
-        return FileUtil.withDocument(project, path, doc -> {
+        return withDocument(path, doc -> {
             try {
                 Element root = doc.getDefaultRootElement();
                 if (lineNumber < 0 || lineNumber > root.getElementCount()) {
-                    log("⚠️ Invalid line number " + lineNumber + " for file: ", path);
+                    progress("⚠️ Invalid line number " + lineNumber + " for file: " + path);
                     return "Invalid line number: " + lineNumber;
                 }
 
@@ -265,11 +252,11 @@ public class FileSystemTools {
 
                 doc.insertString(offset, lineText + System.lineSeparator(), null);
 
-                log("✅ Inserted line at " + lineNumber + " in file: ", path);
+                progress("✅ Inserted line at " + lineNumber + " in file: " + path);
                 return "Inserted line at " + lineNumber;
             } catch (Exception e) {
-                log("❌ Line insert failed: " + e.getMessage() + " in file: ", path);
-                return "Line insert failed: " + e.getMessage();
+                progress("❌ Line insert failed: " + e.getMessage() + " in file: " + path);
+                throw e;
             }
         }, true);
     }
@@ -282,23 +269,23 @@ public class FileSystemTools {
      * @return a status message
      */
     @Tool("Create a new file at the given path with optional content")
-    public String createFile(String path, String content) {
-        log("📄 Creating new file: ", path);
+    public String createFile(String path, String content) throws Exception {
+        progress("📄 Creating new file: " + path);
         try {
-            Path filePath = FileUtil.resolvePath(project, path);
+            Path filePath = Paths.get(basedir, path);
             if (Files.exists(filePath)) {
-                log("⚠️ File already exists: ", path);
+                progress("⚠️ File already exists: " + path);
                 return "File already exists: " + path;
             }
 
             Files.createDirectories(filePath.getParent());
             Files.writeString(filePath, content != null ? content : "");
 
-            log("✅ File created successfully: ", path);
+            progress("✅ File created successfully: " + path);
             return "File created";
         } catch (IOException e) {
-            log("❌ File creation failed: " + e.getMessage() + " in file: ", path);
-            return "File creation failed: " + e.getMessage();
+            progress("❌ File creation failed: " + e.getMessage() + " in file: " + path);
+            throw e;
         }
     }
 
@@ -309,21 +296,21 @@ public class FileSystemTools {
      * @return a status message
      */
     @Tool("Delete a file at the given path")
-    public String deleteFile(String path) {
-        log("🗑️ Attempting to delete file: ", path);
+    public String deleteFile(String path) throws Exception {
+        progress("🗑️ Attempting to delete file: " + path);
         try {
-            Path filePath = FileUtil.resolvePath(project, path);
+            Path filePath = fullPath(path);
             if (!Files.exists(filePath)) {
-                log("⚠️ File not found: ", path);
+                progress("⚠️ File not found: " + path);
                 return "File not found: " + path;
             }
 
             Files.delete(filePath);
-            log("✅ File deleted successfully: ", path);
+            progress("✅ File deleted successfully: " + path);
             return "File deleted";
         } catch (IOException e) {
-            log("❌ File deletion failed: " + e.getMessage() + " in file: ", path);
-            return "File delete failed: " + e.getMessage();
+            progress("❌ File deletion failed: " + e.getMessage() + " in file: " + path);
+            throw e;
         }
     }
 
@@ -334,12 +321,12 @@ public class FileSystemTools {
      * @return a list of files and directories, or an error message
      */
     @Tool("List all files and directories inside a given directory path")
-    public String listFilesInDirectory(String path) {
-        log("📂 Listing contents of directory: ", path);
+    public String listFilesInDirectory(String path) throws Exception {
+        progress("📂 Listing contents of directory: " + path);
         try {
-            Path dirPath = FileUtil.resolvePath(project, path);
+            Path dirPath = fullPath(path);
             if (!Files.exists(dirPath) || !Files.isDirectory(dirPath)) {
-                log("⚠️ Directory not found: ", path);
+                progress("⚠️ Directory not found: " + path);
                 return "Directory not found: " + path;
             }
 
@@ -350,11 +337,11 @@ public class FileSystemTools {
                         .append("\n");
             });
 
-            log("✅ Directory listed successfully: ", path);
+            progress("✅ Directory listed successfully: " + path);
             return result.toString();
         } catch (IOException e) {
-            log("❌ Failed to list directory: " + e.getMessage() + " in ", path);
-            return "Could not list directory: " + e.getMessage();
+            progress("❌ Failed to list directory: " + e.getMessage() + " in " + path);
+            throw e;
         }
     }
 
@@ -365,21 +352,21 @@ public class FileSystemTools {
      * @return a status message
      */
     @Tool("Create a new directory at the given path")
-    public String createDirectory(String path) {
-        log("📂 Creating new directory: ", path);
+    public String createDirectory(String path) throws Exception {
+        progress("📂 Creating new directory: " + path);
         try {
-            Path dirPath = FileUtil.resolvePath(project, path);
+            Path dirPath = fullPath(path);
             if (Files.exists(dirPath)) {
-                log("⚠️ Directory already exists: ", path);
+                progress("⚠️ Directory already exists: " + path);
                 return "Directory already exists: " + path;
             }
 
             Files.createDirectories(dirPath);
-            log("✅ Directory created successfully: ", path);
+            progress("✅ Directory created successfully: " + path);
             return "Directory created";
         } catch (IOException e) {
-            log("❌ Directory creation failed: " + e.getMessage() + " in ", path);
-            return "Directory creation failed: " + e.getMessage();
+            progress("❌ Directory creation failed: " + e.getMessage() + " in " + path);
+            throw e;
         }
     }
 
@@ -390,39 +377,26 @@ public class FileSystemTools {
      * @return a status message
      */
     @Tool("Delete a directory at the given path (must be empty)")
-    public String deleteDirectory(String path) {
-        log("🗑️ Attempting to delete directory: ", path);
+    public String deleteDirectory(String path)
+    throws Exception {
+        progress("🗑️ Attempting to delete directory: " + path);
         try {
-            Path dirPath = FileUtil.resolvePath(project, path);
+            Path dirPath = fullPath(path);
             if (!Files.exists(dirPath)) {
-                log("⚠️ Directory not found: ", path);
+                progress("⚠️ Directory not found: " + path);
                 return "Directory not found: " + path;
             }
             if (!Files.isDirectory(dirPath)) {
-                log("⚠️ Not a directory: ", path);
+                progress("⚠️ Not a directory: " + path);
                 return "Not a directory: " + path;
             }
 
             Files.delete(dirPath);
-            log("✅ Directory deleted successfully: ", path);
+            progress("✅ Directory deleted successfully: " + path);
             return "Directory deleted";
         } catch (IOException e) {
-            log("❌ Directory deletion failed: " + e.getMessage() + " in ", path);
-            return "Directory delete failed: " + e.getMessage();
-        }
-    }
-
-    /**
-     * Logs the current action to the {@link JeddictStreamHandler}, if
-     * available.
-     *
-     * @param action the action being performed (e.g., "Reading", "Updating")
-     * @param path the file path on which the action is performed
-     */
-    private void log(String action, String path) {
-        if (handler != null && path != null) {
-            String fileName = java.nio.file.Paths.get(path).getFileName().toString();
-            handler.onToolingResponse(action + " " + fileName + "\n");
+            progress("❌ Directory deletion failed: " + e.getMessage() + " in " + path);
+            throw e;
         }
     }
 }

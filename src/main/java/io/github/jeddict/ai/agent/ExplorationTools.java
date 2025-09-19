@@ -15,28 +15,21 @@
  */
 package io.github.jeddict.ai.agent;
 
-import org.netbeans.api.java.source.*;
 import dev.langchain4j.agent.tool.Tool;
-import io.github.jeddict.ai.lang.JeddictStreamHandler;
-import io.github.jeddict.ai.util.FileUtil;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.SourceGroup;
-import org.netbeans.api.project.Sources;
-
-import javax.lang.model.element.Element;
 import java.util.List;
 import java.util.Set;
-
-import org.netbeans.api.java.source.JavaSource;
-import org.netbeans.api.java.source.ElementHandle;
-import org.netbeans.api.java.source.JavaSource.Phase;
-import org.netbeans.modules.refactoring.api.RefactoringSession;
-import org.openide.util.lookup.Lookups;
-
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import java.io.IOException;
-import javax.lang.model.element.ElementKind;
+import org.netbeans.api.java.source.ClassIndex;
+import org.netbeans.api.java.source.ElementHandle;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.project.SourceGroup;
+import org.netbeans.api.project.Sources;
+import org.netbeans.modules.refactoring.api.RefactoringSession;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 
 /**
  * Tools for code-level operations in NetBeans projects.
@@ -66,15 +59,13 @@ import javax.lang.model.element.ElementKind;
  *
  * @author Gaurav Gupta
  */
+public class ExplorationTools extends AbstractCodeTool {
 
-public class ExplorationTools {
+    private final Lookup lookup;
 
-    private final Project project;
-    private final JeddictStreamHandler handler;
-
-    public ExplorationTools(Project project, JeddictStreamHandler handler) {
-        this.project = project;
-        this.handler = handler;
+    public ExplorationTools(final String basedir, Lookup lookup) {
+        super(basedir);
+        this.lookup = lookup;
     }
 
     /**
@@ -91,9 +82,9 @@ public class ExplorationTools {
      * @return names of all top-level classes, or a message if none found
      */
     @Tool("List all classes declared in a given Java file by path")
-    public String listClassesInFile(String path) {
-        log("Listing classes in", path);
-        return FileUtil.withJavaSource(project, path, javaSource -> {
+    public String listClassesInFile(String path) throws Exception {
+        progress("Listing classes in " + path);
+        return withJavaSource(path, javaSource -> {
             final StringBuilder result = new StringBuilder();
             javaSource.runUserActionTask(cc -> {
                 cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
@@ -103,7 +94,7 @@ public class ExplorationTools {
                 }
             }, true);
             return result.toString();
-        }, false).toString().replace("File not found", "No classes found").replace("Not a Java source file", "No classes found");
+        }, false).toString();
     }
 
     /**
@@ -120,9 +111,9 @@ public class ExplorationTools {
      * @return method signatures, or a message if none found
      */
     @Tool("List all methods of a class in a given Java file by path")
-    public String listMethodsInFile(String path) {
-        log("Listing methods in", path);
-        return FileUtil.withJavaSource(project, path, javaSource -> {
+    public String listMethodsInFile(String path) throws Exception {
+        progress("Listing methods in " + path);
+        return withJavaSource(path, javaSource -> {
             final StringBuilder result = new StringBuilder();
             javaSource.runUserActionTask(cc -> {
                 cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
@@ -134,7 +125,7 @@ public class ExplorationTools {
                 }
             }, true);
             return result.toString();
-        }, false).toString().replace("File not found", "No methods found").replace("Not a Java source file", "No methods found");
+        }, false).toString();
     }
 
     /**
@@ -148,79 +139,68 @@ public class ExplorationTools {
      * </pre>
      */
     @Tool("Search for a symbol (class, method, or field) in the whole project")
-    public String searchSymbol(String symbolName) {
-        log("Searching symbol", symbolName);
+    public String searchSymbol(String symbolName)
+    throws Exception {
+        progress("Searching symbol " + symbolName);
 
         StringBuilder result = new StringBuilder();
-        try {
-            Sources sources = project.getLookup().lookup(Sources.class);
-            if (sources == null) {
-                return "No sources found in project.";
+        Sources sources = lookup.lookup(Sources.class);
+        if (sources == null) {
+            return "No sources found in project.";
+        }
+
+        for (SourceGroup sg : sources.getSourceGroups(Sources.TYPE_GENERIC)) {
+            JavaSource javaSource = JavaSource.forFileObject(sg.getRootFolder());
+            if (javaSource == null) {
+                continue;
             }
 
-            for (SourceGroup sg : sources.getSourceGroups(Sources.TYPE_GENERIC)) {
-                JavaSource javaSource = JavaSource.forFileObject(sg.getRootFolder());
-                if (javaSource == null) {
-                    continue;
+            javaSource.runUserActionTask(cc -> {
+                cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
+                ClassIndex idx = cc.getClasspathInfo().getClassIndex();
+                Set<ElementHandle<TypeElement>> handles
+                        = idx.getDeclaredTypes(symbolName, ClassIndex.NameKind.SIMPLE_NAME,
+                                Set.of(ClassIndex.SearchScope.SOURCE));
+
+                for (ElementHandle<TypeElement> h : handles) {
+                    result.append("Found: ").append(h.getQualifiedName()).append("\n");
                 }
-
-                javaSource.runUserActionTask(cc -> {
-                    cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                    ClassIndex idx = cc.getClasspathInfo().getClassIndex();
-                    Set<ElementHandle<TypeElement>> handles
-                            = idx.getDeclaredTypes(symbolName, ClassIndex.NameKind.SIMPLE_NAME,
-                                    Set.of(ClassIndex.SearchScope.SOURCE));
-
-                    for (ElementHandle<TypeElement> h : handles) {
-                        result.append("Found: ").append(h.getQualifiedName()).append("\n");
-                    }
-                }, true);
-            }
-        } catch (IOException e) {
-            return "Symbol search failed: " + e.getMessage();
+            }, true);
         }
 
         return result.length() == 0 ? "No matches found." : result.toString();
     }
 
     @Tool("Find all usages of a class, method, or field")
-    public String findUsages(String path, String symbolName) {
-        String jr = FileUtil.withJavaSource(project, path, javaSource -> {
+    public String findUsages(String path, String symbolName)
+    throws Exception {
+        String jr = withJavaSource(path, javaSource -> {
             final StringBuilder result = new StringBuilder();
-            try {
-                javaSource.runUserActionTask(cc -> {
-                    cc.toPhase(Phase.ELEMENTS_RESOLVED);
-                    for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
-                        for (Element member : type.getEnclosedElements()) {
-                            if (member.getSimpleName().toString().equals(symbolName)
-                                    || type.getSimpleName().toString().equals(symbolName)) {
+            javaSource.runUserActionTask(cc -> {
+                cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
+                for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
+                    for (Element member : type.getEnclosedElements()) {
+                        if (member.getSimpleName().toString().equals(symbolName)
+                                || type.getSimpleName().toString().equals(symbolName)) {
 
-                                ElementHandle<Element> handle = ElementHandle.create(member);
-                                org.netbeans.modules.refactoring.api.WhereUsedQuery query
-                                        = new org.netbeans.modules.refactoring.api.WhereUsedQuery(Lookups.singleton(handle));
+                            ElementHandle<Element> handle = ElementHandle.create(member);
+                            org.netbeans.modules.refactoring.api.WhereUsedQuery query
+                                    = new org.netbeans.modules.refactoring.api.WhereUsedQuery(Lookups.singleton(handle));
 
-                                RefactoringSession session = RefactoringSession.create("Find Usages");
-                                query.prepare(session);
-                                session.doRefactoring(true);
+                            RefactoringSession session = RefactoringSession.create("Find Usages");
+                            query.prepare(session);
+                            session.doRefactoring(true);
 
-                                session.getRefactoringElements().forEach(elem
-                                        -> result.append("Usage: ").append(elem.getDisplayText()).append("\n")
-                                );
-                            }
+                            session.getRefactoringElements().forEach(elem
+                                    -> result.append("Usage: ").append(elem.getDisplayText()).append("\n")
+                            );
                         }
                     }
-                }, true);
-            } catch (IOException e) {
-                return "Find usages failed: " + e.getMessage();
-            }
+                }
+            }, true);
             return result.length() == 0 ? "No usages found." : result.toString();
         }, false).toString();
-        return jr.replace("File not found", "No usages found").replace("Not a Java source file", "No usages found");
+        return jr;
     }
-    
-    private void log(String action, String message) {
-        if (handler != null) {
-            handler.onToolingResponse(action + " " + message + "\n");
-        }
-    }
+
 }

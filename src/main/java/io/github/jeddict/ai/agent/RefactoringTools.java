@@ -16,21 +16,15 @@
 package io.github.jeddict.ai.agent;
 
 import dev.langchain4j.agent.tool.Tool;
-import io.github.jeddict.ai.lang.JeddictStreamHandler;
-import io.github.jeddict.ai.util.FileUtil;
-import org.netbeans.api.project.Project;
 import javax.lang.model.element.Element;
-import org.netbeans.api.java.source.JavaSource;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 import org.netbeans.api.java.source.ElementHandle;
-import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.modules.refactoring.api.RefactoringSession;
 import org.netbeans.modules.refactoring.api.RenameRefactoring;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
-
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.ElementFilter;
-import java.io.IOException;
 
 /**
  * Tools for code-level operations in NetBeans projects.
@@ -47,14 +41,10 @@ import java.io.IOException;
  * // -> "Class: com.example.MyClass"
  * </pre>
  */
-public class RefactoringTools {
+public class RefactoringTools extends AbstractCodeTool {
 
-    private final Project project;
-    private final JeddictStreamHandler handler;
-
-    public RefactoringTools(Project project, JeddictStreamHandler handler) {
-        this.project = project;
-        this.handler = handler;
+    public RefactoringTools(final String basedir) {
+        super(basedir);
     }
 
     /**
@@ -71,133 +61,109 @@ public class RefactoringTools {
      * @return status message
      */
     @Tool("Format a Java file by path using NetBeans code formatter")
-    public String formatFile(String path) {
-        log("Formatting", path);
-        return FileUtil.withJavaSource(project, path, javaSource -> {
-            try {
-                javaSource.runModificationTask(cc -> {
-                    cc.toPhase(JavaSource.Phase.UP_TO_DATE);
-                    // NetBeans formatter applies automatically on save
-                }).commit();
-                return "File formatted successfully";
-            } catch (IOException e) {
-                return "Formatting failed: " + e.getMessage();
-            }
+    public String formatFile(String path) throws Exception {
+        progress("Formatting " + path);
+        return withJavaSource(path, javaSource -> {
+            javaSource.runModificationTask(cc -> {
+                cc.toPhase(JavaSource.Phase.UP_TO_DATE);
+                // NetBeans formatter applies automatically on save
+            }).commit();
+            return "File formatted successfully";
         }, true);
     }
 
     @Tool("Rename a class in a Java file")
-    public String renameClass(String path, String oldName, String newName) {
-        log("Renaming class", oldName + " -> " + newName);
+    public String renameClass(String path, String oldName, String newName)
+    throws Exception {
+        progress("Renaming class " + oldName + " -> " + newName);
 
-        return FileUtil.withJavaSource(project, path, javaSource -> {
-            try {
-                final StringBuilder result = new StringBuilder();
+        return withJavaSource(path, javaSource -> {
+            final StringBuilder result = new StringBuilder();
 
-                javaSource.runModificationTask(cc -> {
-                    cc.toPhase(Phase.ELEMENTS_RESOLVED);
-                    for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
-                        if (type.getSimpleName().toString().equals(oldName)) {
-                            ElementHandle<TypeElement> handle = ElementHandle.create(type);
+            javaSource.runModificationTask(cc -> {
+                cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
+                for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
+                    if (type.getSimpleName().toString().equals(oldName)) {
+                        ElementHandle<TypeElement> handle = ElementHandle.create(type);
 
-                            // Create refactoring
-                            Lookup lookup = Lookups.singleton(handle);
-                            RenameRefactoring refactor = new RenameRefactoring(lookup);
-                            refactor.setNewName(newName);
+                        // Create refactoring
+                        Lookup lookup = Lookups.singleton(handle);
+                        RenameRefactoring refactor = new RenameRefactoring(lookup);
+                        refactor.setNewName(newName);
 
-                            // Run refactoring in session
-                            RefactoringSession session = RefactoringSession.create("Rename Class");
-                            refactor.prepare(session);
-                            session.doRefactoring(true);
+                        // Run refactoring in session
+                        RefactoringSession session = RefactoringSession.create("Rename Class");
+                        refactor.prepare(session);
+                        session.doRefactoring(true);
 
-                            result.append("Class renamed from ")
-                                    .append(oldName)
-                                    .append(" to ")
-                                    .append(newName);
-                        }
+                        result.append("Class renamed from ")
+                                .append(oldName)
+                                .append(" to ")
+                                .append(newName);
                     }
-                }).commit();
+                }
+            }).commit();
 
-                return result.length() == 0
-                        ? "No class named " + oldName + " found."
-                        : result.toString();
-
-            } catch (IOException e) {
-                return "Rename failed: " + e.getMessage();
-            }
+            return result.length() == 0
+                    ? "No class named " + oldName + " found."
+                    : result.toString();
         }, true);
     }
 
     @Tool("Rename a method in a Java file")
-    public String renameMethod(String path, String className, String oldMethod, String newMethod) {
-        return FileUtil.withJavaSource(project, path, javaSource -> {
-            try {
-                final StringBuilder result = new StringBuilder();
-                javaSource.runModificationTask(cc -> {
-                    cc.toPhase(Phase.ELEMENTS_RESOLVED);
-                    for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
-                        if (type.getSimpleName().toString().equals(className)) {
-                            for (Element member : type.getEnclosedElements()) {
-                                if ((member.getKind() == javax.lang.model.element.ElementKind.METHOD || member.getKind() == javax.lang.model.element.ElementKind.CONSTRUCTOR)
-                                        && member.getSimpleName().toString().equals(oldMethod)) {
-                                    ElementHandle<Element> handle = ElementHandle.create(member);
+    public String renameMethod(String path, String className, String oldMethod, String newMethod)
+    throws Exception {
+        return withJavaSource(path, javaSource -> {
+            final StringBuilder result = new StringBuilder();
+            javaSource.runModificationTask(cc -> {
+                cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
+                for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
+                    if (type.getSimpleName().toString().equals(className)) {
+                        for (Element member : type.getEnclosedElements()) {
+                            if ((member.getKind() == javax.lang.model.element.ElementKind.METHOD || member.getKind() == javax.lang.model.element.ElementKind.CONSTRUCTOR) && member.getSimpleName().toString().equals(oldMethod)) {
+                                ElementHandle<Element> handle = ElementHandle.create(member);
 
-                                    RenameRefactoring ref = new RenameRefactoring(Lookups.singleton(handle));
-                                    ref.setNewName(newMethod);
-                                    RefactoringSession session = RefactoringSession.create("Rename Method");
-                                    ref.prepare(session);
-                                    session.doRefactoring(true);
+                                RenameRefactoring ref = new RenameRefactoring(Lookups.singleton(handle));
+                                ref.setNewName(newMethod);
+                                RefactoringSession session = RefactoringSession.create("Rename Method");
+                                ref.prepare(session);
+                                session.doRefactoring(true);
 
-                                    result.append("Method renamed: ").append(oldMethod)
-                                            .append(" -> ").append(newMethod).append("\n");
-                                }
+                                result.append("Method renamed: ").append(oldMethod).append(" -> ").append(newMethod).append("\n");
                             }
                         }
                     }
-                }).commit();
-                return result.length() == 0
-                        ? "No method " + oldMethod + " found in " + className
-                        : result.toString();
-            } catch (IOException e) {
-                return "Rename failed: " + e.getMessage();
-            }
+                }
+            }).commit();
+            return result.length() == 0 ? "No method " + oldMethod + " found in " + className : result.toString();
         }, true);
     }
 
     @Tool("Move a class to another package")
-    public String moveClass(String path, String className, String newPackage) {
-        return FileUtil.withJavaSource(project, path, javaSource -> {
-            try {
-                final StringBuilder result = new StringBuilder();
-                javaSource.runModificationTask(cc -> {
-                    cc.toPhase(Phase.ELEMENTS_RESOLVED);
-                    for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
-                        if (type.getSimpleName().toString().equals(className)) {
-                            ElementHandle<TypeElement> handle = ElementHandle.create(type);
+    public String moveClass(String path, String className, String newPackage)
+    throws Exception {
+        return withJavaSource(path, javaSource -> {
+            final StringBuilder result = new StringBuilder();
+            javaSource.runModificationTask(cc -> {
+                cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
+                for (TypeElement type : ElementFilter.typesIn(cc.getTopLevelElements())) {
+                    if (type.getSimpleName().toString().equals(className)) {
+                        ElementHandle<TypeElement> handle = ElementHandle.create(type);
 
-                            org.netbeans.modules.refactoring.api.MoveRefactoring ref
-                                    = new org.netbeans.modules.refactoring.api.MoveRefactoring(Lookups.singleton(handle));
-                            ref.setTarget(Lookups.singleton(newPackage));
+                        org.netbeans.modules.refactoring.api.MoveRefactoring ref
+                                = new org.netbeans.modules.refactoring.api.MoveRefactoring(Lookups.singleton(handle));
+                        ref.setTarget(Lookups.singleton(newPackage));
 
-                            RefactoringSession session = RefactoringSession.create("Move Class");
-                            ref.prepare(session);
-                            session.doRefactoring(true);
+                        RefactoringSession session = RefactoringSession.create("Move Class");
+                        ref.prepare(session);
+                        session.doRefactoring(true);
 
-                            result.append("Moved class ").append(className)
-                                    .append(" to package ").append(newPackage);
-                        }
+                        result.append("Moved class ").append(className)
+                                .append(" to package ").append(newPackage);
                     }
-                }).commit();
-                return result.length() == 0 ? "No class " + className + " found." : result.toString();
-            } catch (IOException e) {
-                return "Move failed: " + e.getMessage();
-            }
+                }
+            }).commit();
+            return result.length() == 0 ? "No class " + className + " found." : result.toString();
         }, true);
-    }
-
-    private void log(String action, String message) {
-        if (handler != null) {
-            handler.onToolingResponse(action + " " + message + "\n");
-        }
     }
 }

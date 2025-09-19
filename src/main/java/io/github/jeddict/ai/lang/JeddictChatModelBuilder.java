@@ -15,7 +15,6 @@
  */
 package io.github.jeddict.ai.lang;
 
-import io.github.jeddict.ai.agent.FileSystemTools;
 import io.github.jeddict.ai.agent.Assistant;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -29,11 +28,13 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import io.github.jeddict.ai.JeddictUpdateManager;
+import io.github.jeddict.ai.agent.AbstractTool;
 import io.github.jeddict.ai.agent.ExecutionTools;
 import io.github.jeddict.ai.agent.ExplorationTools;
-import io.github.jeddict.ai.agent.RefactoringTools;
-import io.github.jeddict.ai.agent.MavenTools;
+import io.github.jeddict.ai.agent.FileSystemTools;
 import io.github.jeddict.ai.agent.GradleTools;
+import io.github.jeddict.ai.agent.MavenTools;
+import io.github.jeddict.ai.agent.RefactoringTools;
 import io.github.jeddict.ai.lang.impl.AnthropicBuilder;
 import io.github.jeddict.ai.lang.impl.AnthropicStreamingBuilder;
 import io.github.jeddict.ai.lang.impl.GoogleBuilder;
@@ -63,7 +64,6 @@ import static io.github.jeddict.ai.settings.GenAIProvider.OLLAMA;
 import static io.github.jeddict.ai.settings.GenAIProvider.OPEN_AI;
 import static io.github.jeddict.ai.settings.GenAIProvider.PERPLEXITY;
 import io.github.jeddict.ai.settings.PreferencesManager;
-import io.github.jeddict.ai.util.ProjectUtil;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +80,7 @@ import javax.swing.JTextField;
 import org.json.JSONObject;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.project.Project;
+import org.openide.filesystems.FileUtil;
 import org.openide.util.NbBundle;
 
 /**
@@ -286,7 +287,7 @@ public class JeddictChatModelBuilder {
                 if(agentEnabled) {
                     Assistant assistant = AiServices.builder(Assistant.class)
                             .streamingChatModel(streamModel)
-                            .tools(buildToolsList(project, handler).toArray())
+                            .tools(buildToolsList(project).toArray())
                             .build();
 
                     TokenStream tokenStream = assistant.stream(messages);
@@ -309,7 +310,7 @@ public class JeddictChatModelBuilder {
                 if (agentEnabled) {
                     Assistant assistant = AiServices.builder(Assistant.class)
                             .chatModel(model)
-                            .tools(buildToolsList(project, null).toArray())
+                            .tools(buildToolsList(project).toArray())
                             .build();
                     response = assistant.chat(messages).aiMessage().text();
                 } else {
@@ -362,18 +363,34 @@ public class JeddictChatModelBuilder {
         }
         return null;
     }
-    
-    private List<Object> buildToolsList(Project project, JeddictStreamHandler handler) {
-        List<Object> toolsList = new ArrayList<>();
-        toolsList.add(new FileSystemTools(project, handler));
-        toolsList.add(new ExecutionTools(project, handler));
-        toolsList.add(new ExplorationTools(project, handler));
-//        toolsList.add(new RefactoringTools(project, handler));
-//        if (ProjectUtil.isMavenProject(project)) {
-//            toolsList.add(new MavenTools(project, handler));
-//        } else if (ProjectUtil.isGradleProject(project)) {
-//            toolsList.add(new GradleTools(project, handler));
-//        }
+
+    private List<AbstractTool> buildToolsList(Project project) {
+        //
+        // TODO: make this automatic with some discoverability approach (maybe
+        // NB lookup registration?)
+        //
+        final String basedir =
+            FileUtil.toPath(project.getProjectDirectory())
+            .toAbsolutePath().normalize()
+            .toString();
+
+        final List<AbstractTool> toolsList = List.of(
+            new ExecutionTools(
+                basedir, project.getProjectDirectory().getName(),
+                pm.getBuildCommand(project), pm.getTestCommand(project)
+            ),
+            new ExplorationTools(basedir, project.getLookup()),
+            new FileSystemTools(basedir),
+            new GradleTools(basedir),
+            new MavenTools(basedir),
+            new RefactoringTools(basedir)
+        );
+
+        //
+        // The hanlder wants to know about tool execution
+        //
+        toolsList.forEach((tool) -> tool.addPropertyChangeListener(handler));
+
         return toolsList;
     }
 

@@ -20,6 +20,8 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.response.TokenHandler;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
@@ -35,7 +37,9 @@ import org.netbeans.api.progress.ProgressHandle;
  *
  * @author Shiwani Gupta
  */
-public abstract class JeddictStreamHandler implements StreamingChatResponseHandler {
+public abstract class JeddictStreamHandler
+    implements StreamingChatResponseHandler, PropertyChangeListener
+{
 
     private final AssistantChat topComponent;
     private boolean init = true;
@@ -59,9 +63,11 @@ public abstract class JeddictStreamHandler implements StreamingChatResponseHandl
         this.handle = handle;
     }
 
-    public void onToolingResponse(String resposne) {
-        toolingResponse.append(resposne);
-        onPartialResponse(resposne);
+    @Override
+    public void propertyChange(PropertyChangeEvent e) {
+        final String msg = (String)e.getNewValue();
+        toolingResponse.append(msg);
+        onPartialResponse(msg);
     }
 
     @Override

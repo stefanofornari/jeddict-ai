@@ -16,41 +16,41 @@
 package io.github.jeddict.ai.agent;
 
 import dev.langchain4j.agent.tool.Tool;
-import io.github.jeddict.ai.lang.JeddictStreamHandler;
-import io.github.jeddict.ai.settings.PreferencesManager;
-import io.github.jeddict.ai.util.FileUtil;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
-import java.nio.file.Path;
-import org.netbeans.api.project.Project;
 
 /**
  * This class provides tools to execute build and test commands in a project,
  * streaming output and returning the full log of the command.
- * 
+ *
  * It supports different commands based on the operating system (Windows or Unix/Mac).
  * The execution logs are streamed to a JeddictStreamHandler if available.
- * 
+ *
  * Usage:
  * - Create an instance with the target project and a stream handler.
  * - Invoke buildProject() to run the build command.
  * - Invoke testProject() to run the test command.
- * 
+ *
  * @author Gaurav Gupta
  */
-public class ExecutionTools {
+public class ExecutionTools extends AbstractTool {
 
-    private final Project project;
-    private final JeddictStreamHandler handler;
-    private final String buildCommand, testCommand;
-    protected static PreferencesManager pm = PreferencesManager.getInstance();
-    private LogPrinter log;
+    private final LogPrinter log;
+    private final String projectName, buildCommand, testCommand;
 
-    public ExecutionTools(Project project, JeddictStreamHandler handler) {
-        this.project = project;
-        this.handler = handler;
-        this.buildCommand = pm.getBuildCommand(project);
-        this.testCommand = pm.getTestCommand(project);
+
+    public ExecutionTools(
+        final String basedir, final String projectName,
+        final String buildCommand, final String testCommand
+    ) {
+        super(basedir);
+
+        this.projectName = projectName;
+        this.buildCommand = buildCommand;
+        this.testCommand = testCommand;
+
+        log = new LogPrinter(projectName);
     }
 
     @Tool("Build the project and return full log")
@@ -73,26 +73,23 @@ public class ExecutionTools {
      * @return full log of the Maven command
      */
     private String runCommand(String goals, String actionLabel) {
-        log(actionLabel, project.getProjectDirectory().getNameExt());
+        progress(actionLabel + " " + projectName);
         StringBuilder fullLog = new StringBuilder();
-         if(log == null) {
-                log = new LogPrinter(project.getProjectDirectory().getName());
-        }
+
         log.show();
 
         try {
-            Path projectDir = FileUtil.resolvePath(project, ".");
             ProcessBuilder pb;
 
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
                 // Run via cmd /c on Windows
                 pb = new ProcessBuilder("cmd", "/c", goals)
-                        .directory(projectDir.toFile())
+                        .directory(new File(basedir))
                         .redirectErrorStream(true);
             } else {
                 // Unix/Mac
                 pb = new ProcessBuilder("sh", "-c", goals)
-                        .directory(projectDir.toFile())
+                        .directory(new File(basedir))
                         .redirectErrorStream(true);
             }
 
@@ -109,29 +106,16 @@ public class ExecutionTools {
             int exitCode = process.waitFor();
             String result = (exitCode == 0 ? actionLabel + " successful"
                     : actionLabel + " failed with exit code " + exitCode);
-            log(actionLabel + " finished", result);
+            progress(actionLabel + " finished " + result);
             fullLog.append(result).append("\n");
 
         } catch (Exception e) {
             String error = actionLabel + " failed: " + e.getMessage();
-            log(actionLabel + " error", error);
+            progress(actionLabel + " error " + error);
             fullLog.append(error).append("\n");
         }
 
         return fullLog.toString();
-    }
-
-    /**
-     * Logs the current action to the {@link JeddictStreamHandler}, if
-     * available.
-     *
-     * @param action the action being performed (e.g., "Building", "Testing")
-     * @param message the message related to the action is performed
-     */
-    private void log(String action, String message) {
-        if (handler != null && message != null) {
-            handler.onToolingResponse(action + " " + message + "\n");
-        }
     }
 
 }
