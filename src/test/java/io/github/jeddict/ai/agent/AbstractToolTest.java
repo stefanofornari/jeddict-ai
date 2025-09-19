@@ -1,4 +1,4 @@
-package io.github.jeddict.ai.agent.tools;
+package io.github.jeddict.ai.agent;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.github.jeddict.ai.agent.tools;
+package io.github.jeddict.ai.agent;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;

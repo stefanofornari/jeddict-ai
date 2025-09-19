@@ -13,29 +13,15 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package io.github.jeddict.ai.agent;
 
-package io.github.jeddict.ai.agent.tools.build;
-
-import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.jupiter.api.Test;
+import io.github.jeddict.ai.agent.AbstractTool;
 
 /**
  *
  */
-public class ProjectToolTest {
-
-    @Test
-    public void BuildProjectTool_is_a_BaseBuildTool() {
-        then(BuildProjectTool.class).isAssignableTo(BaseBuildTool.class);
+public class DummyTool extends AbstractTool {
+    public DummyTool(String basedir) {
+        super(basedir);
     }
-
-    @Test
-    public void TestProjectTool_is_a_BaseBuildTool() {
-        then(TestProjectTool.class).isAssignableTo(BaseBuildTool.class);
-    }
-
-    //
-    // TODO: more test cases
-    //
-
 }

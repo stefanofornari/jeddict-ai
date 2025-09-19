@@ -13,9 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.github.jeddict.ai.agent.tools.fs;
+package io.github.jeddict.ai.agent;
 
-import io.github.jeddict.ai.agent.tools.BaseTest;
+import io.github.jeddict.ai.agent.BaseTest;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.nio.file.Files;
@@ -40,16 +40,16 @@ public class FileSystemToolsTest extends BaseTest {
         final String path = "folder/testfile.txt";
         final String pattern = "test file";
 
-        final SearchInFileTool tool = new SearchInFileTool(projectDir);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
         final List<PropertyChangeEvent> events = new ArrayList<>();
-        tool.addPropertyChangeListener(new PropertyChangeListener() {
+        tools.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 events.add(evt);
             }
         });
 
-        then(tool.searchInFile(path, pattern)).contains("Match at").contains("test file");
+        then(tools.searchInFile(path, pattern)).contains("Match at").contains("test file");
         then(events).hasSize(1);
         then(events.get(0).getPropertyName()).isEqualTo("progress");
         then(events.get(0).getNewValue()).isEqualTo("🔎 Looking for '" + pattern + "' inside '" + path + "'");
@@ -60,16 +60,16 @@ public class FileSystemToolsTest extends BaseTest {
         final String path = "folder/testfile.txt";
         final String pattern = "abc";
 
-        final SearchInFileTool tool = new SearchInFileTool(projectDir);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
         final List<PropertyChangeEvent> events = new ArrayList<>();
-        tool.addPropertyChangeListener(new PropertyChangeListener() {
+        tools.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 events.add(evt);
             }
         });
 
-        then(tool.searchInFile(path, pattern)).isEqualTo("No matches found");
+        then(tools.searchInFile(path, pattern)).isEqualTo("No matches found");
         then(events).hasSize(1);
         then(events.get(0).getPropertyName()).isEqualTo("progress");
         then(events.get(0).getNewValue()).isEqualTo("🔎 Looking for '" + pattern + "' inside '" + path + "'");
@@ -80,9 +80,9 @@ public class FileSystemToolsTest extends BaseTest {
         final String path = "folder/newfile.txt";
         final String content = "Sample content.";
 
-        final CreateFileTool tool = new CreateFileTool(projectDir);
-        then(tool.createFile(path, content)).isEqualTo("File created");
-        then(tool.createFile(path, content)).isEqualTo("File already exists: " + path);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        then(tools.createFile(path, content)).isEqualTo("File created");
+        then(tools.createFile(path, content)).isEqualTo("File already exists: " + path);
 
         //
         // TODO: logging
@@ -91,15 +91,15 @@ public class FileSystemToolsTest extends BaseTest {
 
     @Test
     public void deleteFile_success_and_not_found() throws Exception {
-        final DeleteFileTool tool =  new DeleteFileTool(projectDir);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
         final String path = "folder/testfile.txt";
 
         final Path fileToDelete = Paths.get(projectDir, path);
         then(fileToDelete).exists(); // just to make sure...
-        then(tool.deleteFile(path)).isEqualTo("File deleted");
+        then(tools.deleteFile(path)).isEqualTo("File deleted");
         then(fileToDelete).doesNotExist();
 
-        then(tool.deleteFile(path)).isEqualTo("File not found: " + path);
+        then(tools.deleteFile(path)).isEqualTo("File not found: " + path);
 
         //
         // TODO: logging
@@ -111,10 +111,10 @@ public class FileSystemToolsTest extends BaseTest {
         final String existingDir = "folder";
         final String nonExistingDir = "nonexistingdir";
 
-        ListFilesInDirectoryTool tool = new ListFilesInDirectoryTool(projectDir);
-        then(tool.listFilesInDirectory(existingDir)).contains("testfile.txt");
+        final FileSystemTools tools = new FileSystemTools(projectDir);
+        then(tools.listFilesInDirectory(existingDir)).contains("testfile.txt");
 
-        then(tool.listFilesInDirectory(nonExistingDir)).isEqualTo("Directory not found: " + nonExistingDir);
+        then(tools.listFilesInDirectory(nonExistingDir)).isEqualTo("Directory not found: " + nonExistingDir);
 
         //
         // TODO: logging
@@ -127,9 +127,9 @@ public class FileSystemToolsTest extends BaseTest {
         final Path fullPathOK = Paths.get(projectDir, pathOK);
         final String expectedContent = FileUtils.readFileToString(fullPathOK.toFile(), "UTF8");
 
-        final ReadFileTool tool = new ReadFileTool(projectDir);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
         final List<PropertyChangeEvent> events = new ArrayList<>();
-        tool.addPropertyChangeListener(new PropertyChangeListener() {
+        tools.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 events.add(evt);
@@ -139,7 +139,7 @@ public class FileSystemToolsTest extends BaseTest {
         //
         // success
         //
-        then(tool.readFile(pathOK)).isEqualTo(expectedContent);
+        then(tools.readFile(pathOK)).isEqualTo(expectedContent);
         then(events).hasSize(1);
         then(events.get(0).getPropertyName()).isEqualTo("progress");
         then(events.get(0).getNewValue()).isEqualTo("📖 Reading file " + pathOK);
@@ -152,7 +152,7 @@ public class FileSystemToolsTest extends BaseTest {
         events.clear();
 
         BDDAssertions.thenThrownBy( () ->
-            tool.readFile(pathKO)
+            tools.readFile(pathKO)
         );
         then(events).hasSize(2);
         then(events.get(0).getPropertyName()).isEqualTo("progress");
@@ -165,10 +165,10 @@ public class FileSystemToolsTest extends BaseTest {
     public void createDirectory_success_and_exists() throws Exception {
         final String path = "newdir";
 
-        final CreateDirectoryTool tool = new CreateDirectoryTool(projectDir);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
 
-        then(tool.createDirectory(path)).isEqualTo("Directory created");
-        then(tool.createDirectory(path)).isEqualTo("Directory already exists: " + path);
+        then(tools.createDirectory(path)).isEqualTo("Directory created");
+        then(tools.createDirectory(path)).isEqualTo("Directory already exists: " + path);
 
         //
         // TODO: logging
@@ -182,10 +182,10 @@ public class FileSystemToolsTest extends BaseTest {
 
         Files.createDirectories(fullPath);
 
-        final DeleteDirectoryTool tool = new DeleteDirectoryTool(projectDir);
+        final FileSystemTools tools = new FileSystemTools(projectDir);
 
-        then(tool.deleteDirectory(path)).isEqualTo("Directory deleted");
-        then(tool.deleteDirectory(path)).isEqualTo("Directory not found: " + path);
+        then(tools.deleteDirectory(path)).isEqualTo("Directory deleted");
+        then(tools.deleteDirectory(path)).isEqualTo("Directory not found: " + path);
 
         //
         // TODO: logging

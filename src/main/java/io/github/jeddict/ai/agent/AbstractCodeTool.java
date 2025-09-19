@@ -13,9 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.github.jeddict.ai.agent.tools.code;
+package io.github.jeddict.ai.agent;
 
-import io.github.jeddict.ai.agent.tools.AbstractTool;
 import io.github.jeddict.ai.util.DocAction;
 import io.github.jeddict.ai.util.ThrowingFunction;
 import java.nio.file.Path;
@@ -25,9 +24,9 @@ import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 
-public class BaseCodeTool extends AbstractTool {
+public abstract class AbstractCodeTool extends AbstractTool {
 
-    public BaseCodeTool(final String basedir) {
+    public AbstractCodeTool(final String basedir) {
         super(basedir);
     }
 
@@ -72,7 +71,7 @@ public class BaseCodeTool extends AbstractTool {
      * @param save save the doc after post action
      * @return the result of the action, or an error message
      */
-    public String withDocument(String path, DocAction action, boolean save)
+    protected String withDocument(String path, DocAction action, boolean save)
     throws Exception {
         FileObject fo = org.openide.filesystems.FileUtil.toFileObject(fullPath(path));
         if (fo == null) {
