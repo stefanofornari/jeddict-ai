@@ -19,9 +19,10 @@ import io.github.jeddict.ai.agent.FileAction;
 import static io.github.jeddict.ai.components.AssistantChat.createEditorKit;
 import io.github.jeddict.ai.components.diff.DiffView;
 import io.github.jeddict.ai.components.diff.FileStreamSource;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -32,6 +33,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.border.EtchedBorder;
 import javax.swing.text.EditorKit;
 import org.netbeans.api.diff.StreamSource;
 import org.netbeans.api.project.Project;
@@ -45,11 +47,13 @@ import org.openide.util.Exceptions;
  * within the Jeddict AI Assistant. It shows source code, diffs, and confirmation
  * prompts to the user.
  */
-public class ActionPane extends JTabbedPane {
+public class ActionPane extends JPanel {
 
     private static final Logger LOG = Logger.getLogger(ActionPane.class.getCanonicalName());
 
     public final ActionPaneController ctrl;
+
+    private final JTabbedPane sourcePane;
 
     /**
      * Constructs a new {@code ActionPane}.
@@ -61,6 +65,8 @@ public class ActionPane extends JTabbedPane {
         this.ctrl = new ActionPaneController(project, action);
         setPreferredSize(new Dimension(600, 600));
         setBorder(BorderFactory.createLineBorder(Color.white, 5));
+        setLayout(new BorderLayout());
+        add(sourcePane = new JTabbedPane(), BorderLayout.CENTER);
     }
 
     /**
@@ -92,16 +98,16 @@ public class ActionPane extends JTabbedPane {
             ? "create" : ctrl.action.action();
         if ("update".equals(realAction)) {
             addDiffTab(fo, mimeType);
-        } else {
-            addConfirmationTab(realAction);
         }
+
+        addConfirmationTab(realAction);
 
         JEditorPane editorPane = new JEditorPane();
         EditorKit editorKit = createEditorKit(mimeType);
         editorPane.setEditorKit(editorKit);
         editorPane.setText(ctrl.action.content());
         editorPane.setEditable(false);
-        addTab("Source", editorPane);
+        sourcePane.addTab("Source", editorPane);
 
         return editorPane;
     }
@@ -125,7 +131,7 @@ public class ActionPane extends JTabbedPane {
             );
             final FileStreamSource right = new FileStreamSource(fo);
 
-            addTab("Diff", new DiffView(left, right));
+            sourcePane.addTab("Diff", new DiffView(left, right));
         } catch (IOException x) {
             final String msg = "error creating a diff view for action " + ctrl.action;
             LOG.severe(msg);
@@ -141,43 +147,56 @@ public class ActionPane extends JTabbedPane {
      * @param action The type of action (e.g., "create", "delete").
      */
     private void addConfirmationTab(final String action) {
-        final String projectDir = ctrl.project.getProjectDirectory().getPath();
+        add(new ConfirmationPane(action), BorderLayout.NORTH);
+    }
 
-        final JButton okButton = new JButton(action);
-        okButton.addActionListener((event) -> {
-            try {
-                if ("create".equals(action)) {
-                    LOG.finest(() -> "Creating file " + ctrl.fullActionPath);
-                    ctrl.createFile();
-                } else if ("delete".equals(action)) {
-                    LOG.finest(() -> "Deleting file " + ctrl.fullActionPath);
-                    ctrl.deleteFile();
+    // ---
+    private class ConfirmationPane extends JOptionPane {
+
+        private static final Insets INSETS = new Insets(10, 10, 10, 10);
+
+        public ConfirmationPane(final String action) {
+            super(null, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_OPTION);
+
+            final String projectDir = ctrl.project.getProjectDirectory().getPath();
+
+            final JButton okButton = new JButton(action);
+            okButton.addActionListener((event) -> {
+                try {
+                    if ("create".equals(action)) {
+                        LOG.finest(() -> "Creating file " + ctrl.fullActionPath);
+                        ctrl.createFile();
+                    } else if ("delete".equals(action)) {
+                        LOG.finest(() -> "Deleting file " + ctrl.fullActionPath);
+                        ctrl.deleteFile();
+                    }
+                    okButton.setEnabled(false);
+                } catch (IOException x) {
+                    //
+                    // TODO: show an error to the user
+                    //
+                    LOG.finest(() -> "Failed to " + action + " file " + ctrl.fullActionPath + ": " + x.getMessage());
+                    Exceptions.printStackTrace(x);
                 }
-                okButton.setEnabled(false);
-            } catch (IOException x) {
-                //
-                // TODO: show an error to the user
-                //
-                LOG.finest(() -> "Failed to " + action + " file " + ctrl.fullActionPath + ": " + x.getMessage());
-                Exceptions.printStackTrace(x);
-            }
-        });
+            });
 
-        JOptionPane confirmationPane = new JOptionPane(
+            setBorder(new EtchedBorder());
+            setMessage(
                 new String[]{
                     String.format(
-                            "<html><b>Do you want me to %s the below file?</b></html>", action
+                        "<html><b>Do you want me to %s the below file?</b></html>", action
                     ),
                     projectDir,
-                    "↳ " + ctrl.fullActionPath.substring(projectDir.length() + 1),},
-                JOptionPane.QUESTION_MESSAGE,
-                JOptionPane.YES_OPTION,
-                null,
-                new Object[]{okButton}
-        );
+                    "↳ " + ctrl.fullActionPath.substring(projectDir.length() + 1)
+                }
+            );
+            setOptions(new Object[] { okButton });
 
-        JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        tabPanel.add(confirmationPane);
-        addTab("Confirmation", tabPanel);
+        }
+
+        @Override
+        public Insets getInsets() {
+            return INSETS;
+        }
     }
 }
