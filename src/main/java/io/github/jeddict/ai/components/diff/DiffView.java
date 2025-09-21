@@ -38,6 +38,7 @@ import org.openide.loaders.DataObject;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Utilities;
+
 /**
  * A DiffView inspired by org.netbeans.modules.diff.builtin.SingleDiffPanel
  * which is an internal class and therefore a brittle dependency. It also
@@ -305,10 +306,6 @@ public class DiffView extends JPanel implements PropertyChangeListener {
                 }
             }
         );
-    }
-
-    private void refreshController() {
-
     }
 
     private void saveBase() {
