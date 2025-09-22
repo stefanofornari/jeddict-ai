@@ -53,10 +53,10 @@ public class DummyProjectTest extends BaseTest {
         java.io.File nonExistentFile = new java.io.File("nonexistent-project-dir");
         assertThatThrownBy(() -> new DummyProject(nonExistentFile))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("project directory cannot be null or invalid");
+                .hasMessage("projectDir cannot be null or invalid");
 
         assertThatThrownBy(() -> new DummyProject(nonExistentFile.getAbsolutePath()))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("project directory cannot be null or invalid");
+                .hasMessage("projectDir cannot be null or invalid");
     }
 }
