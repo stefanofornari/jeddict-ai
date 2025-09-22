@@ -1,12 +1,11 @@
 package io.github.jeddict.ai.components.actions;
 
 import io.github.jeddict.ai.agent.FileAction;
+import io.github.jeddict.ai.agent.FileSystemTools;
 import java.io.File;
 import org.netbeans.api.project.Project;
-import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.file.Paths;
 
 /**
  * {@code ActionPaneController} is a controller class that handles file-related
@@ -18,6 +17,8 @@ public class ActionPaneController {
     public final Project project;
     public final FileAction action;
     public final String fullActionPath;
+
+    private final FileSystemTools tools;
 
     /**
      * Constructs a new {@code ActionPaneController}.
@@ -39,6 +40,10 @@ public class ActionPaneController {
         this.action = action;
 
         this.fullActionPath = getValidatedFullPath();
+
+        this.tools = new FileSystemTools(
+            Paths.get(project.getProjectDirectory().getPath()).normalize().toAbsolutePath().toString()
+        );
     }
 
     /**
@@ -48,32 +53,20 @@ public class ActionPaneController {
      *
      * @throws IOException if an I/O error occurs during file creation.
      */
-    public void createFile() throws IOException {
-        final FileObject projectDir = project.getProjectDirectory();
+    public void executeAction() throws IOException {
         final String filePath = action.path();
-        final String fileContent = action.content();
 
-        FileObject newFile = FileUtil.createData(projectDir, filePath);
+        try {
+            switch (action.action()) {
+                case "delete" -> {
+                    tools.deleteFile(filePath);
+                }
 
-        try (OutputStream os = newFile.getOutputStream()) {
-            os.write(fileContent.getBytes());
-        }
-    }
-
-    /**
-     * Deletes a file from the project directory based on the {@code FileAction}.
-     * The file path is taken from {@code action.path()}.
-     * If the file does not exist, the operation is silently ignored.
-     *
-     * @throws IOException if an I/O error occurs during file deletion.
-     */
-    public void deleteFile() throws IOException {
-        String filePath = action.path();
-        FileObject projectDir = project.getProjectDirectory();
-
-        FileObject fileToDelete = projectDir.getFileObject(filePath);
-        if (fileToDelete != null) {
-            fileToDelete.delete();
+            }
+        } catch (Exception x) {
+            //
+            // TODO: if it is already a IOException, just rethrow it
+            throw new IOException(x);
         }
     }
 

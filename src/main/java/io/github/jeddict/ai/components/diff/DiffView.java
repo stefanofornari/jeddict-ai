@@ -267,6 +267,30 @@ public class DiffView extends JPanel implements PropertyChangeListener {
         return undoRedo;
     }
 
+    /**
+     * Save the content of the base file. This method is public to allow classes
+     * using it to save the content from outside the DiffView.
+     */
+    public void saveBase() {
+        if (!isEditable()) {
+            throw new IllegalStateException("base source is not editable, it can not be saved");
+        }
+
+        try {
+            SaveCookie saveCookie = dataObject.getLookup().lookup(SaveCookie.class);
+
+            // If there are unsaved changes, save the file
+            if (saveCookie != null) {
+                saveCookie.save();
+            }
+        } catch (IOException x) {
+            LOG.severe(() -> "error saving base " + baseSource + ": " + x.getMessage());
+            Exceptions.printStackTrace(x);
+        }
+    }
+
+    // --------------------------------------------------------- private methods
+
     private void initMyComponents() {
         //
         // If the modified source is a FileStreamSource we can make the diff
@@ -306,24 +330,6 @@ public class DiffView extends JPanel implements PropertyChangeListener {
                 }
             }
         );
-    }
-
-    private void saveBase() {
-        if (!isEditable()) {
-            throw new IllegalStateException("base source is not editable, it can not be saved");
-        }
-
-        try {
-            SaveCookie saveCookie = dataObject.getLookup().lookup(SaveCookie.class);
-
-            // If there are unsaved changes, save the file
-            if (saveCookie != null) {
-                saveCookie.save();
-            }
-        } catch (IOException x) {
-            LOG.severe(() -> "error saving base " + baseSource + ": " + x.getMessage());
-            Exceptions.printStackTrace(x);
-        }
     }
 
     private boolean isEditable() {

@@ -15,18 +15,13 @@
  */
 package io.github.jeddict.ai.agent;
 
+import io.github.jeddict.ai.agent.AbstractTool;
+
 /**
  *
- *
  */
-public record FileAction(String action, String path, String content) {
-
-    @Override
-    public String toString() {
-        return "FileAction{"
-                + "path='" + path + '\''
-                + ", action='" + action + '\''
-                + ", content='" + (content == null ? "null" : "[content]") + '\''
-                + '}';
+public class DummyTool extends AbstractTool {
+    public DummyTool(String basedir) {
+        super(basedir);
     }
 }

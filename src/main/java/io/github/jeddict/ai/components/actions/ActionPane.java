@@ -54,6 +54,7 @@ public class ActionPane extends JPanel {
     public final ActionPaneController ctrl;
 
     private final JTabbedPane sourcePane;
+    private DiffView diffView;
 
     /**
      * Constructs a new {@code ActionPane}.
@@ -131,7 +132,7 @@ public class ActionPane extends JPanel {
             );
             final FileStreamSource right = new FileStreamSource(fo);
 
-            sourcePane.addTab("Diff", new DiffView(left, right));
+            sourcePane.addTab("Diff", diffView = new DiffView(left, right));
         } catch (IOException x) {
             final String msg = "error creating a diff view for action " + ctrl.action;
             LOG.severe(msg);
@@ -160,16 +161,23 @@ public class ActionPane extends JPanel {
 
             final String projectDir = ctrl.project.getProjectDirectory().getPath();
 
+            //
+            // When the confirmation button is pressed we should execute the
+            // action; however in case of update or create the user has reviewed
+            // the code in the diff viewer. Changes may be different from the
+            // the ones provided by the AI due to such interaction, and can be
+            // directly saved in the UI. Therefore in such cases there is
+            // nothing more to do from a code perspective. The controller is
+            // still called to make it aware of the interaction.
+            //
             final JButton okButton = new JButton(action);
             okButton.addActionListener((event) -> {
+                LOG.finest(() -> "Executing " + action + " on " + ctrl.fullActionPath);
                 try {
-                    if ("create".equals(action)) {
-                        LOG.finest(() -> "Creating file " + ctrl.fullActionPath);
-                        ctrl.createFile();
-                    } else if ("delete".equals(action)) {
-                        LOG.finest(() -> "Deleting file " + ctrl.fullActionPath);
-                        ctrl.deleteFile();
+                    if ("create".equals(action) || "update".equals(action)) {
+                        diffView.saveBase();
                     }
+                    ctrl.executeAction();
                     okButton.setEnabled(false);
                 } catch (IOException x) {
                     //
@@ -181,11 +189,19 @@ public class ActionPane extends JPanel {
             });
 
             setBorder(new EtchedBorder());
+
+            //
+            // TODO: The message may be different for different actions; it will
+            // be dynamic, but for now, we make address only the delete and
+            // update/create cases specifically
+            //
+            final String msg = ("delete".equals(action))
+                             ? "<html><b>Do you want me to delete the below file?</b></html>"
+                             : "<html><b>Review the below file and press " + action + " when ready"
+                             ;
             setMessage(
                 new String[]{
-                    String.format(
-                        "<html><b>Do you want me to %s the below file?</b></html>", action
-                    ),
+                    msg,
                     projectDir,
                     "↳ " + ctrl.fullActionPath.substring(projectDir.length() + 1)
                 }
