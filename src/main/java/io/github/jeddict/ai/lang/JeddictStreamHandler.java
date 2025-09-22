@@ -20,6 +20,8 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.response.TokenHandler;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
@@ -35,13 +37,17 @@ import org.netbeans.api.progress.ProgressHandle;
  *
  * @author Shiwani Gupta
  */
-public abstract class JeddictStreamHandler implements StreamingChatResponseHandler {
+public abstract class JeddictStreamHandler
+    implements StreamingChatResponseHandler, PropertyChangeListener
+{
 
     private final AssistantChat topComponent;
     private boolean init = true;
     private JTextArea textArea;
     private ProgressHandle handle;
     private boolean complete;
+    protected final StringBuilder toolingResponse = new StringBuilder();
+
     private static final Logger LOGGER = Logger.getLogger(JeddictStreamHandler.class.getName());
 
 
@@ -58,8 +64,15 @@ public abstract class JeddictStreamHandler implements StreamingChatResponseHandl
     }
 
     @Override
+    public void propertyChange(PropertyChangeEvent e) {
+        final String msg = (String)e.getNewValue();
+        toolingResponse.append(msg);
+        onPartialResponse(msg);
+    }
+
+    @Override
     public void onPartialResponse(String partialResponse) {
-        LOGGER.finest(() -> "partial response received: " + partialResponse);
+        LOGGER.finest(() -> "partial response: " + partialResponse);
         if (init) {
             topComponent.clear();
             textArea = topComponent.createTextAreaPane();

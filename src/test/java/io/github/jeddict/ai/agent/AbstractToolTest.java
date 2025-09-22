@@ -5,10 +5,10 @@ import java.beans.PropertyChangeListener;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.BDDAssertions.thenThrownBy;
-import org.junit.jupiter.api.Test;
 
 public class AbstractToolTest extends BaseTest {
 

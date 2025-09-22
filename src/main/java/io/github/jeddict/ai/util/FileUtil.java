@@ -18,7 +18,10 @@ package io.github.jeddict.ai.util;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import javax.swing.text.Document;
+import org.netbeans.api.project.Project;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
@@ -53,7 +56,6 @@ public class FileUtil {
             }
         }
     }
-
 
     public static FileObject createTempFileObject(String name, String content) throws IOException {
         File tempFile = File.createTempFile("GenAI-" + name, ".java");

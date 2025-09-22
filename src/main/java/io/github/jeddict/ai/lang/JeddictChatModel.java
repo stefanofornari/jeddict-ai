@@ -867,6 +867,12 @@ Expected YAML format:
     public String generateDescription(
             Project project, String source, String methodContent, List<String> images,
             List<Response> previousChatResponse, String userQuery) {
+        return generateDescription(project, false, source, methodContent, images, previousChatResponse, userQuery);
+    }
+
+    public String generateDescription(
+            Project project, boolean agentEnabled, String source, String methodContent, List<String> images,
+            List<Response> previousChatResponse, String userQuery) {
         StringBuilder prompt = new StringBuilder();
         String rules = pm.getSessionRules();
         if (rules != null && !rules.isEmpty()) {
