@@ -202,6 +202,7 @@
                     </includes>
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
+                    <argLine>--add-opens java.base/java.net=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
@@ -596,15 +597,33 @@
             <version>RELEASE270</version>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.20.0</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.13.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.13.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.13.4</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.27.4</version>
             <scope>test</scope>
+        </dependency>
+	<dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-refactoring-api</artifactId>
+            <version>RELEASE270</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.modules</groupId>
@@ -613,10 +632,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.20.0</version>
         </dependency>
     </dependencies>
     <properties>
