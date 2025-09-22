@@ -13,20 +13,26 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.github.jeddict.ai.agent;
+package io.github.jeddict.ai.util;
+
+import javax.swing.text.Document;
 
 /**
- *
- *
+ * Functional interface representing an action to be applied to a
+ * {@link Document}. This allows lambda expressions that can throw
+ * checked exceptions.
+ *  
+ * @author Gaurav Gupta
  */
-public record FileAction(String action, String path, String content) {
+@FunctionalInterface
+public interface DocAction {
 
-    @Override
-    public String toString() {
-        return "FileAction{"
-                + "path='" + path + '\''
-                + ", action='" + action + '\''
-                + ", content='" + (content == null ? "null" : "[content]") + '\''
-                + '}';
-    }
+    /**
+     * Apply the action to the given document.
+     *
+     * @param doc the Swing document to operate on
+     * @return a status or result string
+     * @throws Exception if the document operation fails
+     */
+    String apply(Document doc) throws Exception;
 }

@@ -16,31 +16,27 @@
 
 package io.github.jeddict.ai.components.actions;
 
+import io.github.jeddict.ai.agent.BaseTest;
 import java.io.IOException;
 import io.github.jeddict.ai.agent.FileAction;
 import io.github.jeddict.ai.test.DummyProject;
+import java.io.File;
+import java.nio.file.Paths;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.netbeans.api.project.Project;
-import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileSystem;
-import org.openide.filesystems.FileUtil;
 
 /**
  *
  */
-public class ActionPaneControllerTest {
+public class ActionPaneControllerTest extends BaseTest {
 
-    private FileSystem FS;
-    private FileObject projectDir;
     private Project P;
 
-    @Before
-    public void setup() throws IOException {
-        FS = FileUtil.createMemoryFileSystem();
-        projectDir = FS.getRoot().createFolder("dummy-project");
+    @BeforeEach
+    public void before() throws IOException {
         P = new DummyProject(projectDir);
     }
 
@@ -50,7 +46,7 @@ public class ActionPaneControllerTest {
         ActionPaneController ctrl = new ActionPaneController(P, A);
         then(ctrl.project).isSameAs(P);
         then(ctrl.action).isSameAs(A);
-        then(ctrl.fullActionPath).isEqualTo("/dummy-project/src/main/java/SayHello.java");
+        then(Paths.get(ctrl.fullActionPath)).isEqualTo(Paths.get(projectDir, "/src/main/java/SayHello.java"));
     }
 
     @Test
@@ -60,12 +56,12 @@ public class ActionPaneControllerTest {
 
         assertThatThrownBy(() -> new ActionPaneController(P, action))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("file path '/outside.txt' must be within the project directory");
+                .hasMessage("file path '" + Paths.get(projectDir, PATH).toAbsolutePath().normalize() + "' must be within the project directory");
     }
 
     @Test
     public void project_cannot_be_null() {
-        final FileAction A = new FileAction("create", "/dummy-project/src/main/java/SayHello.java", "hello world");
+        final FileAction A = new FileAction("create", "src/main/java/SayHello.java", "hello world");
         assertThatThrownBy(() -> new ActionPaneController(null, A))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("project cannot be null");
@@ -78,34 +74,36 @@ public class ActionPaneControllerTest {
                 .hasMessage("action cannot be null");
     }
 
+    /*
+     * For now create/update of a file is currently not done in the controller
+     * but in the diffView firectly.
+     *
     @Test
     public void create_file_in_project() throws IOException {
         String filePath = "src/main/java/NewFile.java";
         String fileContent = "public class NewFile {}";
         final FileAction A = new FileAction("create", filePath, fileContent);
         ActionPaneController ctrl = new ActionPaneController(P, A);
-        ctrl.createFile();
+        ctrl.executeAction();
 
-        FileObject newFile = projectDir.getFileObject(filePath);
-        then(newFile).isNotNull();
-        then(newFile.asText()).isEqualTo(fileContent);
+        final File fileToCreate = new File(projectDir, A.path());
+        then(fileToCreate).exists();
+        then(fileToCreate).content().isEqualTo(fileContent);
     }
+    */
 
     @Test
     public void delete_file_from_project() throws IOException {
-        String filePath = "src/main/java/FileToDelete.java";
-        String fileContent = "public class FileToDelete {}";
-        final FileAction createAction = new FileAction("create", filePath, fileContent);
-        ActionPaneController createCtrl = new ActionPaneController(P, createAction);
-        createCtrl.createFile();
+        final String filePath = "src/main/java/FileToDelete.java";
 
-        FileObject fileToDelete = projectDir.getFileObject(filePath);
-        then(fileToDelete).isNotNull();
+        final File fileToDelete = new File(projectDir, filePath);
+        fileToDelete.mkdirs(); fileToDelete.createNewFile();
+        then(fileToDelete).exists();
 
         final FileAction deleteAction = new FileAction("delete", filePath, null);
         ActionPaneController deleteCtrl = new ActionPaneController(P, deleteAction);
-        deleteCtrl.deleteFile();
+        deleteCtrl.executeAction();
 
-        then(projectDir.getFileObject(filePath)).isNull();
+        then(fileToDelete).doesNotExist();
     }
 }

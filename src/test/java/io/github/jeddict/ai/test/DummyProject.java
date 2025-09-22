@@ -46,6 +46,10 @@ public class DummyProject implements Project {
         this.projectDir = projectDir;
     }
 
+    public DummyProject(final String projectDir) {
+        this(new File(projectDir));
+    }
+
     @Override
     public FileObject getProjectDirectory() {
         return projectDir;
@@ -55,7 +59,5 @@ public class DummyProject implements Project {
     public Lookup getLookup() {
         return Lookup.getDefault();
     }
-
-
 
 }

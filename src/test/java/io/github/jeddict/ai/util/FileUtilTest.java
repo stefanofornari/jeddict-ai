@@ -21,7 +21,7 @@ import java.net.URLConnection;
 import java.io.File;
 import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FileUtilTest {
 
