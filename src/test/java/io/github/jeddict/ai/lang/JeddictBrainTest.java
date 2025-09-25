@@ -16,13 +16,16 @@
 package io.github.jeddict.ai.lang;
 
 import com.github.caciocavallosilano.cacio.ctc.junit.CacioTest;
+import static com.github.stefanbirkner.systemlambda.SystemLambda.restoreSystemProperties;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.test.DummyStreamHandler;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -40,8 +43,24 @@ public class JeddictBrainTest {
     @TempDir
     private Path HOME;
 
+    private PreferencesManager preferences;
+
+    @BeforeEach
+    public void before() throws Exception {
+        Files.copy(Paths.get("src/test/resources/settings/jeddict.json"), HOME.resolve("jeddict.json"));
+
+        //
+        // Making sure the singleton is initilazed with a testing configuration
+        // file under a temporary directory
+        //
+        restoreSystemProperties(() -> {
+            System.setProperty("user.home", HOME.toAbsolutePath().toString());
+
+            preferences = PreferencesManager.getInstance();
+        });
+    }
+
     @Test
-    @Disabled // TODO: enable once we fixed the configuration
     public void constructors() throws Exception {
         final DummyStreamHandler H = new DummyStreamHandler();
         final String N1 = "jeddict", N2 = "jeddict2";
