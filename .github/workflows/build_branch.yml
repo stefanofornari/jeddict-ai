@@ -28,13 +28,12 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
-    - name: Install Xvfb
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y xvfb
     - name: Start Xvfb
-      run: |
-        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-        echo "DISPLAY=:99" >> $GITHUB_ENV
+      uses: GabrielBB/xvfb-action@v1
+      with:
+        display-num: 99
+        screen-width: 1024
+        screen-height: 768
+        screen-depth: 24
     - name: Build with Maven
       run: mvn -B package --file pom.xml
