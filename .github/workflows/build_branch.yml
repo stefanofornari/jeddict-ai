@@ -28,12 +28,7 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
-    - name: Start Xvfb
+    - name: Build with Maven with Xvfb
       uses: GabrielBB/xvfb-action@v1
       with:
-        display-num: 99
-        screen-width: 1024
-        screen-height: 768
-        screen-depth: 24
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+        run: mvn -B package --file pom.xml
