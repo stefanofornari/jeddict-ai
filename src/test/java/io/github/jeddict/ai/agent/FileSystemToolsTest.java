@@ -15,7 +15,6 @@
  */
 package io.github.jeddict.ai.agent;
 
-import io.github.jeddict.ai.agent.BaseTest;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.nio.file.Files;
