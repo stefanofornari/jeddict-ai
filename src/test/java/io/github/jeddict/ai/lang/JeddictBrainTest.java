@@ -15,6 +15,7 @@
  */
 package io.github.jeddict.ai.lang;
 
+import com.github.caciocavallosilano.cacio.ctc.junit.CacioTest;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.test.DummyStreamHandler;
 import java.beans.PropertyChangeEvent;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  *
  */
+@CacioTest  // TODO: this shall be removed once JeddictBrain will be free of UI dependency
 public class JeddictBrainTest {
 
     //
