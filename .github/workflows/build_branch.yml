@@ -30,6 +30,4 @@ jobs:
         Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         echo "DISPLAY=:99" >> $GITHUB_ENV
     - name: Build with Maven
-      env:
-        JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
       run: mvn -B package --file pom.xml
