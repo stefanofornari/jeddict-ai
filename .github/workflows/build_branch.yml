@@ -8,27 +8,16 @@ on:
         default: 'main' # Default to main, or whatever is appropriate
 
 jobs:
-  build:
+  bbuild:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.inputs.branch }}
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-    # Cache Maven dependencies to speed up subsequent builds
-    - name: Cache Maven packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-    - name: Build with Maven with Xvfb
-      uses: GabrielBB/xvfb-action@v1
-      with:
-        run: mvn -B package --file pom.xml
+        cache: maven
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
