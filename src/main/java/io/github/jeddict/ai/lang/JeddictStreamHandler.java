@@ -19,6 +19,7 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import io.github.jeddict.ai.JeddictUpdateManager;
+import io.github.jeddict.ai.agent.AbstractTool;
 import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.response.TokenHandler;
 import java.beans.PropertyChangeEvent;
@@ -67,16 +68,15 @@ public abstract class JeddictStreamHandler
     public void propertyChange(PropertyChangeEvent e) {
         LOG.finest(() -> String.valueOf(e));
         final String name = e.getPropertyName();
-        if ("tokens".equals(name)) {
+        if (JeddictBrain.PROPERTY_TOKENS.equals(name)) {
             final String progress = NbBundle.getMessage(JeddictUpdateManager.class, "ProgressHandle", (int)e.getNewValue());
             handle.progress(progress);
             handle.setDisplayName(progress);
-        } else if ("toolMessage".equals(name)) {
+        } else if (AbstractTool.PROPERTY_MESSAGE.equals(name)) {
             final String msg = (String)e.getNewValue();
-            toolingResponse.append(msg);
+            toolingResponse.append(msg).append('\n');
             onPartialResponse(msg);
         }
-
     }
 
     @Override

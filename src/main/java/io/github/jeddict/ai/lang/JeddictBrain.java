@@ -74,6 +74,11 @@ import org.openide.filesystems.FileUtil;
 //
 public class JeddictBrain {
 
+    /**
+     * property notified for changes: # of input tokens
+     */
+    public static final String PROPERTY_TOKENS = "tokens";
+
     public final Optional<StreamingChatResponseHandler> streamHandler;
     public final Optional<ChatModel> chatModel;
     public final Optional<StreamingChatModel> streamingChatModel;
@@ -165,6 +170,9 @@ public class JeddictBrain {
         return UserMessage.from(parts.toArray(new Content[0]));
     }
 
+    //
+    // TODO: P3 - better use of langchain4j functionalities (see https://docs.langchain4j.dev/tutorials/agents)
+    //
     private String generateInternal(Project project, boolean agentEnabled, String prompt, List<String> images, List<Response> responseHistory) {
         if (chatModel.isEmpty() && streamHandler.isEmpty()) {
             throw new IllegalStateException("AI assistance model not intitalized, this looks like a bug!");
@@ -205,7 +213,7 @@ public class JeddictBrain {
         //
         // TODO: P3 - decouple token counting from saving stats; saving stats should listen to this event
         //
-        progressListeners.firePropertyChange("tokens", 0, TokenHandler.saveInputToken(messages));
+        progressListeners.firePropertyChange(PROPERTY_TOKENS, 0, TokenHandler.saveInputToken(messages));
 
         try {
             if (streamingChatModel.isPresent()) {
