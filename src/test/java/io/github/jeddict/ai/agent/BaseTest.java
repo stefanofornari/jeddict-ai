@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -41,7 +42,7 @@ public class BaseTest {
     public void beforeEach() throws IOException {
         projectDir = HOME.resolve("dummy-project").toString();
 
-        Logger logger = Logger.getLogger(getClass().getPackageName());
+        Logger logger = Logger.getLogger("io.github.jeddict.ai");
         logger.setLevel(Level.ALL);
         logger.addHandler(logHandler = new DummyLogHandler());
 
@@ -49,5 +50,10 @@ public class BaseTest {
         try (Writer w = new FileWriter(folder.resolve("testfile.txt").toFile())) {
             w.append("This is a test file content for real file testing.");
         }
+    }
+
+    @AfterEach
+    public void afterEach() {
+        Logger.getLogger(getClass().getPackageName()).removeHandler(logHandler);
     }
 }
