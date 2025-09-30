@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.github.jeddict.ai.agent;
+package io.github.jeddict.ai.test;
 
 import io.github.jeddict.ai.test.DummyLogHandler;
 import java.io.FileWriter;
