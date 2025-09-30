@@ -41,6 +41,7 @@ import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
+import io.github.jeddict.ai.util.Utilities;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
@@ -68,6 +69,7 @@ public class JeddictBrain {
      * property notified for changes: # of input tokens
      */
     public static final String PROPERTY_TOKENS = "tokens";
+    public static final String PROPERTY_ERROR = "error";
 
     public final Optional<StreamingChatResponseHandler> streamHandler;
     public final Optional<ChatModel> chatModel;
@@ -177,11 +179,17 @@ public class JeddictBrain {
     }
 
     //
+    // TODO: P2 - StreamingChatResponseHandler shall be created in both
+    //       streaming or not streaming chats; in the case of streaming
+    //       onPartialResponse will be called, otherwise only onCompleteResponse
+    //       and onError
+    //       This method should then not return any value.
+    //
     // TODO: P3 - better use of langchain4j functionalities (see https://docs.langchain4j.dev/tutorials/agents)
     //
     private String generateInternal(Project project, boolean agentEnabled, String prompt, List<String> images, List<Response> responseHistory) {
         if (chatModel.isEmpty() && streamHandler.isEmpty()) {
-            throw new IllegalStateException("AI assistance model not intitalized, this looks like a bug!");
+            throw new IllegalStateException("AI assistant model not intitalized, this looks like a bug!");
         }
 
         if (project != null) {
@@ -221,46 +229,58 @@ public class JeddictBrain {
         //
         progressListeners.firePropertyChange(PROPERTY_TOKENS, 0, TokenHandler.saveInputToken(messages));
 
-        if (streamingChatModel.isPresent()) {
-            final StreamingChatResponseHandler handler = streamHandler.get();
-            if(agentEnabled) {
-                final Assistant assistant = AiServices.builder(Assistant.class)
-                    .streamingChatModel(streamingChatModel.get())
-                    .tools(tools.toArray())
-                    .build();
+        final StringBuilder response = new StringBuilder();
+        try {
 
-                final TokenStream tokenStream = assistant.stream(messages);
-                tokenStream
-                    .onCompleteResponse(partial -> {
-                        handler.onCompleteResponse(partial);
-                    })
-                    .onPartialResponse(partial -> {
-                        handler.onPartialResponse(partial);
-                    })
-                    .onError(error -> {
-                        handler.onError(error);
-                    })
-                    .start();
-            } else {
-                streamingChatModel.get().chat(messages, handler);
-            }
-        } else {
-            ChatModel model = chatModel.get();
-            String response;
-            if (agentEnabled) {
-                Assistant assistant = AiServices.builder(Assistant.class)
-                        .chatModel(model)
+            if (streamingChatModel.isPresent()) {
+                final StreamingChatResponseHandler handler = streamHandler.get();
+                if(agentEnabled) {
+                    final Assistant assistant = AiServices.builder(Assistant.class)
+                        .streamingChatModel(streamingChatModel.get())
                         .tools(tools.toArray())
                         .build();
-                response = assistant.chat(messages).aiMessage().text();
+
+                    final TokenStream tokenStream = assistant.stream(messages);
+                    tokenStream
+                        .onCompleteResponse(partial -> {
+                            handler.onCompleteResponse(partial);
+                        })
+                        .onPartialResponse(partial -> {
+                            handler.onPartialResponse(partial);
+                        })
+                        .onError(error -> {
+                            handler.onError(error);
+                        })
+                        .start();
+                } else {
+                    streamingChatModel.get().chat(messages, handler);
+                }
             } else {
-                response = model.chat(messages).aiMessage().text();
+                ChatModel model = chatModel.get();
+                if (agentEnabled) {
+                    Assistant assistant = AiServices.builder(Assistant.class)
+                            .chatModel(model)
+                            .tools(tools.toArray())
+                            .build();
+                    response.append(assistant.chat(messages).aiMessage().text());
+                } else {
+                    response.append(model.chat(messages).aiMessage().text());
+                }
+
+                CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response.toString()));
             }
-            CompletableFuture.runAsync(() -> TokenHandler.saveOutputToken(response));
-            return response;
+        } catch (Exception x) {
+            LOG.finest(() -> "Communication error: " + x.getMessage());
+            response.append(Utilities.errorHTMLBlock(x));
+            //
+            // TODO: P2 - remove this and use onError
+            //
+            progressListeners.firePropertyChange(PROPERTY_ERROR, null, x);
         }
 
-        return null;
+        LOG.finest(() -> "Returning " + response);
+
+        return response.toString();
     }
 
     public String generateJavadocForClass(Project project, String classContent) {
@@ -1304,5 +1324,4 @@ public class JeddictBrain {
     public void removeProgressListener(final PropertyChangeListener listener) {
         progressListeners.removePropertyChangeListener(listener);
     }
-
 }
