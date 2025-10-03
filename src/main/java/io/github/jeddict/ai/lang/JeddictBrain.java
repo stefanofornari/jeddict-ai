@@ -174,12 +174,6 @@ public class JeddictBrain {
     }
 
     //
-    // TODO: P2 - StreamingChatResponseHandler shall be created in both
-    //       streaming or not streaming chats; in the case of streaming
-    //       onPartialResponse will be called, otherwise only onCompleteResponse
-    //       and onError
-    //       This method should then not return any value.
-    //
     // TODO: P3 - better use of langchain4j functionalities (see https://docs.langchain4j.dev/tutorials/agents)
     //
     private String generateInternal(Project project, boolean agentEnabled, String prompt, List<String> images, List<Response> responseHistory) {
@@ -286,9 +280,6 @@ public class JeddictBrain {
         } catch (Exception x) {
             LOG.finest(() -> "Communication error: " + x.getMessage());
             response.append(Utilities.errorHTMLBlock(x));
-            //
-            // TODO: P2 - remove this and use onError
-            //
             fireEvent(EventProperty.CHAT_ERROR, x);
         }
 
