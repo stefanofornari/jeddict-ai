@@ -351,7 +351,7 @@ public class AssistantChat extends TopComponent {
                 content.setContent(editorPane.getText());
             }
         });
-        editorPane.setEditable(false); editorPane.setCaretPosition(0);
+        editorPane.setCaretPosition(0); // moving the highlighted line to the first line
         addContextMenu(editorPane);
         addEditorPaneRespectingTextArea(editorPane);
         return editorPane;
