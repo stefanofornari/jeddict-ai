@@ -49,7 +49,7 @@ import static io.github.jeddict.ai.components.QueryPane.createIconButton;
 import static io.github.jeddict.ai.components.QueryPane.createStyledComboBox;
 import io.github.jeddict.ai.components.TokenUsageChartDialog;
 import io.github.jeddict.ai.lang.JeddictBrain;
-import io.github.jeddict.ai.lang.JeddictStreamHandler;
+import io.github.jeddict.ai.lang.JeddictBrainListener;
 import io.github.jeddict.ai.response.Block;
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.review.Review;
@@ -269,7 +269,7 @@ public class AssistantChatManager extends JavaFix {
                 Set<FileObject> messageContextCopy = new HashSet<>(messageContext);
                 SwingUtilities.invokeLater(() -> {
                     displayHtmlContent(fileName, name + " AI Assistant");
-                    JeddictStreamHandler handler = new JeddictStreamHandler(topComponent) {
+                    JeddictBrainListener handler = new JeddictBrainListener(topComponent) {
                         @Override
                         public void onCompleteResponse(ChatResponse response) {
                             super.onCompleteResponse(response);
@@ -943,7 +943,7 @@ public class AssistantChatManager extends JavaFix {
     }
 
     private Future result;
-    private JeddictStreamHandler handler;
+    private JeddictBrainListener handler;
 
     private void handleQuestion(String question, Set<FileObject> messageContext, boolean newQuery) {
         result = executorService.submit(() -> {
@@ -968,7 +968,7 @@ public class AssistantChatManager extends JavaFix {
                     prevChatResponses = responseHistory.subList(startIndex, responseHistory.size());
                 }
                 Set<FileObject> messageContextCopy = new HashSet<>(messageContext);
-                handler = new JeddictStreamHandler(topComponent) {
+                handler = new JeddictBrainListener(topComponent) {
                     @Override
                     public void onCompleteResponse(ChatResponse response) {
                         super.onCompleteResponse(response);
@@ -1102,15 +1102,15 @@ public class AssistantChatManager extends JavaFix {
         openInBrowserButton.setVisible(topComponent.getAllEditorCount() > 0);
     }
 
-    private JeddictBrain newJeddictBrain(final JeddictStreamHandler handler, final String name) {
+    private JeddictBrain newJeddictBrain(final JeddictBrainListener listener, final String name) {
         final JeddictBrain brain = new JeddictBrain(
-            name, handler, PreferencesManager.getInstance().isStreamEnabled(), buildToolsList(project, handler));
-        brain.addProgressListener(handler);
+            name, PreferencesManager.getInstance().isStreamEnabled(), buildToolsList(project, listener));
+        brain.addProgressListener(listener);
         return brain;
     }
 
     private List<AbstractTool> buildToolsList(
-        final Project project, final JeddictStreamHandler handler
+        final Project project, final JeddictBrainListener handler
     ) {
         //
         // TODO: make this automatic with some discoverability approach (maybe
