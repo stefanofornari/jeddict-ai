@@ -22,13 +22,11 @@ import static com.sun.source.tree.Tree.Kind.INTERFACE;
 import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.lang.JeddictBrain;
 import io.github.jeddict.ai.util.SourceUtil;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import javax.lang.model.element.Element;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
@@ -40,15 +38,10 @@ import org.openide.util.NbBundle;
  *
  * @author Shiwani Gupta
  */
-public class RestEndpointFix extends JavaFix {
+public class RestEndpointFix extends BaseAIFix {
 
-    private final ElementHandle classType;
-    private final Action action;
-
-    public RestEndpointFix(TreePathHandle tpHandle, Action action, ElementHandle classType) {
-        super(tpHandle);
-        this.classType = classType;
-        this.action = action;
+    public RestEndpointFix(final TreePathHandle treePathHandle, final Action action) {
+        super(treePathHandle, action);
     }
 
     @Override
@@ -72,8 +65,8 @@ public class RestEndpointFix extends JavaFix {
 
         if (leaf.getKind() == CLASS || leaf.getKind() == INTERFACE) {
 
-            String javadocContent = new JeddictBrain().generateRestEndpointForClass(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+            String javadocContent = newJeddictBrain().generateRestEndpointForClass(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 leaf.toString());
             JSONObject json = new JSONObject(removeCodeBlockMarkers(javadocContent));
             JSONArray imports = json.getJSONArray("imports");

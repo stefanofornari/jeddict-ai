@@ -21,7 +21,6 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.lang.JeddictBrain;
 import io.github.jeddict.ai.util.StringUtil;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
@@ -34,15 +33,10 @@ import org.openide.util.NbBundle;
  *
  * @author Shiwani Gupta
  */
-public class ExpressionFix extends JavaFix {
+public class ExpressionFix extends TreePathAIFix {
 
-    private final TreePath treePath;
-    private final Action action;
-
-    public ExpressionFix(TreePathHandle tpHandle, Action action, TreePath treePath) {
-        super(tpHandle);
-        this.treePath = treePath;
-        this.action = action;
+    public ExpressionFix(final TreePathHandle treePathHandle, final Action action, final TreePath treePath) {
+        super(treePathHandle, action, treePath);
     }
 
     @Override
@@ -60,7 +54,7 @@ public class ExpressionFix extends JavaFix {
         Tree leaf = treePath.getLeaf();
         String content;
         com.sun.source.tree.ExpressionStatementTree expressionStatement = (com.sun.source.tree.ExpressionStatementTree) leaf;
-        content = new JeddictBrain().enhanceExpressionStatement(
+        content = newJeddictBrain().enhanceExpressionStatement(
                 FileOwnerQuery.getOwner(copy.getFileObject()),
                 treePath.getCompilationUnit().toString(),
                 treePath.getParentPath().getLeaf().toString(),
