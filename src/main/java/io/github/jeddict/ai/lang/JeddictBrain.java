@@ -21,6 +21,7 @@ package io.github.jeddict.ai.lang;
  */
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
@@ -35,6 +36,7 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.service.AiServices;
 import io.github.jeddict.ai.agent.AbstractTool;
 import io.github.jeddict.ai.agent.Assistant;
+import io.github.jeddict.ai.agent.PairProgrammer;
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.response.TokenHandler;
 import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
@@ -288,70 +290,10 @@ public class JeddictBrain {
         return response.toString();
     }
 
-    public String generateJavadocForClass(Project project, String classContent) {
-        String prompt
-                = "You are an API server that responds only with Javadoc comments for class not the member of class. "
-                + "Generate only the Javadoc wrapped with in /** ${javadoc} **/ for the following Java class not the member of class. Do not include any additional text or explanation.\n\n"
-                + classContent;
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String generateJavadocForMethod(Project project, String methodContent) {
-        String prompt
-                = "You are an API server that responds only with Javadoc comments for method. "
-                + "Generate only the Javadoc wrapped with in /** ${javadoc} **/ for the following Java method. Do not include any additional text or explanation.\n\n"
-                + methodContent;
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String generateJavadocForField(Project project, String fieldContent) {
-        String prompt
-                = "You are an API server that responds only with Javadoc comments for field. "
-                + "Generate only the Javadoc wrapped with in /** ${javadoc} **/ for the following Java variable. Do not include any additional text or explanation.\n\n"
-                + fieldContent;
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String enhanceJavadocForClass(Project project, String existingJavadoc, String classContent) {
-        String prompt
-                = "You are an API server that enhances existing Javadoc comments for a class. "
-                + "Given the existing Javadoc comment and the following Java class, enhance the Javadoc comment by adding more details if necessary. "
-                + "Do not include any additional text or explanation, just the enhanced Javadoc wrapped with /** ${javadoc} **/.\n\n"
-                + "Existing Javadoc:\n" + existingJavadoc + "\n\n"
-                + "Java Class Content:\n" + classContent;
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String enhanceJavadocForMethod(Project project, String existingJavadoc, String methodContent) {
-        String prompt
-                = "You are an API server that enhances existing Javadoc comments for a method. "
-                + "Given the existing Javadoc comment and the following Java method, enhance the Javadoc comment by adding more details if necessary. "
-                + "Do not include any additional text or explanation, just the enhanced Javadoc wrapped with /** ${javadoc} **/.\n\n"
-                + "Existing Javadoc:\n" + existingJavadoc + "\n\n"
-                + "Java Method Content:\n" + methodContent;
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String enhanceJavadocForField(Project project, String existingJavadoc, String fieldContent) {
-        String prompt
-                = "You are an API server that enhances existing Javadoc comments for a field. "
-                + "Given the existing Javadoc comment and the following Java field, enhance the Javadoc comment by adding more details if necessary. "
-                + "Do not include any additional text or explanation, just the enhanced Javadoc wrapped with /** ${javadoc} **/.\n\n"
-                + "Existing Javadoc:\n" + existingJavadoc + "\n\n"
-                + "Java Field Content:\n" + fieldContent;
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
+    public PairProgrammer pairProgrammer() {
+        return AgenticServices.agentBuilder(PairProgrammer.class)
+                        .chatModel(chatModel.get())
+                        .build();
     }
 
     public String generateRestEndpointForClass(Project project, String classContent) {
@@ -384,6 +326,7 @@ public class JeddictBrain {
         return response;
     }
 
+    @Deprecated
     public String updateMethodFromDevQuery(Project project, String javaClassContent, String methodContent, String developerRequest) {
         String prompt = """
             You are an API server that enhances Java methods based on user requests.
@@ -409,6 +352,7 @@ public class JeddictBrain {
         return response;
     }
 
+    @Deprecated
     public String enhanceMethodFromMethodContent(Project project, String javaClassContent, String methodContent) {
         String prompt = """
             You are an API server that enhances or creates Java methods based on the method name, comments, and its content.

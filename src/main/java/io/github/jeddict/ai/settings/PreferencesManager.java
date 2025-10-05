@@ -603,6 +603,9 @@ public class PreferencesManager {
         userPrompts = map;
     }
 
+    //
+    // Should we move the conversion to module loading?
+    //
     public String getGlobalRules() {
         // First check for old key "systemMessage"
         String oldValue = preferences.get("systemMessage", null);
@@ -629,7 +632,7 @@ public class PreferencesManager {
     public void setProjectRules(Project project, String message) {
         preferences.put(project.getProjectDirectory().getName() + "-" + PROJECT_RULES_PREFERENCE, message);
     }
-    
+
     /**
      * Get the build command for the given project.
      * <p>
@@ -715,7 +718,7 @@ public class PreferencesManager {
     public void setTestCommand(Project project, String command) {
         preferences.put(project.getProjectDirectory().getName() + "-" + TEST_COMMAND_PREFERENCE, command);
     }
-    
+
     public String getAssistantAction() {
         return preferences.get(ASSISTANT_ACTION_PREFERENCE, "");
     }
