@@ -40,6 +40,11 @@ import java.util.regex.Pattern;
 /**
  *
  */
+import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
+import java.util.ArrayList;
+import java.util.Collections;
+
 public class DummyChatModel implements ChatModel, StreamingChatModel {
 
     private final Logger LOG = Logger.getLogger(DummyChatModel.class.getCanonicalName());
@@ -48,6 +53,21 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
     private static final String ERROR_MOCK_FILE = "src/test/resources/mocks/error.txt";
     private static final Pattern MOCK_INSTRUCTION_PATTERN =
         Pattern.compile("use mock\\s+(?:'([^']+)'|(\\S+))", Pattern.CASE_INSENSITIVE);
+
+    private final List<ChatModelListener> listeners;
+
+    public DummyChatModel() {
+        this.listeners = new ArrayList<>();
+    }
+
+    public void addListener(ChatModelListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public List<ChatModelListener> listeners() {
+        return Collections.unmodifiableList(listeners);
+    }
 
     @Override
     public ChatResponse chat(final ChatRequest chatRequest) {
@@ -61,6 +81,11 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
     @Override
     public ChatResponse doChat(final ChatRequest chatRequest) {
         LOG.info(() -> "> " + String.valueOf(chatRequest));
+
+        ChatModelRequestContext requestContext = new ChatModelRequestContext(chatRequest, provider(), Collections.emptyMap());
+        for (ChatModelListener listener : listeners) {
+            listener.onRequest(requestContext);
+        }
 
         final StringBuilder body = new StringBuilder();
 
@@ -96,6 +121,11 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
         ChatResponse chatResponse = ChatResponse.builder().aiMessage(
             AiMessage.from(mockContent)
         ).build();
+
+        ChatModelResponseContext responseContext = new ChatModelResponseContext(chatResponse, chatRequest, provider(), Collections.emptyMap());
+        for (ChatModelListener listener : listeners) {
+            listener.onResponse(responseContext);
+        }
 
         LOG.info(() -> "< " + String.valueOf(chatResponse));
 
@@ -158,14 +188,6 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
         LOG.info(() -> "< " + String.valueOf(params));
 
         return params;
-    }
-
-    @Override
-    public List<ChatModelListener> listeners() {
-        final List listeners = ChatModel.super.listeners();
-        LOG.info(() -> "< " + String.valueOf(listeners));
-
-        return listeners;
     }
 
     @Override
