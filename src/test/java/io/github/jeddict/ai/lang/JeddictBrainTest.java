@@ -15,20 +15,16 @@
  */
 package io.github.jeddict.ai.lang;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.restoreSystemProperties;
 import io.github.jeddict.ai.agent.AbstractTool;
+import io.github.jeddict.ai.agent.PairProgrammer;
 import io.github.jeddict.ai.settings.PreferencesManager;
-import io.github.jeddict.ai.test.DummyStreamHandler;
 import io.github.jeddict.ai.test.DummyTool;
 import io.github.jeddict.ai.test.TestBase;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.BDDAssertions.thenThrownBy;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 
@@ -38,30 +34,6 @@ import org.junit.jupiter.api.Test;
  * listener management, and functionality such as code analysis.
  */
 public class JeddictBrainTest extends TestBase {
-
-    //
-    // Settings are currently saved in a file in the user home (see
-    // PreferencesManager and FilePreferences). To be able to manipulate them
-    // without side effects, we set up a different user home (provided by TestBase)
-    //
-    private PreferencesManager preferences;
-
-    @BeforeEach
-    public void before() throws Exception {
-        super.beforeEach();
-
-        Files.copy(Paths.get("src/test/resources/settings/jeddict.json"), HOME.resolve("jeddict.json"));
-
-        //
-        // Making sure the singleton is initilazed with a testing configuration
-        // file under a temporary directory
-        //
-        restoreSystemProperties(() -> {
-            System.setProperty("user.home", HOME.toAbsolutePath().toString());
-
-            preferences = PreferencesManager.getInstance();
-        });
-    }
 
     @Test
     public void constructors() throws Exception {
@@ -103,7 +75,6 @@ public class JeddictBrainTest extends TestBase {
 
     @Test
     public void add_and_remove_listeners() {
-        final DummyStreamHandler H = new DummyStreamHandler();
         final String N = "jeddict";
 
         final PropertyChangeListener L1 = new PropertyChangeListener() {
@@ -128,5 +99,15 @@ public class JeddictBrainTest extends TestBase {
 
         brain.removeProgressListener(L1);
         then(brain.progressListeners.getPropertyChangeListeners()).isEmpty();
+    }
+
+    @Test
+    public void get_new_pair_programmer() {
+        final JeddictBrain brain = new JeddictBrain(false);
+
+        final PairProgrammer pair = brain.pairProgrammer();
+
+        then(pair).isNotNull();
+        then(brain.pairProgrammer()).isNotSameAs(pair);  // create a new pair every call
     }
 }
