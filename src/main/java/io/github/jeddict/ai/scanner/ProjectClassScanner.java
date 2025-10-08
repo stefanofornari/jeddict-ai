@@ -23,6 +23,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import io.github.jeddict.ai.lang.JeddictBrain;
 import io.github.jeddict.ai.settings.AIClassContext;
+import io.github.jeddict.ai.settings.PreferencesManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -232,12 +233,10 @@ public class ProjectClassScanner {
     }
 
     public static JeddictBrain getJeddictChatModel(FileObject fileObject) {
-//        String key = fileObject.toURL().toString();
-//        if (models.get(key) == null) {
-//            models.put(key, new JeddictChatModel());
-//        }
-//        return models.get(key);
-        return new JeddictBrain();
+        return new JeddictBrain(
+            PreferencesManager.getInstance().getModelName(),
+            false, List.of()
+        );
     }
 
     public static FileObject getFileObjectFromEditor(Document document) {

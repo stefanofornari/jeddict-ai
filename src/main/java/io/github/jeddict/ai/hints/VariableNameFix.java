@@ -27,7 +27,6 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.TreeScanner;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.lang.JeddictBrain;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
@@ -44,15 +43,10 @@ import org.openide.util.NbBundle;
  *
  * @author Shiwani Gupta
  */
-public class VariableNameFix extends JavaFix {
+public class VariableNameFix extends TreePathAIFix {
 
-    private final TreePath treePath;
-    private final Action action;
-
-    public VariableNameFix(TreePathHandle tpHandle, Action action, TreePath treePath) {
-        super(tpHandle);
-        this.treePath = treePath;
-        this.action = action;
+    public VariableNameFix(final TreePathHandle treePathHandle, final Action action, final TreePath treePath) {
+        super(treePathHandle, action, treePath);
     }
 
     @Override
@@ -73,7 +67,7 @@ public class VariableNameFix extends JavaFix {
 
         if (elm instanceof VariableElement) {
             String oldName = elm.toString();
-            String newName = new JeddictBrain().enhanceVariableName(
+            String newName = newJeddictBrain().enhanceVariableName(
                     oldName,
                     path.getParentPath().getLeaf().toString(),
                     copy.getCompilationUnit().toString()

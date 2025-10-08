@@ -30,9 +30,9 @@ import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.TokenStream;
 import io.github.jeddict.ai.agent.AbstractTool;
 import io.github.jeddict.ai.agent.Assistant;
 import io.github.jeddict.ai.response.Response;
@@ -57,21 +57,27 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.netbeans.api.project.Project;
 
-//
-// TODO: shall we combine the processing in using always StreamingModels
-// providing an adapter for not streaming mode?
-//
 public class JeddictBrain {
 
     private final Logger LOG = Logger.getLogger(JeddictBrain.class.getCanonicalName());
 
-    /**
-     * property notified for changes: # of input tokens
-     */
-    public static final String PROPERTY_TOKENS = "tokens";
-    public static final String PROPERTY_ERROR = "error";
+    public enum EventProperty {
+        CHAT_TOKENS("chatTokens"),
+        CHAT_ERROR("chatError"),
+        CHAT_COMPLETED("chatComplete"),
+        CHAT_PARTIAL("chatPartial"),
+        CHAT_INTERMEDIATE("chatIntermediate"),
+        TOOL_BEFORE_EXECUTION("toolBeforeExecution"),
+        TOOL_EXECUTED("toolExecuted")
+        ;
 
-    public final Optional<StreamingChatResponseHandler> streamHandler;
+        public final String name;
+
+        EventProperty(final String name) {
+            this.name = JeddictBrain.class.getCanonicalName() + '.' + name;
+        }
+    }
+
     public final Optional<ChatModel> chatModel;
     public final Optional<StreamingChatModel> streamingChatModel;
     protected final List<AbstractTool> tools;
@@ -105,24 +111,14 @@ public class JeddictBrain {
 
     """;
 
-    public JeddictBrain() {
-        this.streamHandler = Optional.empty();
-        this.streamingChatModel = Optional.empty();
-        this.chatModel = Optional.empty();
-        this.modelName = null;
-        this.tools = List.of();
-    }
-
     public JeddictBrain(
-        final StreamingChatResponseHandler handler,
         final boolean streaming
     ) {
-        this("", handler, streaming, List.of());
+        this("", streaming, List.of());
     }
 
     public JeddictBrain(
         final String modelName,
-        final StreamingChatResponseHandler handler,
         final boolean streaming,
         final List<AbstractTool> tools
     ) {
@@ -130,12 +126,11 @@ public class JeddictBrain {
             throw new IllegalArgumentException("modelName can not be null");
         }
         this.modelName = modelName;
-        this.streamHandler = (handler != null) ? Optional.of(handler) : Optional.empty();
 
         final JeddictChatModelBuilder builder =
-            new JeddictChatModelBuilder(handler, this.modelName);
+            new JeddictChatModelBuilder(this.modelName);
 
-        if (streaming && handler != null) {
+        if (streaming) {
             this.streamingChatModel = Optional.of(builder.buildStreaming());
             this.chatModel = Optional.empty();
         } else {
@@ -188,7 +183,7 @@ public class JeddictBrain {
     // TODO: P3 - better use of langchain4j functionalities (see https://docs.langchain4j.dev/tutorials/agents)
     //
     private String generateInternal(Project project, boolean agentEnabled, String prompt, List<String> images, List<Response> responseHistory) {
-        if (chatModel.isEmpty() && streamHandler.isEmpty()) {
+        if (chatModel.isEmpty() && streamingChatModel.isEmpty()) {
             throw new IllegalStateException("AI assistant model not intitalized, this looks like a bug!");
         }
 
@@ -227,33 +222,52 @@ public class JeddictBrain {
         //
         // TODO: P3 - decouple token counting from saving stats; saving stats should listen to this event
         //
-        progressListeners.firePropertyChange(PROPERTY_TOKENS, 0, TokenHandler.saveInputToken(messages));
+        fireEvent(EventProperty.CHAT_TOKENS, TokenHandler.saveInputToken(messages));
 
         final StringBuilder response = new StringBuilder();
         try {
 
             if (streamingChatModel.isPresent()) {
-                final StreamingChatResponseHandler handler = streamHandler.get();
                 if(agentEnabled) {
                     final Assistant assistant = AiServices.builder(Assistant.class)
                         .streamingChatModel(streamingChatModel.get())
                         .tools(tools.toArray())
                         .build();
 
-                    final TokenStream tokenStream = assistant.stream(messages);
-                    tokenStream
-                        .onCompleteResponse(partial -> {
-                            handler.onCompleteResponse(partial);
+                    assistant.stream(messages)
+                        .onCompleteResponse(complete -> {
+                            fireEvent(EventProperty.CHAT_COMPLETED, complete);
+                            //handler.onCompleteResponse(partial);
                         })
                         .onPartialResponse(partial -> {
-                            handler.onPartialResponse(partial);
+                            fireEvent(EventProperty.CHAT_PARTIAL, partial);
+                            //handler.onPartialResponse(partial);
                         })
+                        .onIntermediateResponse(intermediate -> fireEvent(EventProperty.CHAT_INTERMEDIATE, intermediate))
+                        .beforeToolExecution(execution -> fireEvent(EventProperty.TOOL_BEFORE_EXECUTION, execution))
+                        .onToolExecuted(execution -> fireEvent(EventProperty.TOOL_EXECUTED, execution))
                         .onError(error -> {
-                            handler.onError(error);
+                            fireEvent(EventProperty.CHAT_ERROR, error);
+                            //handler.onError(error);
                         })
                         .start();
                 } else {
-                    streamingChatModel.get().chat(messages, handler);
+                    streamingChatModel.get().chat(messages, new StreamingChatResponseHandler() {
+                        @Override
+                        public void onPartialResponse(final String partial) {
+                            fireEvent(EventProperty.CHAT_PARTIAL, partial);
+                        }
+
+                        @Override
+                        public void onCompleteResponse(final ChatResponse completed) {
+                            fireEvent(EventProperty.CHAT_COMPLETED, completed);
+                        }
+
+                        @Override
+                        public void onError(final Throwable error) {
+                            fireEvent(EventProperty.CHAT_ERROR, error);
+                        }
+                    });
                 }
             } else {
                 ChatModel model = chatModel.get();
@@ -272,10 +286,7 @@ public class JeddictBrain {
         } catch (Exception x) {
             LOG.finest(() -> "Communication error: " + x.getMessage());
             response.append(Utilities.errorHTMLBlock(x));
-            //
-            // TODO: P2 - remove this and use onError
-            //
-            progressListeners.firePropertyChange(PROPERTY_ERROR, null, x);
+            fireEvent(EventProperty.CHAT_ERROR, x);
         }
 
         LOG.finest(() -> "Returning " + response);
@@ -1317,11 +1328,41 @@ public class JeddictBrain {
         return sqlQueries;
     }
 
+    /**
+     * Makes a simple query to explain the provided code.
+     *
+     * @param text the code to explain
+     * @param agentEnabled is agent mode enabled?
+     *
+     * @return the AI explaination of the given content
+     */
+    public String aboutCode(final String text, final boolean agentEnabled) {
+        final String prompt = new StringBuilder()
+            .append("Plese explain the following source code:\n")
+            .append(text)
+            .toString();
+
+        final String response = generate(null, agentEnabled, prompt.toString());
+
+        logPromptResponse(prompt, response);
+
+        return response;
+    }
+
     public void addProgressListener(final PropertyChangeListener listener) {
         progressListeners.addPropertyChangeListener(listener);
     }
 
     public void removeProgressListener(final PropertyChangeListener listener) {
         progressListeners.removePropertyChangeListener(listener);
+    }
+
+    private void logPromptResponse(final String prompt, final String response) {
+        LOG.finest(() -> "===\nprompt:\n-------\n" + prompt + "\nresponse:\n---------\n" + response + "\n===");
+    }
+
+    private void fireEvent(EventProperty property, Object value) {
+        LOG.finest(() -> "Firing event " + property + " with value " + value);
+        progressListeners.firePropertyChange(property.name, null, value);
     }
 }
