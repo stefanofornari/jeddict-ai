@@ -18,6 +18,7 @@ package io.github.jeddict.ai.models;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.ModelProvider;
 import dev.langchain4j.model.chat.Capability;
 import dev.langchain4j.model.chat.ChatModel;
@@ -90,9 +91,10 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
         final StringBuilder body = new StringBuilder();
 
         chatRequest.messages().forEach((msg) -> {
-            body.append("\n").append(msg.toString());
+            final UserMessage userMsg = (UserMessage)msg;
+            body.append("\n").append(userMsg.singleText());
         });
-
+        
         Matcher matcher = MOCK_INSTRUCTION_PATTERN.matcher(body.toString());
 
         Path mockPath = Path.of(DEFAULT_MOCK_FILE);
@@ -110,10 +112,10 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
             mockPath = Path.of(ERROR_MOCK_FILE);
         }
 
-        String mockContent = null;
+        String mockContent;
         try {
             mockContent = Files.readString(mockPath, StandardCharsets.UTF_8);
-            mockContent = mockContent.replaceAll("\\{error\\}", error);
+            mockContent = mockContent.replaceAll("\\{error}", error);
         } catch (IOException x) {
             mockContent = "Error reading mock file: " + x.getMessage();
         }
