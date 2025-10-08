@@ -30,13 +30,11 @@ import io.github.jeddict.ai.lang.impl.OllamaBuilder;
 import io.github.jeddict.ai.lang.impl.OllamaStreamingBuilder;
 import io.github.jeddict.ai.lang.impl.OpenAiBuilder;
 import io.github.jeddict.ai.lang.impl.OpenAiStreamingBuilder;
-import io.github.jeddict.ai.models.DummyChatModel;
 import static io.github.jeddict.ai.settings.GenAIProvider.ANTHROPIC;
 import static io.github.jeddict.ai.settings.GenAIProvider.COPILOT_PROXY;
 import static io.github.jeddict.ai.settings.GenAIProvider.CUSTOM_OPEN_AI;
 import static io.github.jeddict.ai.settings.GenAIProvider.DEEPINFRA;
 import static io.github.jeddict.ai.settings.GenAIProvider.DEEPSEEK;
-import static io.github.jeddict.ai.settings.GenAIProvider.DUMMY;
 import static io.github.jeddict.ai.settings.GenAIProvider.GOOGLE;
 import static io.github.jeddict.ai.settings.GenAIProvider.GPT4ALL;
 import static io.github.jeddict.ai.settings.GenAIProvider.GROQ;
@@ -86,7 +84,6 @@ public class JeddictChatModelBuilder {
             case OLLAMA -> buildModel(new OllamaBuilder(), modelName);
             case LM_STUDIO -> buildModel(new LMStudioBuilder(), modelName);
             case GPT4ALL -> buildModel(new LocalAiBuilder(), modelName);
-            case DUMMY -> new DummyChatModel();
             default -> {
                 final String msg = String.format("No model %s found for provider %s, this is most likely a bug", modelName, pm.getProvider());
 
@@ -105,7 +102,6 @@ public class JeddictChatModelBuilder {
             case ANTHROPIC -> buildModel(new AnthropicStreamingBuilder(), modelName);
             case OLLAMA -> buildModel(new OllamaStreamingBuilder(), modelName);
             case GPT4ALL -> buildModel(new LocalAiStreamingBuilder(), modelName);
-            case DUMMY -> new DummyChatModel();
             default -> {
                 final String msg = String.format("No streaming model %s found for provider %s", modelName, pm.getProvider());
 
