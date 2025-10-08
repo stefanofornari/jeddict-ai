@@ -43,8 +43,7 @@ public enum GenAIProvider {
     ANTHROPIC("https://docs.anthropic.com/en/docs/about-claude/models", "https://console.anthropic.com/settings/keys"),
     PERPLEXITY("https://docs.perplexity.ai/getting-started/models", "https://www.perplexity.ai/account/api/keys"),
     LM_STUDIO("https://lmstudio.ai/models", ""),
-    GPT4ALL("https://docs.gpt4all.io/gpt4all_desktop/models.html", ""),
-    DUMMY("", "");
+    GPT4ALL("https://docs.gpt4all.io/gpt4all_desktop/models.html", "");
 
     private final String modelInfoUrl;
     private final String apiKeyUrl;
