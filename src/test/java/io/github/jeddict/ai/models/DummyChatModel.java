@@ -18,6 +18,7 @@ package io.github.jeddict.ai.models;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.ModelProvider;
 import dev.langchain4j.model.chat.Capability;
 import dev.langchain4j.model.chat.ChatModel;
@@ -40,6 +41,11 @@ import java.util.regex.Pattern;
 /**
  *
  */
+import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
+import java.util.ArrayList;
+import java.util.Collections;
+
 public class DummyChatModel implements ChatModel, StreamingChatModel {
 
     private final Logger LOG = Logger.getLogger(DummyChatModel.class.getCanonicalName());
@@ -48,6 +54,21 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
     private static final String ERROR_MOCK_FILE = "src/test/resources/mocks/error.txt";
     private static final Pattern MOCK_INSTRUCTION_PATTERN =
         Pattern.compile("use mock\\s+(?:'([^']+)'|(\\S+))", Pattern.CASE_INSENSITIVE);
+
+    private final List<ChatModelListener> listeners;
+
+    public DummyChatModel() {
+        this.listeners = new ArrayList<>();
+    }
+
+    public void addListener(ChatModelListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public List<ChatModelListener> listeners() {
+        return Collections.unmodifiableList(listeners);
+    }
 
     @Override
     public ChatResponse chat(final ChatRequest chatRequest) {
@@ -62,12 +83,18 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
     public ChatResponse doChat(final ChatRequest chatRequest) {
         LOG.info(() -> "> " + String.valueOf(chatRequest));
 
+        ChatModelRequestContext requestContext = new ChatModelRequestContext(chatRequest, provider(), Collections.emptyMap());
+        for (ChatModelListener listener : listeners) {
+            listener.onRequest(requestContext);
+        }
+
         final StringBuilder body = new StringBuilder();
 
         chatRequest.messages().forEach((msg) -> {
-            body.append("\n").append(msg.toString());
+            final UserMessage userMsg = (UserMessage)msg;
+            body.append("\n").append(userMsg.singleText());
         });
-
+        
         Matcher matcher = MOCK_INSTRUCTION_PATTERN.matcher(body.toString());
 
         Path mockPath = Path.of(DEFAULT_MOCK_FILE);
@@ -85,10 +112,10 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
             mockPath = Path.of(ERROR_MOCK_FILE);
         }
 
-        String mockContent = null;
+        String mockContent;
         try {
             mockContent = Files.readString(mockPath, StandardCharsets.UTF_8);
-            mockContent = mockContent.replaceAll("\\{error\\}", error);
+            mockContent = mockContent.replaceAll("\\{error}", error);
         } catch (IOException x) {
             mockContent = "Error reading mock file: " + x.getMessage();
         }
@@ -96,6 +123,11 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
         ChatResponse chatResponse = ChatResponse.builder().aiMessage(
             AiMessage.from(mockContent)
         ).build();
+
+        ChatModelResponseContext responseContext = new ChatModelResponseContext(chatResponse, chatRequest, provider(), Collections.emptyMap());
+        for (ChatModelListener listener : listeners) {
+            listener.onResponse(responseContext);
+        }
 
         LOG.info(() -> "< " + String.valueOf(chatResponse));
 
@@ -158,14 +190,6 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
         LOG.info(() -> "< " + String.valueOf(params));
 
         return params;
-    }
-
-    @Override
-    public List<ChatModelListener> listeners() {
-        final List listeners = ChatModel.super.listeners();
-        LOG.info(() -> "< " + String.valueOf(listeners));
-
-        return listeners;
     }
 
     @Override

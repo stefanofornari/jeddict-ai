@@ -46,7 +46,7 @@ public class DummyChatModelTest extends TestBase {
         ).build();
 
         then(chat.doChat(chatRequest).aiMessage().text().trim())
-            .startsWith("Oops! Mock file 'src/test/resources/mocks/none.txt\"' not found.");
+            .startsWith("Oops! Mock file 'src/test/resources/mocks/none.txt' not found.");
     }
 
     @Test
