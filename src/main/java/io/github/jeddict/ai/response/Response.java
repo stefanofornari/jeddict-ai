@@ -95,7 +95,7 @@ public class Response {
                     // Ending code block
                     insideCodeBlock = false;
                     //
-                    // NOTE: content outside blocks should not be trimmed
+                    // NOTE: content inside blocks should not be trimmed
                     //
                     result.add(new Block(blockType, buffer.toString()));
                     buffer.setLength(0);
