@@ -108,7 +108,7 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
 
         String error = null;
         if (!Files.exists(mockPath)) {
-            error = "Mock file '" + mockPath + "' not found.";
+            error = "Mock file '" + mockPath.toUri().getPath() + "' not found.";
             mockPath = Path.of(ERROR_MOCK_FILE);
         }
 
