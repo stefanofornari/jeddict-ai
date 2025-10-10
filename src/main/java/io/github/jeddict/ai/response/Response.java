@@ -34,15 +34,12 @@ public class Response {
     private final Set<FileObject> messageContext;
 
     public Response(String query, String response,  Set<FileObject> messageContext) {
-        if (query == null || query.trim().isEmpty()) {
-            throw new IllegalArgumentException("query can not be null or empty");
-        }
         this.query = query;
         if (response == null || response.isBlank()) {
             response = "";
         }
         if (messageContext == null) {
-            throw new IllegalArgumentException("messageContext can not be null");
+            messageContext = Set.of();
         }
         this.messageContext = messageContext;
 
@@ -98,7 +95,7 @@ public class Response {
                     // Ending code block
                     insideCodeBlock = false;
                     //
-                    // NOTE: content outside blocks should not be trimmed
+                    // NOTE: content inside blocks should not be trimmed
                     //
                     result.add(new Block(blockType, buffer.toString()));
                     buffer.setLength(0);

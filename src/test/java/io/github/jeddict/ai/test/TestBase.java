@@ -15,7 +15,6 @@
  */
 package io.github.jeddict.ai.test;
 
-import io.github.jeddict.ai.test.DummyLogHandler;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -31,7 +30,11 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  *
  */
-public class BaseTest {
+public class TestBase {
+
+    private static final Logger LOG = Logger.getAnonymousLogger();
+    private static final String LOGGING_PROPERTIES = "logging.properties";
+
     protected String projectDir;
     protected DummyLogHandler logHandler;
 

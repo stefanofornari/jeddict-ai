@@ -21,7 +21,6 @@ import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
-import io.github.jeddict.ai.lang.JeddictBrain;
 import static io.github.jeddict.ai.scanner.ProjectClassScanner.getClassDataContent;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.SourceUtil;
@@ -33,7 +32,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
@@ -47,26 +45,21 @@ import org.openide.util.NbBundle;
  *
  * @author Shiwani Gupta
  */
-public class MethodFix extends JavaFix {
+public class MethodFix extends BaseAIFix {
 
-    private ElementHandle classType;
-    private final Action action;
     private String actionTitleParam;
     private String compliationError;
-    
+
     private static final PreferencesManager prefsManager = PreferencesManager.getInstance();
 
-    public MethodFix(TreePathHandle tpHandle, Action action, ElementHandle classType) {
-        super(tpHandle);
-        this.classType = classType;
-        this.action = action;
+    public MethodFix(final TreePathHandle treePathHandle, final Action action) {
+        super(treePathHandle, action);
     }
 
-    public MethodFix(TreePathHandle tpHandle, String compliationError, String actionTitleParam) {
-        super(tpHandle);
+    public MethodFix(final TreePathHandle treePathHandle, final String compliationError, final String actionTitleParam) {
+        super(treePathHandle, Action.COMPILATION_ERROR);
         this.compliationError = compliationError;
         this.actionTitleParam = actionTitleParam;
-        this.action = Action.COMPILATION_ERROR;
     }
 
     @Override
@@ -104,24 +97,24 @@ public class MethodFix extends JavaFix {
                         copy.getCompilationUnit(),
                         prefsManager.getClassContext()
                 );
-                    
-                content = new JeddictBrain().fixMethodCompilationError(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
-                treePath.getParentPath().getLeaf().toString(), 
-                leaf.toString(), 
+
+                content = newJeddictBrain().fixMethodCompilationError(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
+                treePath.getParentPath().getLeaf().toString(),
+                leaf.toString(),
                 compliationError,
                 classDataContent);
             } else if (action == Action.ENHANCE) {
-                content = new JeddictBrain().enhanceMethodFromMethodContent(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                content = newJeddictBrain().enhanceMethodFromMethodContent(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 treePath.getParentPath().getLeaf().toString(), leaf.toString());
             } else {
                 String query = queryToEnhance();
                 if (query == null) {
                     return;
                 }
-                content = new JeddictBrain().updateMethodFromDevQuery(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                content = newJeddictBrain().updateMethodFromDevQuery(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 treePath.getParentPath().getLeaf().toString(), leaf.toString(), query);
             }
         }
@@ -145,7 +138,7 @@ public class MethodFix extends JavaFix {
             }
         }
     }
-    
+
     private void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
     try {
         if (lengthToRemove > 0) {

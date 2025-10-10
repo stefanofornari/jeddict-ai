@@ -108,7 +108,7 @@ public class JeddictHint {
                     fixes.add(new JavaDocFixImpl(tpHandle, Action.ENHANCE, elementHandle).toEditorFix());
                 }
                 if (type.getAnnotationMirrors().stream().anyMatch(a -> a.getAnnotationType().toString().equals("jakarta.ws.rs.Path"))) {
-                    fixes.add(new RestEndpointFix(tpHandle, Action.CREATE, elementHandle).toEditorFix());
+                    fixes.add(new RestEndpointFix(tpHandle, Action.CREATE).toEditorFix());
                 }
                 fixes.add(new AssistantChatManager(tpHandle, Action.LEARN, treePath).toEditorFix());
                 fixes.add(new AssistantChatManager(tpHandle, Action.TEST, treePath).toEditorFix());
@@ -138,8 +138,8 @@ public class JeddictHint {
                     if (oldDocCommentTree != null) {
                         fixes.add(new JavaDocFixImpl(tpHandle, Action.ENHANCE, methodHandle).toEditorFix());
                     }
-                    fixes.add(new MethodFix(tpHandle, Action.CREATE, methodHandle).toEditorFix());
-                    fixes.add(new MethodFix(tpHandle, Action.ENHANCE, methodHandle).toEditorFix());
+                    fixes.add(new MethodFix(tpHandle, Action.CREATE).toEditorFix());
+                    fixes.add(new MethodFix(tpHandle, Action.ENHANCE).toEditorFix());
                     for (Diagnostic<?> d : ctx.getInfo().getDiagnostics()) {
                         if (isDiagnosticRelatedToMethod(d, compilationInfo, treePath.getLeaf())) {
                             if (d.getKind() == Diagnostic.Kind.ERROR) {

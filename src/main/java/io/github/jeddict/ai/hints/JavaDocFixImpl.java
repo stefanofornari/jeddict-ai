@@ -29,7 +29,7 @@ import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.completion.Action;
 import static io.github.jeddict.ai.completion.Action.ENHANCE;
-import io.github.jeddict.ai.lang.JeddictBrain;
+import io.github.jeddict.ai.settings.PreferencesManager;
 import static io.github.jeddict.ai.util.SourceUtil.geIndentaion;
 import io.github.jeddict.ai.util.StringUtil;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
@@ -48,15 +48,14 @@ import org.openide.util.NbBundle;
  *
  * @author Shiwani Gupta
  */
-public class JavaDocFixImpl extends JavaFix {
+public class JavaDocFixImpl extends BaseAIFix {
 
-    private final Action action;
+    private final PreferencesManager pm = PreferencesManager.getInstance();
+
     private final ElementHandle classType;
 
-    public JavaDocFixImpl(TreePathHandle tpHandle, Action type,
-            ElementHandle classType) {
-        super(tpHandle);
-        this.action = type;
+    public JavaDocFixImpl(final TreePathHandle treePathHandle, final Action action, final ElementHandle classType) {
+        super(treePathHandle, action);
         this.classType = classType;
     }
 
@@ -93,34 +92,34 @@ public class JavaDocFixImpl extends JavaFix {
             case CLASS:
             case INTERFACE:
                 if (action == ENHANCE) {
-                    javadocContent = new JeddictBrain().enhanceJavadocForClass(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                    javadocContent = newJeddictBrain().enhanceJavadocForClass(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 oldDocCommentTree.toString(), tree.toString());
                 } else {
-                    javadocContent = new JeddictBrain().generateJavadocForClass(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                    javadocContent = newJeddictBrain().generateJavadocForClass(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 tree.toString());
                 }
                 break;
             case METHOD:
                 if (action == ENHANCE) {
-                    javadocContent = new JeddictBrain().enhanceJavadocForMethod(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                    javadocContent = newJeddictBrain().enhanceJavadocForMethod(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 oldDocCommentTree.toString(), ((MethodTree) tree).toString());
                 } else {
-                    javadocContent = new JeddictBrain().generateJavadocForMethod(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                    javadocContent = newJeddictBrain().generateJavadocForMethod(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 ((MethodTree) tree).toString());
                 }
                 break;
             case VARIABLE:
                 if (action == ENHANCE) {
-                    javadocContent = new JeddictBrain().enhanceJavadocForField(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                    javadocContent = newJeddictBrain().enhanceJavadocForField(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 oldDocCommentTree.toString(), ((VariableTree) tree).toString());
                 } else {
-                    javadocContent = new JeddictBrain().generateJavadocForField(
-                FileOwnerQuery.getOwner(copy.getFileObject()), 
+                    javadocContent = newJeddictBrain().generateJavadocForField(
+                FileOwnerQuery.getOwner(copy.getFileObject()),
                 ((VariableTree) tree).toString());
                 }
                 break;
@@ -185,7 +184,5 @@ public class JavaDocFixImpl extends JavaFix {
                 e.printStackTrace();
             }
         }
-
     }
-
 }
