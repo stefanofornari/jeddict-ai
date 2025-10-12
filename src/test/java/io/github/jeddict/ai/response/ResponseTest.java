@@ -20,7 +20,7 @@ import org.openide.filesystems.FileUtil;
 
 //
 // TODO: remove setBlocks
-// TODO: make ir a record
+// TODO: make it a record
 //
 public class ResponseTest extends TestBase {
 
