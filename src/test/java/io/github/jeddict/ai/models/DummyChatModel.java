@@ -93,10 +93,12 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
 
         chatRequest.messages().forEach((msg) -> {
             body.append("\n");
-            switch(msg) {
-                case UserMessage m -> body.append(m.singleText());
-                case SystemMessage m -> body.append(m.text());
-                default -> body.append(String.valueOf(msg));
+            if (msg instanceof UserMessage) {
+                body.append(((UserMessage)msg).singleText());
+            } else if (msg instanceof SystemMessage) {
+                body.append(((SystemMessage)msg).text());
+            } else {
+                body.append(String.valueOf(msg));
             }
         });
 
