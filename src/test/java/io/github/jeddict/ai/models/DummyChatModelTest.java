@@ -15,8 +15,12 @@
  */
 package io.github.jeddict.ai.models;
 
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import io.github.jeddict.ai.test.DummyChatModelListener;
 import io.github.jeddict.ai.test.TestBase;
 import java.nio.file.Paths;
 import static org.assertj.core.api.BDDAssertions.then;
@@ -60,6 +64,94 @@ public class DummyChatModelTest extends TestBase {
 
         then(chat.doChat(chatRequest).aiMessage().text().trim())
             .startsWith("To use the mock server, send a prompt containing the following instruction:");
+    }
+
+    @Test
+    public void listeners_registers_the_provided_listeners() {
+        // Given
+        final DummyChatModel chat = new DummyChatModel();
+        final ChatModelListener listener1 = new ChatModelListener() {}; // Concrete listener 1
+        final ChatModelListener listener2 = new ChatModelListener() {}; // Concrete listener 2
+
+        // When 1: Add the first listener
+        chat.addListener(listener1);
+
+        // Then 1: Check if the first listener is registered
+        then(chat.listeners()).containsExactly(listener1);
+
+        // When 2: Add the second listener
+        chat.addListener(listener2);
+
+        // Then 2: Check if both listeners are registered
+        then(chat.listeners()).containsExactly(listener1, listener2);
+    }
+
+    @Test
+    public void listeners_are_invoked_during_chat_operation() {
+        // Given
+        final DummyChatModel chat = new DummyChatModel();
+
+        DummyChatModelListener testListener1 = new DummyChatModelListener();
+        DummyChatModelListener testListener2 = new DummyChatModelListener();
+        chat.addListener(testListener1);
+        chat.addListener(testListener2);
+
+        UserMessage userMessage = new UserMessage("use mock 'hello world.txt'");
+        ChatRequest chatRequest = ChatRequest.builder().messages(userMessage).build();
+
+        // When
+        chat.doChat(chatRequest);
+
+        // Then for listener 1
+        thenReceivedMessageIs(testListener1, userMessage);
+
+        // Then for listener 2
+        thenReceivedMessageIs(testListener2, userMessage);
+    }
+
+    @Test
+    public void chat_string_invokes_listeners() {
+        // Given
+        final DummyChatModel chat = new DummyChatModel();
+
+        DummyChatModelListener testListener = new DummyChatModelListener();
+        chat.addListener(testListener);
+
+        String userMessageString = "use mock 'hello world.txt'";
+
+        // When
+        chat.chat(userMessageString);
+
+        // Then
+        thenReceivedMessageIs(testListener, new UserMessage(userMessageString));
+    }
+
+    @Test
+    public void chat_array_invokes_listeners() {
+        // Given
+        final DummyChatModel chat = new DummyChatModel();
+
+        DummyChatModelListener testListener = new DummyChatModelListener();
+        chat.addListener(testListener);
+
+        ChatMessage[] messagesArray = new ChatMessage[]{new UserMessage("use mock 'hello world.txt'")};
+
+        // When
+        chat.chat(messagesArray);
+
+        // Then
+        thenReceivedMessageIs(testListener, (UserMessage) messagesArray[0]);
+    }
+
+    // --------------------------------------------------------- private methods
+
+    private void thenReceivedMessageIs(DummyChatModelListener testListener, UserMessage expectedUserMessage) {
+        then(testListener.lastRequestContext).isPresent();
+        then(testListener.lastRequestContext.get().chatRequest().messages()).containsExactly(expectedUserMessage);
+
+        then(testListener.lastResponseContext).isPresent();
+        then(testListener.lastResponseContext.get().chatResponse().aiMessage()).isInstanceOf(AiMessage.class);
+        then(testListener.lastResponseContext.get().chatResponse().aiMessage().text().trim()).isEqualTo("hello world"); // Default mock response
     }
 
 }

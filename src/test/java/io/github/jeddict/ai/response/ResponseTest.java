@@ -20,7 +20,7 @@ import org.openide.filesystems.FileUtil;
 
 //
 // TODO: remove setBlocks
-// TODO: make ir a record
+// TODO: make it a record
 //
 public class ResponseTest extends TestBase {
 
@@ -78,7 +78,6 @@ public class ResponseTest extends TestBase {
         ).usingRecursiveComparison().isEqualTo(List.of(new Block("text", "Some text.")));
     }
 
-    // TODO: remove setBlocks
     /**
     @Test
     void set_blocks_updates_blocks() {

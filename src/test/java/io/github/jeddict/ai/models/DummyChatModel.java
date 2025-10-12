@@ -18,6 +18,7 @@ package io.github.jeddict.ai.models;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.ModelProvider;
 import dev.langchain4j.model.chat.Capability;
@@ -91,10 +92,16 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
         final StringBuilder body = new StringBuilder();
 
         chatRequest.messages().forEach((msg) -> {
-            final UserMessage userMsg = (UserMessage)msg;
-            body.append("\n").append(userMsg.singleText());
+            body.append("\n");
+            if (msg instanceof UserMessage) {
+                body.append(((UserMessage)msg).singleText());
+            } else if (msg instanceof SystemMessage) {
+                body.append(((SystemMessage)msg).text());
+            } else {
+                body.append(String.valueOf(msg));
+            }
         });
-        
+
         Matcher matcher = MOCK_INSTRUCTION_PATTERN.matcher(body.toString());
 
         Path mockPath = Path.of(DEFAULT_MOCK_FILE);

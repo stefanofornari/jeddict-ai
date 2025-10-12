@@ -132,7 +132,6 @@
     "temperature": 1,
     "dailyInputTokenStats": { },
     "CUSTOM_OPEN_AIapi_key": "custom_open_api_key",
-    "nb-log-manager-projectRules": "",
     "ANTHROPICapi_key": "anthropic_api_key",
     "customHeaders": {},
     "excludeJavadoc": false,
