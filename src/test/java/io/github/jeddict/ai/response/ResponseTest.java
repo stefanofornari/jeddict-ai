@@ -78,6 +78,7 @@ public class ResponseTest extends TestBase {
         ).usingRecursiveComparison().isEqualTo(List.of(new Block("text", "Some text.")));
     }
 
+    // TODO: remove setBlocks
     /**
     @Test
     void set_blocks_updates_blocks() {
