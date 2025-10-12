@@ -15,16 +15,16 @@
  */
 package io.github.jeddict.ai.models;
 
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import io.github.jeddict.ai.test.TestBase;
-import io.github.jeddict.ai.test.DummyChatModelListener;
+import java.nio.file.Paths;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.Test;
 
+/**
+ *
+ */
 public class DummyChatModelTest extends TestBase {
 
     @Test
@@ -47,7 +47,7 @@ public class DummyChatModelTest extends TestBase {
         ).build();
 
         then(chat.doChat(chatRequest).aiMessage().text().trim())
-            .startsWith("Oops! Mock file 'src/test/resources/mocks/none.txt' not found.");
+            .startsWith("Oops! Mock file '" + Paths.get("src/test/resources/mocks/none.txt").toUri().getPath() + "' not found.");
     }
 
     @Test
