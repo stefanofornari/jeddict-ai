@@ -24,14 +24,13 @@ import org.json.JSONObject;
 public class ReportManager {
 
     private static ReportManager instance;
-    private final FilePreferences preferences;
     private static final String DAILY_INPUT_TOKEN_STATS_KEY = "dailyInputTokenStats";
     private static final String DAILY_OUTPUT_TOKEN_STATS_KEY = "dailyOutputTokenStats";
     private JSONObject dailyInputTokenStats;
     private JSONObject dailyOutputTokenStats;
 
     private ReportManager() {
-        preferences = new FilePreferences();
+        // Constructor is now empty
     }
 
     public static ReportManager getInstance() {
@@ -47,25 +46,25 @@ public class ReportManager {
     
     public JSONObject getDailyInputTokenStats() {
         if (dailyInputTokenStats == null) {
-            dailyInputTokenStats = preferences.getChild(DAILY_INPUT_TOKEN_STATS_KEY);
+            dailyInputTokenStats = PreferencesManager.getInstance().getChild(DAILY_INPUT_TOKEN_STATS_KEY);
         }
         return dailyInputTokenStats;
     }
 
     public void setDailyInputTokenStats(JSONObject usage) {
         this.dailyInputTokenStats = usage;
-        preferences.setChild(DAILY_INPUT_TOKEN_STATS_KEY, usage);
+        PreferencesManager.getInstance().setChild(DAILY_INPUT_TOKEN_STATS_KEY, usage);
     }
 
     public JSONObject getDailyOutputTokenStats() {
         if (dailyOutputTokenStats == null) {
-            dailyOutputTokenStats = preferences.getChild(DAILY_OUTPUT_TOKEN_STATS_KEY);
+            dailyOutputTokenStats = PreferencesManager.getInstance().getChild(DAILY_OUTPUT_TOKEN_STATS_KEY);
         }
         return dailyOutputTokenStats;
     }
 
     public void setDailyOutputTokenStats(JSONObject usage) {
         this.dailyOutputTokenStats = usage;
-        preferences.setChild(DAILY_OUTPUT_TOKEN_STATS_KEY, usage);
+        PreferencesManager.getInstance().setChild(DAILY_OUTPUT_TOKEN_STATS_KEY, usage);
     }
 }

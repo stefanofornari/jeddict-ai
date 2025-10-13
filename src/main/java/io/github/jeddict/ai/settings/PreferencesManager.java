@@ -42,7 +42,16 @@ import org.json.JSONObject;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.project.Project;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class PreferencesManager {
+
+    private static final Logger LOG = Logger.getLogger(PreferencesManager.class.getName());
 
     private final FilePreferences preferences;
     private static final String API_KEY_ENV_VAR = "OPENAI_API_KEY";
@@ -164,7 +173,45 @@ public class PreferencesManager {
     private TokenGranularity tokenGranularity;
 
     private PreferencesManager() {
-        preferences = new FilePreferences();
+        // Migration logic
+        try {
+            Path userHome = Paths.get(System.getProperty("user.home"));
+            Path oldConfigFile = userHome.resolve("jeddict.json");
+
+            Path newConfigFile = getDefaultPreferencesPath(); // Get the new path
+
+            if (Files.exists(oldConfigFile) && !Files.exists(newConfigFile)) {
+                LOG.log(Level.INFO, "Migrating old config file from {0} to {1}", new Object[]{oldConfigFile, newConfigFile});
+                Files.createDirectories(newConfigFile.getParent());
+                Files.move(oldConfigFile, newConfigFile);
+                LOG.info("Successfully migrated old config file.");
+            }
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "Failed to migrate old config file", e);
+        }
+        preferences = new FilePreferences(getDefaultPreferencesPath());
+    }
+
+    public static Path getDefaultPreferencesPath() {
+        String os = System.getProperty("os.name").toLowerCase();
+        Path userHome = Paths.get(System.getProperty("user.home"));
+
+        if (os.contains("win")) {
+            String appData = System.getenv("APPDATA");
+            Path basePath;
+            if (appData != null && !appData.isEmpty()) {
+                basePath = Paths.get(appData);
+            } else {
+                basePath = userHome.resolve("AppData").resolve("Roaming");
+            }
+            return basePath.resolve("jeddict").resolve("jeddict.json");
+        } else if (os.contains("mac")) {
+            return userHome.resolve("Library/Application Support").resolve("jeddict").resolve("jeddict.json");
+        } else if (os.contains("linux")) {
+            return userHome.resolve(".config").resolve("jeddict").resolve("jeddict.json");
+        } else {
+            return userHome.resolve("jeddict.json");
+        }
     }
 
     private static PreferencesManager instance;
@@ -899,6 +946,14 @@ public class PreferencesManager {
 
     public void setLastBrowseDirectory(String directory) {
         preferences.put(LAST_BROWSE_DIRECTORY_PREFERENCE, directory);
+    }
+
+    public JSONObject getChild(String nodeKey) {
+        return preferences.getChild(nodeKey);
+    }
+
+    public void setChild(String nodeKey, JSONObject metadata) {
+        preferences.setChild(nodeKey, metadata);
     }
 
 }
