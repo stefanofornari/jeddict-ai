@@ -666,6 +666,12 @@
             <version>3.27.4</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
         <!--
             Headless testing
         -->

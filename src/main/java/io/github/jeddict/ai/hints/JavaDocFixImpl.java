@@ -27,7 +27,8 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
-import io.github.jeddict.ai.agent.PairProgrammer;
+import io.github.jeddict.ai.agent.pair.JavadocSpecialist;
+import io.github.jeddict.ai.agent.pair.PairProgrammer;
 import io.github.jeddict.ai.completion.Action;
 import static io.github.jeddict.ai.completion.Action.ENHANCE;
 import io.github.jeddict.ai.settings.PreferencesManager;
@@ -134,7 +135,7 @@ public class JavaDocFixImpl extends BaseAIFix {
             }
 
             TreePath treePath = tc.getPath();
-            Tree tree = treePath.getLeaf();
+            Tree leaf = treePath.getLeaf();
             Element elm = copy.getTrees().getElement(treePath);
             if (elm == null) {
                 return;
@@ -145,45 +146,45 @@ public class JavaDocFixImpl extends BaseAIFix {
             String javadocContent;
             DocCommentTree oldDocCommentTree = copy.getDocTrees().getDocCommentTree(treePath);
 
-            final PairProgrammer pair = newJeddictBrain().pairProgrammer();
+            final JavadocSpecialist pair = newJeddictBrain().pairProgrammer(PairProgrammer.Specialist.JAVADOC);
             final Project project = FileOwnerQuery.getOwner(copy.getFileObject());
 
             SwingUtilities.invokeLater(() -> progress.start());
 
-            switch (tree.getKind()) {
+            switch (leaf.getKind()) {
                 case CLASS, INTERFACE -> {
                     if (action == ENHANCE) {
                         javadocContent = pair.enhanceClassJavadoc(
-                                tree.toString(), oldDocCommentTree.toString(),
+                                leaf.toString(), oldDocCommentTree.toString(),
                                 globalRules(), projectRules(project)
                         );
                     } else {
                         javadocContent = pair.generateClassJavadoc(
-                                tree.toString(), globalRules(), projectRules(project)
+                                leaf.toString(), globalRules(), projectRules(project)
                         );
                     }
                 }
                 case METHOD -> {
                     if (action == ENHANCE) {
                         javadocContent = pair.enhanceMethodJavadoc(
-                            ((MethodTree) tree).toString(), oldDocCommentTree.toString(),
+                            ((MethodTree) leaf).toString(), oldDocCommentTree.toString(),
                             globalRules(), projectRules(project)
                         );
                     } else {
                         javadocContent = pair.generateMethodJavadoc(
-                            ((MethodTree) tree).toString(), globalRules(), projectRules(project)
+                            ((MethodTree) leaf).toString(), globalRules(), projectRules(project)
                         );
                     }
                 }
                 case VARIABLE -> {
                     if (action == ENHANCE) {
                         javadocContent = pair.enhanceMemberJavadoc(
-                            ((VariableTree) tree).toString(), oldDocCommentTree.toString(),
+                            ((VariableTree) leaf).toString(), oldDocCommentTree.toString(),
                             globalRules(), projectRules(project)
                         );
                     } else {
                         javadocContent = pair.generateMemberJavadoc(
-                            ((VariableTree) tree).toString(),
+                            ((VariableTree) leaf).toString(),
                             globalRules(), projectRules(project)
                         );
                     }
@@ -201,10 +202,10 @@ public class JavaDocFixImpl extends BaseAIFix {
             javadocContent = removeCodeBlockMarkers(javadocContent);
 
             int startOffset = (int) copy.getTrees().getSourcePositions()
-                    .getStartPosition(copy.getCompilationUnit(), tree);
+                    .getStartPosition(copy.getCompilationUnit(), leaf);
 
             if (document != null) {
-                String lastLine = geIndentaion(copy, tree);
+                String lastLine = geIndentaion(copy, leaf);
                 if (lastLine.isBlank() && lastLine.length() <= 12) {
                     StringBuilder indentedContent = new StringBuilder();
 

@@ -16,7 +16,7 @@
 package io.github.jeddict.ai.lang;
 
 import io.github.jeddict.ai.agent.AbstractTool;
-import io.github.jeddict.ai.agent.PairProgrammer;
+import io.github.jeddict.ai.agent.pair.PairProgrammer;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.test.DummyTool;
 import io.github.jeddict.ai.test.TestBase;
@@ -105,9 +105,14 @@ public class JeddictBrainTest extends TestBase {
     public void get_new_pair_programmer() {
         final JeddictBrain brain = new JeddictBrain(false);
 
-        final PairProgrammer pair = brain.pairProgrammer();
+        for (PairProgrammer.Specialist s: PairProgrammer.Specialist.values()) {
+            final Object pair1 = brain.pairProgrammer(s);
+            final Object pair2 = brain.pairProgrammer(s);
 
-        then(pair).isNotNull();
-        then(brain.pairProgrammer()).isNotSameAs(pair);  // create a new pair every call
+            then(pair1).isNotNull(); then(pair2).isNotNull();
+            then(pair1.getClass().getInterfaces()).contains(s.specialistClass);
+            then(pair2.getClass().getInterfaces()).contains(s.specialistClass);
+            then(pair2).isNotSameAs(pair1);  // create a new pair every call
+        }
     }
 }
