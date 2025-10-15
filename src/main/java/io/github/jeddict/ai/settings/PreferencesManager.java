@@ -21,8 +21,11 @@ package io.github.jeddict.ai.settings;
  */
 import io.github.jeddict.ai.response.TokenGranularity;
 import static io.github.jeddict.ai.settings.GenAIModel.DEFAULT_MODEL;
+import static io.github.jeddict.ai.settings.ReportManager.DAILY_INPUT_TOKEN_STATS_KEY;
+import static io.github.jeddict.ai.settings.ReportManager.DAILY_OUTPUT_TOKEN_STATS_KEY;
+import static io.github.jeddict.ai.settings.ReportManager.JEDDICT_STATS;
+import io.github.jeddict.ai.util.FileUtil;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
@@ -51,9 +54,12 @@ import java.util.logging.Logger;
 
 public class PreferencesManager {
 
-    private static final Logger LOG = Logger.getLogger(PreferencesManager.class.getName());
+    public static final String JEDDICT_CONFIG = "jeddict-config.json";
+
+    private final Logger LOG = Logger.getLogger(PreferencesManager.class.getName());
 
     private final FilePreferences preferences;
+
     private static final String API_KEY_ENV_VAR = "OPENAI_API_KEY";
     private static final String API_KEY_SYS_PROP = "openai.api.key";
     private static final String MODEL_ENV_VAR = "OPENAI_MODEL";
@@ -173,45 +179,55 @@ public class PreferencesManager {
     private TokenGranularity tokenGranularity;
 
     private PreferencesManager() {
-        // Migration logic
+        final Path configPath = FileUtil.getConfigPath();
+        final Path configFile = configPath.resolve(JEDDICT_CONFIG);
+
+        //
+        // Old versions of Jeddict used to store the configuration in $HOME/jeddict.json,
+        // therefore the new code shall migrate the old settings is found.
+        //
+        // TODO: this logic would be better placed in some sort of module
+        // loading/initialization code (@OnStart triggers only when NB restarts
+        // and not if the module is just reloading) - maybe in JeddictUpdateManager?
+        //
         try {
-            Path userHome = Paths.get(System.getProperty("user.home"));
-            Path oldConfigFile = userHome.resolve("jeddict.json");
+            final Path oldConfigFile = Paths.get(System.getProperty("user.home")).resolve("jeddict.json");
 
-            Path newConfigFile = getDefaultPreferencesPath(); // Get the new path
+            if (Files.exists(oldConfigFile) && !Files.exists(configFile)) {
+                final Path statsFile = configPath.resolve(JEDDICT_STATS);
+                LOG.info(() -> String.format(
+                    "Migrating old config file from %s to %s and %s",
+                    oldConfigFile, configPath, statsFile
+                ));
+                Files.createDirectories(configPath);
+                Files.move(oldConfigFile, configFile);
 
-            if (Files.exists(oldConfigFile) && !Files.exists(newConfigFile)) {
-                LOG.log(Level.INFO, "Migrating old config file from {0} to {1}", new Object[]{oldConfigFile, newConfigFile});
-                Files.createDirectories(newConfigFile.getParent());
-                Files.move(oldConfigFile, newConfigFile);
+                //
+                // the old version of the settings contained also stats; the new
+                // version does not and stats go in a separate file
+                //
+                final FilePreferences prefs = new FilePreferences(configFile);
+                final FilePreferences stats = new FilePreferences(statsFile);
+
+                JSONObject o = prefs.getChild(DAILY_INPUT_TOKEN_STATS_KEY);
+                if (!o.isEmpty()) {
+                    stats.setChild(DAILY_INPUT_TOKEN_STATS_KEY, o);
+                }
+                o = prefs.getChild(DAILY_OUTPUT_TOKEN_STATS_KEY);
+                if (!o.isEmpty()) {
+                    stats.setChild(DAILY_OUTPUT_TOKEN_STATS_KEY, o);
+                }
+                prefs.remove(DAILY_INPUT_TOKEN_STATS_KEY);
+                prefs.remove(DAILY_OUTPUT_TOKEN_STATS_KEY);
+                
                 LOG.info("Successfully migrated old config file.");
             }
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "Failed to migrate old config file", e);
         }
-        preferences = new FilePreferences(getDefaultPreferencesPath());
-    }
 
-    public static Path getDefaultPreferencesPath() {
-        String os = System.getProperty("os.name").toLowerCase();
-        Path userHome = Paths.get(System.getProperty("user.home"));
+        preferences = new FilePreferences(configFile);
 
-        if (os.contains("win")) {
-            String appData = System.getenv("APPDATA");
-            Path basePath;
-            if (appData != null && !appData.isEmpty()) {
-                basePath = Paths.get(appData);
-            } else {
-                basePath = userHome.resolve("AppData").resolve("Roaming");
-            }
-            return basePath.resolve("jeddict").resolve("jeddict.json");
-        } else if (os.contains("mac")) {
-            return userHome.resolve("Library/Application Support").resolve("jeddict").resolve("jeddict.json");
-        } else if (os.contains("linux")) {
-            return userHome.resolve(".config").resolve("jeddict").resolve("jeddict.json");
-        } else {
-            return userHome.resolve("jeddict.json");
-        }
     }
 
     private static PreferencesManager instance;
@@ -676,7 +692,7 @@ public class PreferencesManager {
     public void setProjectRules(Project project, String message) {
         preferences.put(project.getProjectDirectory().getName() + "-" + PROJECT_RULES_PREFERENCE, message);
     }
-    
+
     /**
      * Get the build command for the given project.
      * <p>
@@ -762,7 +778,7 @@ public class PreferencesManager {
     public void setTestCommand(Project project, String command) {
         preferences.put(project.getProjectDirectory().getName() + "-" + TEST_COMMAND_PREFERENCE, command);
     }
-    
+
     public String getAssistantAction() {
         return preferences.get(ASSISTANT_ACTION_PREFERENCE, "");
     }
@@ -947,13 +963,4 @@ public class PreferencesManager {
     public void setLastBrowseDirectory(String directory) {
         preferences.put(LAST_BROWSE_DIRECTORY_PREFERENCE, directory);
     }
-
-    public JSONObject getChild(String nodeKey) {
-        return preferences.getChild(nodeKey);
-    }
-
-    public void setChild(String nodeKey, JSONObject metadata) {
-        preferences.setChild(nodeKey, metadata);
-    }
-
 }

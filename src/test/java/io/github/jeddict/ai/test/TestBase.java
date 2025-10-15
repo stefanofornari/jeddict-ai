@@ -16,7 +16,6 @@
 package io.github.jeddict.ai.test;
 
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +41,7 @@ public class TestBase {
     protected Path HOME;
 
     @BeforeEach
-    public void beforeEach() throws IOException {
+    public void beforeEach() throws Exception {
         projectDir = HOME.resolve("dummy-project").toString();
 
         Logger logger = Logger.getLogger("io.github.jeddict.ai");
