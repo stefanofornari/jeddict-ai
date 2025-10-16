@@ -114,13 +114,17 @@ public class FileUtil {
         System.out.println(">> home: " + userHome);
 
         if (os.contains("win")) {
-            String appData = System.getenv("APPDATA");
-            Path basePath;
+            final String appData = System.getenv("APPDATA");
+            final Path basePath;
             if (appData != null && !appData.isEmpty()) {
                 basePath = Paths.get(appData);
             } else {
                 basePath = userHome.resolve("AppData").resolve("Roaming");
             }
+
+            System.out.println(">> appData: " + appData);
+            System.out.println(">> basePath: " + basePath);
+
             return basePath.resolve("jeddict");
         } else if (os.contains("mac")) {
             return userHome.resolve("Library/Application Support").resolve("jeddict");
