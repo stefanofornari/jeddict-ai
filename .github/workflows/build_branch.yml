@@ -6,13 +6,13 @@ on:
         description: 'Branch to checkout'
         required: true
         default: 'main' # Default to main, or whatever is appropriate
-      os:
-        description: 'Target OS'
+      target:
+        description: 'Target environment'
         required: true
         default: 'ubuntu-latest' # Default to ubuntu
-        
+jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ target }}
 
     steps:
     - uses: actions/checkout@v4
