@@ -12,7 +12,7 @@ on:
         default: 'ubuntu-latest' # Default to ubuntu
 jobs:
   build:
-    runs-on: ${{ target }}
+    runs-on: ${{ github.event.inputs.target }}
 
     steps:
     - uses: actions/checkout@v4
