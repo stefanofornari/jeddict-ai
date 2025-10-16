@@ -193,7 +193,7 @@ public class PreferencesManager {
         LOG.info(">> configFile: " + configFile);
         try {
             final Path oldConfigFile = Paths.get(System.getProperty("user.home")).resolve("jeddict.json");
-            LOG.info(">> oldConfigFile: " + configFile);
+            LOG.info(">> oldConfigFile: " + oldConfigFile);
 
             if (Files.exists(oldConfigFile) && !Files.exists(configFile)) {
                 final Path statsFile = configPath.resolve(JEDDICT_STATS);
