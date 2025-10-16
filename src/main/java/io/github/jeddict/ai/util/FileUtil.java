@@ -107,8 +107,8 @@ public class FileUtil {
 
 
     public static Path getConfigPath() {
-        String os = System.getProperty("os.name").toLowerCase();
-        Path userHome = Paths.get(System.getProperty("user.home"));
+        final String os = System.getProperty("os.name").toLowerCase();
+        final Path userHome = Paths.get(System.getProperty("user.home"));
 
         System.out.println(">> os: " + os);
         System.out.println(">> home: " + userHome);

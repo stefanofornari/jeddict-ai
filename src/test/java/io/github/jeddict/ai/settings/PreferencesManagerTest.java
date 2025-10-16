@@ -26,13 +26,17 @@ import java.nio.file.Paths;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
  *
  */
 public class PreferencesManagerTest extends TestBase {
+
+    public final static String WINDOWS = "Windows 10";
+    public final static String LINUX = "Linux";
+    public final static String MACOS = "Mac OS X";
+    public final static String USER = "user";
 
     @BeforeEach
     @Override
@@ -42,14 +46,17 @@ public class PreferencesManagerTest extends TestBase {
         Field instance = PreferencesManager.class.getDeclaredField("instance");
         instance.setAccessible(true);
         instance.set(null, null);
+
+        Files.createDirectory(HOME.resolve(USER));
     }
 
     @Test
     @Disabled
     public void constructor_without_given_path_linux() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Linux");
-            System.setProperty("user.home", "/home/user");
+            System.setProperty("os.name", LINUX);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", "/home/" + USER);
 
             Path expectedPath = Paths.get("/home/user", ".config", "jeddict", JEDDICT_CONFIG);
 
@@ -66,8 +73,9 @@ public class PreferencesManagerTest extends TestBase {
     @Disabled
     public void constructor_without_given_path_macos() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Mac OS X");
-            System.setProperty("user.home", "/home/user");
+            System.setProperty("os.name", MACOS);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", "/home/" + USER);
 
             Path expectedPath = Paths.get("/home/user", "Library", "Application Support", "jeddict", JEDDICT_CONFIG);
 
@@ -84,8 +92,9 @@ public class PreferencesManagerTest extends TestBase {
     @Disabled
     public void constructor_without_given_path_windows() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Windows 10");
-            System.setProperty("user.home", "C:\\Users\\runneradmin");
+            System.setProperty("os.name", WINDOWS);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", "C:\\Users\\" + USER);
 
             Path expectedPath = Paths.get("C:\\Users\\runneradmin", "AppData", "Roaming", "jeddict", JEDDICT_CONFIG);
 
@@ -101,20 +110,22 @@ public class PreferencesManagerTest extends TestBase {
     @Test
     @Disabled
     public void migrates_old_config_file_from_home_directory_linux() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
         // Simulate Linux for a predictable target path
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Linux");
+            System.setProperty("os.name", LINUX);
+            System.setProperty("user.name", USER);
             // Use the @TempDir HOME from TestBase as our user.home
-            System.setProperty("user.home", HOME.toString());
+            System.setProperty("user.home", USERHOME.toString());
 
             // 1. Setup: Create the old config file in the user's home
-            Path oldConfigFile = HOME.resolve("jeddict.json");
+            Path oldConfigFile = USERHOME.resolve("jeddict.json");
             String fileContent = "{\"key\": \"value\"}";
             Files.writeString(oldConfigFile, fileContent);
             then(oldConfigFile).exists();
 
             // Define the expected new path
-            Path newConfigFile = HOME.getFileSystem().getPath(HOME.toString(), ".config", "jeddict", JEDDICT_CONFIG);
+            Path newConfigFile = USERHOME.resolve(".config").resolve("jeddict").resolve(JEDDICT_CONFIG);
             then(newConfigFile).doesNotExist();
 
             // 2. Execute the code under test
@@ -128,20 +139,21 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
-    @DisplayName("migrates_old_config_file_from_home_directory_windows")
     public void migrates_old_config_file_from_home_directory_windows() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Windows 10");
-            System.setProperty("user.home", HOME.toString()); // Use @TempDir for user.home
+            System.setProperty("os.name", WINDOWS);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", USERHOME.toString()); // Use @TempDir for user.home
 
             // 1. Setup: Create the old config file in the user's home
-            Path oldConfigFile = HOME.resolve("jeddict.json");
+            Path oldConfigFile = USERHOME.resolve("jeddict.json");
             String fileContent = "{\"key\": \"value_win\"}";
             Files.writeString(oldConfigFile, fileContent);
             then(oldConfigFile).exists();
 
             // Define the expected new path (Windows fallback when APPDATA is not set)
-            Path newConfigFile = HOME.resolve("AppData/Roaming/jeddict").resolve(JEDDICT_CONFIG); // Use forward slashes for Path.resolve()
+            Path newConfigFile = USERHOME.resolve("AppData/Roaming/jeddict").resolve(JEDDICT_CONFIG); // Use forward slashes for Path.resolve()
             then(newConfigFile).doesNotExist();
 
             // 2. Execute the code under test
@@ -157,18 +169,20 @@ public class PreferencesManagerTest extends TestBase {
     @Test
     @Disabled
     public void migrates_old_config_file_from_home_directory_macos() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Mac OS X");
-            System.setProperty("user.home", HOME.toString()); // Use @TempDir for user.home
+            System.setProperty("os.name", MACOS);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", USERHOME.toString()); // Use @TempDir for user.home
 
             // 1. Setup: Create the old config file in the user's home
-            Path oldConfigFile = HOME.resolve("jeddict.json");
+            Path oldConfigFile = USERHOME.resolve("jeddict.json");
             String fileContent = "{\"key\": \"value_mac\"}";
             Files.writeString(oldConfigFile, fileContent);
             then(oldConfigFile).exists();
 
             // Define the expected new path
-            Path newConfigFile = HOME.resolve("Library/Application Support/jeddict").resolve(JEDDICT_CONFIG);
+            Path newConfigFile = USERHOME.resolve("Library/Application Support/jeddict").resolve(JEDDICT_CONFIG);
             then(newConfigFile).doesNotExist();
 
             // 2. Execute the code under test
@@ -184,14 +198,16 @@ public class PreferencesManagerTest extends TestBase {
     @Test
     @Disabled
     public void migrates_old_config_file_splits_config_and_stats() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
+
         // Simulate Linux for a predictable target path
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Linux");
-            // Use the @TempDir HOME from TestBase as our user.home
-            System.setProperty("user.home", HOME.toString());
+            System.setProperty("os.name", LINUX);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", USERHOME.toString());
 
             // 1. Setup: Create the old config file in the user's home
-            Path oldConfigFile = HOME.resolve("jeddict.json");
+            Path oldConfigFile = USERHOME.resolve("jeddict.json");
             String fileContent = """
             {
                 "dailyInputTokenStats": {
@@ -207,8 +223,8 @@ public class PreferencesManagerTest extends TestBase {
             then(oldConfigFile).exists();
 
             // Define the expected new path
-            Path newConfigFile = HOME.getFileSystem().getPath(HOME.toString(), ".config", "jeddict", JEDDICT_CONFIG);
-            Path newStatsFile = HOME.getFileSystem().getPath(HOME.toString(), ".config", "jeddict", JEDDICT_STATS);
+            Path newConfigFile = USERHOME.resolve(".config/jeddict").resolve(JEDDICT_CONFIG);
+            Path newStatsFile = USERHOME.resolve(".config/jeddict").resolve(JEDDICT_STATS);
             then(newConfigFile).doesNotExist(); then(newStatsFile).doesNotExist();
 
             // 2. Execute the code under test
