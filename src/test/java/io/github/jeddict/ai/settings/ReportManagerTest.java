@@ -78,9 +78,9 @@ public class ReportManagerTest extends TestBase {
     public void constructor_without_given_path_windows() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
             System.setProperty("os.name", "Windows 10");
-            System.setProperty("user.home", "C:\\Users\\user");
+            System.setProperty("user.home", "C:\\Users\\runneradmin");
 
-            Path expectedPath = Paths.get("C:\\Users\\user", "AppData", "Roaming", "jeddict", JEDDICT_STATS);
+            Path expectedPath = Paths.get("C:\\Users\\runneradmin", "AppData", "Roaming", "jeddict", JEDDICT_STATS);
 
             ReportManager manager = ReportManager.getInstance();
             Field prefsField = ReportManager.class.getDeclaredField("stats");
