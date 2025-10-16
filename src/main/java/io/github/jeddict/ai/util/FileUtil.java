@@ -110,6 +110,9 @@ public class FileUtil {
         final String os = System.getProperty("os.name").toLowerCase();
         final Path userHome = Paths.get(System.getProperty("user.home"));
 
+        System.out.println(">> os: " + os);
+        System.out.println(">> home: " + userHome);
+
         if (os.contains("win")) {
             final String appData = System.getenv("APPDATA");
             final Path basePath;
