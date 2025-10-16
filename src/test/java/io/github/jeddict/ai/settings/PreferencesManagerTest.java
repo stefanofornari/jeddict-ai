@@ -19,6 +19,7 @@ import com.github.stefanbirkner.systemlambda.SystemLambda;
 import static io.github.jeddict.ai.settings.PreferencesManager.JEDDICT_CONFIG;
 import static io.github.jeddict.ai.settings.ReportManager.JEDDICT_STATS;
 import io.github.jeddict.ai.test.TestBase;
+import io.github.jeddict.ai.util.FileUtil;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -125,7 +126,7 @@ public class PreferencesManagerTest extends TestBase {
             then(oldConfigFile).exists();
 
             // Define the expected new path
-            Path newConfigFile = USERHOME.resolve(".config").resolve("jeddict").resolve(JEDDICT_CONFIG);
+            Path newConfigFile = FileUtil.getConfigPath().resolve(JEDDICT_CONFIG);
             then(newConfigFile).doesNotExist();
 
             // 2. Execute the code under test
@@ -139,7 +140,7 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
-    public void migrates_old_config_file_from_home_directory_windows() throws Exception {
+    public void migrates_old_config_file_from_home_directory_windows_no_appdata() throws Exception {
         final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
             System.setProperty("os.name", WINDOWS);
@@ -153,7 +154,7 @@ public class PreferencesManagerTest extends TestBase {
             then(oldConfigFile).exists();
 
             // Define the expected new path (Windows fallback when APPDATA is not set)
-            Path newConfigFile = USERHOME.resolve("AppData/Roaming/jeddict").resolve(JEDDICT_CONFIG); // Use forward slashes for Path.resolve()
+            Path newConfigFile = FileUtil.getConfigPath().resolve(JEDDICT_CONFIG);
             then(newConfigFile).doesNotExist();
 
             // 2. Execute the code under test
@@ -163,6 +164,39 @@ public class PreferencesManagerTest extends TestBase {
             then(oldConfigFile).doesNotExist();
             then(newConfigFile).exists();
             then(Files.readString(newConfigFile)).isEqualTo(fileContent);
+        });
+    }
+
+    @Test
+    public void migrates_old_config_file_from_home_directory_windows_appdata() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
+        SystemLambda.restoreSystemProperties(() -> {
+            System.setProperty("os.name", WINDOWS);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", USERHOME.toString()); // Use @TempDir for user.home
+
+            SystemLambda.withEnvironmentVariable("APPDATA", HOME.resolve("AppData").toString())
+            .execute(() -> {
+
+                // 1. Setup: Create the old config file in the user's home
+                Path oldConfigFile = USERHOME.resolve("jeddict.json");
+                String fileContent = "{\"key\": \"value_win\"}";
+                Files.writeString(oldConfigFile, fileContent);
+                then(oldConfigFile).exists();
+
+                // Define the expected new path (Windows fallback when APPDATA is not set)
+                Path newConfigFile = FileUtil.getConfigPath().resolve(JEDDICT_CONFIG);
+                then(newConfigFile).doesNotExist();
+
+                // 2. Execute the code under test
+                PreferencesManager.getInstance(); // This will trigger the migration
+
+                // 3. Assert the results
+                then(oldConfigFile).doesNotExist();
+                then(newConfigFile).exists();
+                then(Files.readString(newConfigFile)).isEqualTo(fileContent);
+
+            });
         });
     }
 
@@ -182,7 +216,7 @@ public class PreferencesManagerTest extends TestBase {
             then(oldConfigFile).exists();
 
             // Define the expected new path
-            Path newConfigFile = USERHOME.resolve("Library/Application Support/jeddict").resolve(JEDDICT_CONFIG);
+            Path newConfigFile = FileUtil.getConfigPath().resolve(JEDDICT_CONFIG);
             then(newConfigFile).doesNotExist();
 
             // 2. Execute the code under test
@@ -223,8 +257,8 @@ public class PreferencesManagerTest extends TestBase {
             then(oldConfigFile).exists();
 
             // Define the expected new path
-            Path newConfigFile = USERHOME.resolve(".config/jeddict").resolve(JEDDICT_CONFIG);
-            Path newStatsFile = USERHOME.resolve(".config/jeddict").resolve(JEDDICT_STATS);
+            Path newConfigFile = FileUtil.getConfigPath().resolve(JEDDICT_CONFIG);
+            Path newStatsFile = FileUtil.getConfigPath().resolve(JEDDICT_STATS);
             then(newConfigFile).doesNotExist(); then(newStatsFile).doesNotExist();
 
             // 2. Execute the code under test
