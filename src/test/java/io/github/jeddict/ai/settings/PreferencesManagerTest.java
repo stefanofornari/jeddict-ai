@@ -80,10 +80,9 @@ public class PreferencesManagerTest extends TestBase {
     public void constructor_without_given_path_windows() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
             System.setProperty("os.name", "Windows 10");
-            System.setProperty("user.name", "user");
-            System.setProperty("user.home", "C:\\Users\\user");
+            System.setProperty("user.home", "C:\\Users\\runneradmin");
 
-            Path expectedPath = Paths.get("C:\\Users\\user", "AppData", "Roaming", "jeddict", JEDDICT_CONFIG);
+            Path expectedPath = Paths.get("C:\\Users\\runneradmin", "AppData", "Roaming", "jeddict", JEDDICT_CONFIG);
 
             PreferencesManager manager = PreferencesManager.getInstance();
             Field prefsField = PreferencesManager.class.getDeclaredField("preferences");
