@@ -6,8 +6,11 @@ on:
         description: 'Branch to checkout'
         required: true
         default: 'main' # Default to main, or whatever is appropriate
-
-jobs:
+      os:
+        description: 'Target OS'
+        required: true
+        default: 'ubuntu-latest' # Default to ubuntu
+        
   build:
     runs-on: ubuntu-latest
 
