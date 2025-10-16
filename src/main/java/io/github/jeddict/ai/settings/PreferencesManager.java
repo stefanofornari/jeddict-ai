@@ -190,17 +190,22 @@ public class PreferencesManager {
         // loading/initialization code (@OnStart triggers only when NB restarts
         // and not if the module is just reloading) - maybe in JeddictUpdateManager?
         //
+        LOG.info(">> configFile: " + configFile);
         try {
             final Path oldConfigFile = Paths.get(System.getProperty("user.home")).resolve("jeddict.json");
+            LOG.info(">> oldConfigFile: " + configFile);
 
             if (Files.exists(oldConfigFile) && !Files.exists(configFile)) {
                 final Path statsFile = configPath.resolve(JEDDICT_STATS);
+                LOG.info(">> statsFile: " + statsFile);
                 LOG.info(() -> String.format(
                     "Migrating old config file from %s to %s and %s",
                     oldConfigFile, configPath, statsFile
                 ));
                 Files.createDirectories(configPath);
                 Files.move(oldConfigFile, configFile);
+
+                LOG.info("old file moved " + Files.exists(configFile));
 
                 //
                 // the old version of the settings contained also stats; the new
@@ -219,7 +224,7 @@ public class PreferencesManager {
                 }
                 prefs.remove(DAILY_INPUT_TOKEN_STATS_KEY);
                 prefs.remove(DAILY_OUTPUT_TOKEN_STATS_KEY);
-                
+
                 LOG.info("Successfully migrated old config file.");
             }
         } catch (IOException e) {
