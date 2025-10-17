@@ -16,11 +16,13 @@
 package io.github.jeddict.ai.settings;
 
 import com.github.stefanbirkner.systemlambda.SystemLambda;
+import static io.github.jeddict.ai.settings.PreferencesManagerTest.LINUX;
+import static io.github.jeddict.ai.settings.PreferencesManagerTest.USER;
 import static io.github.jeddict.ai.settings.ReportManager.JEDDICT_STATS;
 import io.github.jeddict.ai.test.TestBase;
+import io.github.jeddict.ai.util.FileUtil;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,11 +44,13 @@ public class ReportManagerTest extends TestBase {
 
     @Test
     public void constructor_without_given_path_linux() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Linux");
-            System.setProperty("user.home", "/home/user");
+            System.setProperty("os.name", LINUX);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", USERHOME.toString());
 
-            Path expectedPath = Paths.get("/home/user", ".config", "jeddict", JEDDICT_STATS);
+            Path expectedPath = FileUtil.getConfigPath().resolve(JEDDICT_STATS);
 
             ReportManager manager = ReportManager.getInstance();
             Field prefsField = ReportManager.class.getDeclaredField("stats");
@@ -59,11 +63,13 @@ public class ReportManagerTest extends TestBase {
 
     @Test
     public void constructor_without_given_path_macos() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Mac OS X");
-            System.setProperty("user.home", "/home/user");
+            System.setProperty("os.name", LINUX);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", USERHOME.toString());
 
-            Path expectedPath = Paths.get("/home/user", "Library", "Application Support", "jeddict", JEDDICT_STATS);
+            Path expectedPath = FileUtil.getConfigPath().resolve(JEDDICT_STATS);
 
             ReportManager manager = ReportManager.getInstance();
             Field prefsField = ReportManager.class.getDeclaredField("stats");
@@ -76,11 +82,13 @@ public class ReportManagerTest extends TestBase {
 
     @Test
     public void constructor_without_given_path_windows() throws Exception {
+        final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
-            System.setProperty("os.name", "Windows 10");
-            System.setProperty("user.home", "C:\\Users\\runneradmin");
+            System.setProperty("os.name", LINUX);
+            System.setProperty("user.name", USER);
+            System.setProperty("user.home", USERHOME.toString());
 
-            Path expectedPath = Paths.get("C:\\Users\\runneradmin", "AppData", "Roaming", "jeddict", JEDDICT_STATS);
+            Path expectedPath = FileUtil.getConfigPath().resolve(JEDDICT_STATS);
 
             ReportManager manager = ReportManager.getInstance();
             Field prefsField = ReportManager.class.getDeclaredField("stats");

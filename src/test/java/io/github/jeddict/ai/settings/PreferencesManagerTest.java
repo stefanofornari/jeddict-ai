@@ -52,7 +52,6 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
-    @Disabled
     public void constructor_without_given_path_linux() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
             System.setProperty("os.name", LINUX);
@@ -71,7 +70,6 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
-    @Disabled
     public void constructor_without_given_path_macos() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
             System.setProperty("os.name", MACOS);
@@ -90,7 +88,6 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
-    @Disabled
     public void constructor_without_given_path_windows() throws Exception {
         SystemLambda.restoreSystemProperties(() -> {
             System.setProperty("os.name", WINDOWS);
@@ -201,7 +198,6 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
-    @Disabled
     public void migrates_old_config_file_from_home_directory_macos() throws Exception {
         final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
@@ -230,7 +226,6 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
-    @Disabled
     public void migrates_old_config_file_splits_config_and_stats() throws Exception {
         final Path USERHOME = HOME.resolve(USER);
 

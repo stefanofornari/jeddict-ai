@@ -110,9 +110,6 @@ public class FileUtil {
         final String os = System.getProperty("os.name").toLowerCase();
         final Path userHome = Paths.get(System.getProperty("user.home"));
 
-        System.out.println(">> os: " + os);
-        System.out.println(">> home: " + userHome);
-
         if (os.contains("win")) {
             final String appData = System.getenv("APPDATA");
             final Path basePath;
@@ -121,9 +118,6 @@ public class FileUtil {
             } else {
                 basePath = userHome.resolve("AppData").resolve("Roaming");
             }
-
-            System.out.println(">> appData: " + appData);
-            System.out.println(">> basePath: " + basePath);
 
             return basePath.resolve("jeddict");
         } else if (os.contains("mac")) {
