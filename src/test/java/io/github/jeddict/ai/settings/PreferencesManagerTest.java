@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -142,28 +141,32 @@ public class PreferencesManagerTest extends TestBase {
             System.setProperty("user.name", USER);
             System.setProperty("user.home", USERHOME.toString()); // Use @TempDir for user.home
 
-            // 1. Setup: Create the old config file in the user's home
-            Path oldConfigFile = USERHOME.resolve("jeddict.json");
-            String fileContent = "{\"key\": \"value_win\"}";
-            Files.writeString(oldConfigFile, fileContent);
-            then(oldConfigFile).exists();
+            SystemLambda.withEnvironmentVariable("APPDATA", "")
+            .execute(() -> {
 
-            // Define the expected new path (Windows fallback when APPDATA is not set)
-            Path newConfigFile = FileUtil.getConfigPath().resolve(JEDDICT_CONFIG);
-            then(newConfigFile).doesNotExist();
+                // 1. Setup: Create the old config file in the user's home
+                Path oldConfigFile = USERHOME.resolve("jeddict.json");
+                String fileContent = "{\"key\": \"value_win\"}";
+                Files.writeString(oldConfigFile, fileContent);
+                then(oldConfigFile).exists();
 
-            // 2. Execute the code under test
-            PreferencesManager.getInstance(); // This will trigger the migration
+                // Define the expected new path (Windows fallback when APPDATA is not set)
+                Path newConfigFile = FileUtil.getConfigPath().resolve(JEDDICT_CONFIG);
+                then(newConfigFile).doesNotExist();
 
-            // 3. Assert the results
-            then(oldConfigFile).doesNotExist();
-            then(newConfigFile).exists();
-            then(Files.readString(newConfigFile)).isEqualTo(fileContent);
+                // 2. Execute the code under test
+                PreferencesManager.getInstance(); // This will trigger the migration
+
+                // 3. Assert the results
+                then(oldConfigFile).doesNotExist();
+                then(newConfigFile).exists();
+                then(Files.readString(newConfigFile)).isEqualTo(fileContent);
+                
+            });
         });
     }
 
     @Test
-    @Disabled // TODO: make it work in the CI/CD pipeline
     public void migrates_old_config_file_from_home_directory_windows_appdata() throws Exception {
         final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
