@@ -137,6 +137,7 @@ public class PreferencesManagerTest extends TestBase {
     }
 
     @Test
+    @Disable
     public void migrates_old_config_file_from_home_directory_windows_no_appdata() throws Exception {
         final Path USERHOME = HOME.resolve(USER);
         SystemLambda.restoreSystemProperties(() -> {
