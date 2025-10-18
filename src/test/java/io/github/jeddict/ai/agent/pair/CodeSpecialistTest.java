@@ -17,6 +17,7 @@ package io.github.jeddict.ai.agent.pair;
 
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -24,13 +25,21 @@ import org.junit.jupiter.api.Test;
  */
 public class CodeSpecialistTest extends PairProgrammerTestBase {
 
+    private CodeSpecialist pair;
+
+    @BeforeEach
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+
+        pair = AgenticServices.agentBuilder(CodeSpecialist.class)
+            .chatModel(model)
+            .build();
+
+    }
+
     @Test
     public void updateMethodFromDevQuery_returns_AI_provided_response_with_and_without_rules() {
         final String USER_PROMPT = "This is the user request...";
-
-        final CodeSpecialist pair = AgenticServices.agentBuilder(CodeSpecialist.class)
-            .chatModel(model)
-            .build();
 
         updateMethodFromDevQuery_returns_AI_provided_response(USER_PROMPT, "the class", "the method", "no rules", "no rules", pair::updateMethodFromDevQuery);
         updateMethodFromDevQuery_returns_AI_provided_response(USER_PROMPT, "the class", "the method", "\n- global rule 1", "no rules", pair::updateMethodFromDevQuery);
@@ -40,14 +49,18 @@ public class CodeSpecialistTest extends PairProgrammerTestBase {
 
     @Test
     public void enhanceMethodFromMethodContent_returns_AI_provided_response_with_and_without_rules() {
-        final CodeSpecialist pair = AgenticServices.agentBuilder(CodeSpecialist.class)
-            .chatModel(model)
-            .build();
-
         enhanceMethodFromMethodContent_returns_AI_provided_response("the class", "the method", "no rules", "no rules", pair::enhanceMethodFromMethodContent);
         enhanceMethodFromMethodContent_returns_AI_provided_response("the class", "the method", "\n- global rule 1", "no rules", pair::enhanceMethodFromMethodContent);
         enhanceMethodFromMethodContent_returns_AI_provided_response("the class", "the method", "no rules", "\n- project rule 1", pair::enhanceMethodFromMethodContent);
         enhanceMethodFromMethodContent_returns_AI_provided_response("the class", "the method", "\n- global rule 1", "\n- project rule 1", pair::enhanceMethodFromMethodContent);
+    }
+
+    @Test
+    public void fixMethodCompilationError_returns_AI_provided_response_with_and_without_rules() {
+        fixMethodCompilationError_returns_AI_provided_response("the class", "the method", "no rules", "no rules", pair::fixMethodCompilationError);
+        fixMethodCompilationError_returns_AI_provided_response("the class", "the method", "\n- global rule 1", "no rules", pair::fixMethodCompilationError);
+        fixMethodCompilationError_returns_AI_provided_response("the class", "the method", "no rules", "\n- project rule 1", pair::fixMethodCompilationError);
+        fixMethodCompilationError_returns_AI_provided_response("the class", "the method", "\n- global rule 1", "\n- project rule 1", pair::fixMethodCompilationError);
     }
 
     // --------------------------------------------------------- private methods
@@ -79,6 +92,29 @@ public class CodeSpecialistTest extends PairProgrammerTestBase {
         // proper prompt messages has been generated and provided
         //
         updateMethod_returns_AI_provided_response(prompt, code, method, globalRules, projectRules);
+    }
+
+    protected void fixMethodCompilationError_returns_AI_provided_response(
+        final String code,
+        final String method,
+        final String globalRules,
+        final String projectRules,
+        final CodeGenerator1 generator
+    ) {
+        final String ERROR = "the error";
+
+        //
+        // invoke the agent
+        //
+        generator.apply(ERROR, code, method, globalRules, projectRules);
+
+        //
+        // proper prompt messages has been generated and provided
+        //
+        updateMethod_returns_AI_provided_response(
+            String.format(CodeSpecialist.FIX_METHOD_COMPILATION_ERROR, ERROR),
+            code, method, globalRules, projectRules
+        );
     }
 
     protected void enhanceMethodFromMethodContent_returns_AI_provided_response(

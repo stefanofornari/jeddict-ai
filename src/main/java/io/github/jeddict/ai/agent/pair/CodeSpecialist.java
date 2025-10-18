@@ -79,6 +79,8 @@ The current method code is: {{methodCode}}
 """;
     public static final String PROMPT_ENHANCE_METHOD_FROM_METHOD_CODE =
         "Given the following Java class content and Java method content, modify and enhance the method accordingly.";
+    public static final String FIX_METHOD_COMPILATION_ERROR =
+        "Given the compilation error %s and the following Java class and method content, fix the method so it compiles properly";
 
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
@@ -96,6 +98,14 @@ The current method code is: {{methodCode}}
     ) {
         return updateMethodFromDevQuery(
             PROMPT_ENHANCE_METHOD_FROM_METHOD_CODE, source, methodSource, globalRules, projectRules
+        );
+    }
+
+    default String fixMethodCompilationError(
+        final String error, final String source, final String methodSource, final String globalRules, final String projectRules
+    ) {
+        return updateMethodFromDevQuery(
+            String.format(FIX_METHOD_COMPILATION_ERROR, error), source, methodSource, globalRules, projectRules
         );
     }
 }

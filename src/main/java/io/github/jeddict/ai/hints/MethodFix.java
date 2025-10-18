@@ -24,7 +24,6 @@ import io.github.jeddict.ai.agent.pair.CodeSpecialist;
 import io.github.jeddict.ai.agent.pair.PairProgrammer;
 import io.github.jeddict.ai.completion.Action;
 import static io.github.jeddict.ai.scanner.ProjectClassScanner.getClassDataContent;
-import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.SourceUtil;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import static io.github.jeddict.ai.util.UIUtil.queryToEnhance;
@@ -53,8 +52,6 @@ public class MethodFix extends BaseAIFix {
     private String actionTitleParam;
     private String compliationError;
 
-    private static final PreferencesManager prefsManager = PreferencesManager.getInstance();
-
     public MethodFix(final TreePathHandle treePathHandle, final Action action) {
         super(treePathHandle, action);
     }
@@ -82,51 +79,43 @@ public class MethodFix extends BaseAIFix {
         if (copy.toPhase(JavaSource.Phase.RESOLVED).compareTo(JavaSource.Phase.RESOLVED) < 0) {
             return;
         }
-
         TreePath treePath = tc.getPath();
         Tree leaf = treePath.getLeaf();
-
         Element elm = copy.getTrees().getElement(treePath);
         if (elm == null) {
             return;
         }
-
         String content = null;
-
         if (leaf.getKind() == METHOD) {
             final Project project = FileOwnerQuery.getOwner(copy.getFileObject());
             final CodeSpecialist pair = newJeddictBrain().pairProgrammer(PairProgrammer.Specialist.CODE);
             final String classSource = treePath.getParentPath().getLeaf().toString();
             final String methodSource = leaf.toString();
 
-            if (action == Action.COMPILATION_ERROR) {
-                String classDataContent = getClassDataContent(
-                        copy.getFileObject(),
-                        copy.getCompilationUnit(),
-                        prefsManager.getClassContext()
-                );
-
-                content = newJeddictBrain().fixMethodCompilationError(
-                FileOwnerQuery.getOwner(copy.getFileObject()),
-                treePath.getParentPath().getLeaf().toString(),
-                leaf.toString(),
-                compliationError,
-                classDataContent);
-            } else if (action == Action.ENHANCE) {
-                content = pair.enhanceMethodFromMethodContent(
-                    classSource, methodSource,
-                    globalRules(), projectRules(project)
-                );
-            } else {
-                String query = queryToEnhance();
-                if (query == null) {
-                    return;
+            content = switch (action) {
+                case COMPILATION_ERROR -> {
+                    String classDataContent = getClassDataContent(
+                        copy.getFileObject(), copy.getCompilationUnit(), pm.getClassContext()
+                    );
+                    yield pair.fixMethodCompilationError(
+                        compliationError, classDataContent, methodSource, globalRules(), projectRules(project)
+                    );
                 }
-                content = pair.updateMethodFromDevQuery(
-                    query, classSource, methodSource,
-                    globalRules(), projectRules(project)
-                );
-            }
+                case ENHANCE -> {
+                    yield pair.enhanceMethodFromMethodContent(
+                        classSource, methodSource, globalRules(), projectRules(project)
+                    );
+                }
+                default -> {
+                    String query = queryToEnhance();
+                    if (query == null) {
+                        yield "";
+                    }
+                    yield pair.updateMethodFromDevQuery(
+                        query, classSource, methodSource, globalRules(), projectRules(project)
+                    );
+                }
+            };
         }
 
         if (content == null) {
@@ -137,7 +126,6 @@ public class MethodFix extends BaseAIFix {
         JSONArray imports = json.getJSONArray("imports");
         String methodContent = json.getString("methodContent");
         SourceUtil.addImports(copy, imports);
-
         if (leaf instanceof MethodTree methodTree) {
             long startPos = copy.getTrees().getSourcePositions().getStartPosition(copy.getCompilationUnit(), methodTree);
             long endPos = copy.getTrees().getSourcePositions().getEndPosition(copy.getCompilationUnit(), methodTree);
@@ -148,6 +136,7 @@ public class MethodFix extends BaseAIFix {
             }
         }
     }
+
 
     private void insertAndReformat(Document document, String content, int startPosition, int lengthToRemove) {
     try {

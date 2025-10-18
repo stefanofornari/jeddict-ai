@@ -296,31 +296,6 @@ public class JeddictBrain {
                 .build();
     }
 
-    public String fixMethodCompilationError(Project project, String javaClassContent, String methodContent, String errorMessage, String classDatas) {
-        String prompt = """
-            You are an API server that fixes compilation errors in Java methods based on the provided error messages.
-            Given the following Java method content, class content, and the error message, correct the method accordingly.
-            Ensure that all compilation errors indicated by the error message are resolved.
-            Include any necessary imports relevant to the fixed method.
-            Return only the corrected Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
-            Do not include full Java class, any additional text, or explanation—just the imports and the corrected method source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'.
-            Error Message:
-            """ + errorMessage + """
-
-            Java Class Content:
-            """ + javaClassContent + """
-
-            Java Method Content:
-            """ + methodContent;
-
-        prompt = loadClassData(prompt, classDatas);
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
     public String fixVariableError(Project project, String javaClassContent, String errorMessage, String classDatas) {
         String prompt = """
             You are an API server that fixes variable-related compilation errors in Java classes based on the provided error messages.
