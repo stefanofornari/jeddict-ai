@@ -20,6 +20,8 @@ import com.sun.source.tree.Tree;
 import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.util.TreePath;
 import io.github.jeddict.ai.JeddictUpdateManager;
+import io.github.jeddict.ai.agent.pair.CodeSpecialist;
+import io.github.jeddict.ai.agent.pair.PairProgrammer;
 import io.github.jeddict.ai.completion.Action;
 import static io.github.jeddict.ai.scanner.ProjectClassScanner.getClassDataContent;
 import io.github.jeddict.ai.settings.PreferencesManager;
@@ -36,6 +38,7 @@ import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.api.project.FileOwnerQuery;
+import org.netbeans.api.project.Project;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.netbeans.spi.java.hints.JavaFix;
 import org.openide.util.Exceptions;
@@ -113,9 +116,12 @@ public class MethodFix extends BaseAIFix {
                 if (query == null) {
                     return;
                 }
-                content = newJeddictBrain().updateMethodFromDevQuery(
-                FileOwnerQuery.getOwner(copy.getFileObject()),
-                treePath.getParentPath().getLeaf().toString(), leaf.toString(), query);
+                final Project project = FileOwnerQuery.getOwner(copy.getFileObject());
+                CodeSpecialist pair = newJeddictBrain().pairProgrammer(PairProgrammer.Specialist.CODE);
+                content = pair.updateMethodFromDevQuery(
+                    query, treePath.getParentPath().getLeaf().toString(), leaf.toString(),
+                    globalRules(), projectRules(project)
+                );
             }
         }
 

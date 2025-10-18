@@ -297,32 +297,6 @@ public class JeddictBrain {
     }
 
     @Deprecated
-    public String updateMethodFromDevQuery(Project project, String javaClassContent, String methodContent, String developerRequest) {
-        String prompt = """
-            You are an API server that enhances Java methods based on user requests.
-            Given the following Java method and the developer's request, modify and enhance the method accordingly.
-            Incorporate any specific details or requirements mentioned by the developer. Do not include any additional text or explanation, just return the enhanced Java method source code.
-
-            Include all necessary imports relevant to the enhanced or newly created method.
-            Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
-            Do not include full java class, any additional text or explanation, just the imports and the method source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'.
-            Developer Request:
-            """ + developerRequest + """
-
-            Java Class Content:
-            """ + javaClassContent + """
-
-            Java Method Content:
-            """ + methodContent;
-
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    @Deprecated
     public String enhanceMethodFromMethodContent(Project project, String javaClassContent, String methodContent) {
         String prompt = """
             You are an API server that enhances or creates Java methods based on the method name, comments, and its content.
