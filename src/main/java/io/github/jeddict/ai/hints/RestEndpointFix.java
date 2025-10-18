@@ -85,8 +85,6 @@ public class RestEndpointFix extends BaseAIFix {
                 JSONArray imports = json.getJSONArray("imports");
                 String methodContent = json.getString("methodContent");
 
-
-
                 String halfTab = "    ";
                 String[] lines = methodContent.split("\n");
                 StringBuilder modifiedContent = new StringBuilder("\n");
