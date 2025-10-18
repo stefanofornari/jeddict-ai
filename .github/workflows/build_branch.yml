@@ -6,19 +6,22 @@ on:
         description: 'Branch to checkout'
         required: true
         default: 'main' # Default to main, or whatever is appropriate
-
+      target:
+        description: 'Target environment'
+        required: true
+        default: 'ubuntu-latest' # Default to ubuntu
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.target }}
 
     steps:
     - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.inputs.branch }}
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
         cache: maven
     - name: Build and Test
