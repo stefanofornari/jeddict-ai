@@ -94,6 +94,11 @@ public class MethodFix extends BaseAIFix {
         String content = null;
 
         if (leaf.getKind() == METHOD) {
+            final Project project = FileOwnerQuery.getOwner(copy.getFileObject());
+            final CodeSpecialist pair = newJeddictBrain().pairProgrammer(PairProgrammer.Specialist.CODE);
+            final String classSource = treePath.getParentPath().getLeaf().toString();
+            final String methodSource = leaf.toString();
+
             if (action == Action.COMPILATION_ERROR) {
                 String classDataContent = getClassDataContent(
                         copy.getFileObject(),
@@ -108,18 +113,17 @@ public class MethodFix extends BaseAIFix {
                 compliationError,
                 classDataContent);
             } else if (action == Action.ENHANCE) {
-                content = newJeddictBrain().enhanceMethodFromMethodContent(
-                FileOwnerQuery.getOwner(copy.getFileObject()),
-                treePath.getParentPath().getLeaf().toString(), leaf.toString());
+                content = pair.enhanceMethodFromMethodContent(
+                    classSource, methodSource,
+                    globalRules(), projectRules(project)
+                );
             } else {
                 String query = queryToEnhance();
                 if (query == null) {
                     return;
                 }
-                final Project project = FileOwnerQuery.getOwner(copy.getFileObject());
-                CodeSpecialist pair = newJeddictBrain().pairProgrammer(PairProgrammer.Specialist.CODE);
                 content = pair.updateMethodFromDevQuery(
-                    query, treePath.getParentPath().getLeaf().toString(), leaf.toString(),
+                    query, classSource, methodSource,
                     globalRules(), projectRules(project)
                 );
             }

@@ -296,27 +296,6 @@ public class JeddictBrain {
                 .build();
     }
 
-    @Deprecated
-    public String enhanceMethodFromMethodContent(Project project, String javaClassContent, String methodContent) {
-        String prompt = """
-            You are an API server that enhances or creates Java methods based on the method name, comments, and its content.
-            Given the following Java class content and Java method content, modify and enhance the method accordingly.
-            Include all necessary imports relevant to the enhanced or newly created method.
-            Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
-            Do not include full java class, any additional text or explanation, just the imports and the method source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'.
-            Java Class Content:
-            """ + javaClassContent + """
-
-            Java Method Content:
-            """ + methodContent;
-
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
     public String fixMethodCompilationError(Project project, String javaClassContent, String methodContent, String errorMessage, String classDatas) {
         String prompt = """
             You are an API server that fixes compilation errors in Java methods based on the provided error messages.

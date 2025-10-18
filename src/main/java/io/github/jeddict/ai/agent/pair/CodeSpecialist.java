@@ -77,10 +77,12 @@ Take into account the following project rules: {{projectRules}}
 The class is: {{code}}
 The current method code is: {{methodCode}}
 """;
+    public static final String PROMPT_ENHANCE_METHOD_FROM_METHOD_CODE =
+        "Given the following Java class content and Java method content, modify and enhance the method accordingly.";
 
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
-    @Agent("Generate class javadoc based on the class code")
+    @Agent("Generate or enhance a method based on the class code and method code")
     String updateMethodFromDevQuery(
         @V("userRequest") final String userRequest,
         @V("code") final String source,
@@ -88,4 +90,12 @@ The current method code is: {{methodCode}}
         @V("globalRules") final String globalRules,
         @V("projectRules") final String projectRules
     );
+
+    default String enhanceMethodFromMethodContent(
+        final String source, final String methodSource, final String globalRules, final String projectRules
+    ) {
+        return updateMethodFromDevQuery(
+            PROMPT_ENHANCE_METHOD_FROM_METHOD_CODE, source, methodSource, globalRules, projectRules
+        );
+    }
 }
