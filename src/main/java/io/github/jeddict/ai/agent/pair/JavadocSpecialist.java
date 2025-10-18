@@ -86,7 +86,7 @@ The Javadoc is: {{javadoc}}
 
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
-    @Agent("Generate class javadoc based on the class code")
+    @Agent("Generate or enhance javadoccomments based on the class or class member code")
     String javadoc(
         @V("element") final String element,
         @V("code") final String sourece,

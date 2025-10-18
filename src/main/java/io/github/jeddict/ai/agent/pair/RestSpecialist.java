@@ -78,7 +78,7 @@ The class is: {{code}}
 """;
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
-    @Agent("Generate class javadoc based on the class code")
+    @Agent("Generate JAX-RS REST endpoints based on the provided Java class")
     String generateEndpointForClass(
         @V("code") final String sourece,
         @V("globalRules") final String globalRules,
