@@ -31,6 +31,7 @@ import java.io.IOException;
 import javax.lang.model.element.Element;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.netbeans.api.java.source.JavaSource;
@@ -94,14 +95,26 @@ public class MethodFix extends BaseAIFix {
 
             content = switch (action) {
                 case COMPILATION_ERROR -> {
-                    String classDataContent = getClassDataContent(
+                    final String classDataContent = getClassDataContent(
                         copy.getFileObject(), copy.getCompilationUnit(), pm.getClassContext()
                     );
+
+                    LOG.finest(() -> "\nmethodSource: " + StringUtils.abbreviate(methodSource, 80)
+                        + "\nclassSource: " + StringUtils.abbreviate(classSource, 80)
+                        + "\nclassDataContent: " + StringUtils.abbreviate(classDataContent, 80)
+                        + "\nglobalRules: " + globalRules()
+                        + "\nprohectRules: " + projectRules(project)
+                    );
                     yield pair.fixMethodCompilationError(
-                        compliationError, classDataContent, methodSource, globalRules(), projectRules(project)
+                        compliationError, classSource + "\n" + classDataContent, methodSource, globalRules(), projectRules(project)
                     );
                 }
                 case ENHANCE -> {
+                    LOG.finest(() -> "\nmethodSource: " + StringUtils.abbreviate(methodSource, 80)
+                        + "\nclassSource: " + StringUtils.abbreviate(classSource, 80)
+                        + "\nglobalRules: " + globalRules()
+                        + "\nprohectRules: " + projectRules(project)
+                    );
                     yield pair.enhanceMethodFromMethodContent(
                         classSource, methodSource, globalRules(), projectRules(project)
                     );
@@ -111,6 +124,12 @@ public class MethodFix extends BaseAIFix {
                     if (query == null) {
                         yield "";
                     }
+                    LOG.finest(() -> "prompt: " + query
+                        + "\nmethodSource: " + StringUtils.abbreviate(methodSource, 80)
+                        + "\nclassSource: " + StringUtils.abbreviate(classSource, 80)
+                        + "\nglobalRules: " + globalRules()
+                        + "\nprohectRules: " + projectRules(project)
+                    );
                     yield pair.updateMethodFromDevQuery(
                         query, classSource, methodSource, globalRules(), projectRules(project)
                     );
@@ -124,7 +143,7 @@ public class MethodFix extends BaseAIFix {
 
         JSONObject json = new JSONObject(removeCodeBlockMarkers(content));
         JSONArray imports = json.getJSONArray("imports");
-        String methodContent = json.getString("methodContent");
+        String methodContent = json.getString("content");
         SourceUtil.addImports(copy, imports);
         if (leaf instanceof MethodTree methodTree) {
             long startPos = copy.getTrees().getSourcePositions().getStartPosition(copy.getCompilationUnit(), methodTree);
