@@ -146,6 +146,21 @@ The current method code is: {{methodCode}}
         );
     }
 
+    /**
+     * Attempts to fix a compilation error related to variables in the given source code
+     * using the provided global and project rules.
+     *
+     * This method delegates to {@code updateMethodFromDevQuery} with a specific error
+     * formatting, aiming to automatically apply the necessary fix for the described error.
+     *
+     * @param source      the original source code where the error was detected
+     * @param error       a description or message of the variable-related compilation error
+     * @param globalRules a set of global rules to guide the fixing logic
+     * @param projectRules a set of project-specific rules to further guide the fixing logic
+     *
+     * @return a new source code string with the variable error fixed according to the rules,
+     *         or the original if no applicable fix is found
+     */
     default String fixVariableError(
         final String source, final String error, final String globalRules, final String projectRules
     ) {
@@ -154,6 +169,18 @@ The current method code is: {{methodCode}}
         );
     }
 
+    /**
+     * Enhances the given variable name based on the specified method content, class content,
+     * global rules, and project rules. This method formats a prompt for variable name
+     * enhancement and delegates the operation to {@code updateMethodFromDevQuery}.
+     *
+     * @param currentName    the current name of the variable to be enhanced
+     * @param methodContent  the content of the method where the variable is used
+     * @param classContent   the content of the class containing the variable
+     * @param globalRules    global naming and formatting rules to consider
+     * @param projectRules   project-specific naming and formatting rules to consider
+     * @return               the enhanced variable name as determined by the prompt and rules
+     */
     default String enhanceVariableName(
         final String currentName, final String methodContent, final String classContent, final String globalRules, final String projectRules
     ) {
