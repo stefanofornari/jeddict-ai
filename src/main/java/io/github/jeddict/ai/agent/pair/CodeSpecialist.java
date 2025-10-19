@@ -57,8 +57,9 @@ You are a programmer specialized in writing Java code. Base on user request, you
 - Write new or enhancing existing code
 - Incorporate any specific details or requirements mentioned by the user.
 - Include all necessary imports relevant to the enhanced or newly created method.
-- Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
-- Format the output as a JSON object with two fields: 'imports' as array (list of necessary imports) and 'methodContent' as text.
+- Return only the Java code and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
+- Not include any description or explanation beside the code
+- Format the output as a JSON object with two fields: 'imports' as array (list of necessary imports) and 'content' as text.
   Example output:
   {
     "imports": [
@@ -66,7 +67,7 @@ You are a programmer specialized in writing Java code. Base on user request, you
       "io.github.jeddict.ai.agent.pair.CodeSpecialits",
       "io.github.jeddict.ai.ReturnType"
     ],
-    "methodContent": "public ReturnType method() {\\n // implementation \\n}"
+    "content": "public ReturnType method() {\\n // implementation \\n}"
   }
 - Ensure the generated methods are unique and not duplicates of existing methods in the class content.
 Take into account the following general rules: {{globalRules}}
@@ -79,7 +80,9 @@ The current method code is: {{methodCode}}
 """;
     public static final String PROMPT_ENHANCE_METHOD_FROM_METHOD_CODE =
         "Given the following Java class content and Java method content, modify and enhance the method accordingly.";
-    public static final String FIX_METHOD_COMPILATION_ERROR =
+    public static final String PROMPT_ENHANCE_VARIABLE_NAME =
+        "given the current variable name \n%s\n, provide a better name for the variable; make sure to return just the variable name only";
+    public static final String FIX_COMPILATION_ERROR =
         "Given the compilation error %s and the following Java class and method content, fix the method so it compiles properly";
 
     @SystemMessage(SYSTEM_MESSAGE)
@@ -93,6 +96,21 @@ The current method code is: {{methodCode}}
         @V("projectRules") final String projectRules
     );
 
+    /**
+     * Enhances the content of a Java method by applying both global and project-specific rules.
+     *
+     * This default method receives the source code representing the entire context,
+     * the source of the target method, and two sets of rule definitions: global
+     * and project-scoped. It delegates enhancement logic to {@code updateMethodFromDevQuery}
+     * using the defined prompt {@code PROMPT_ENHANCE_METHOD_FROM_METHOD_CODE}.</
+     *
+     * @param source       the source code containing the overall context in which the method resides
+     * @param methodSource the source code of the specific method to enhance
+     * @param globalRules  the global rules to apply during enhancement
+     * @param projectRules the project-specific rules to apply during enhancement
+     *
+     * @return the enhanced method source code as a {@code String}
+     */
     default String enhanceMethodFromMethodContent(
         final String source, final String methodSource, final String globalRules, final String projectRules
     ) {
@@ -101,11 +119,47 @@ The current method code is: {{methodCode}}
         );
     }
 
+    /**
+     * Fixes a compilation error in the provided method source using contextual code and rules.
+     *
+     * This method attempts to resolve the specified compilation error by updating
+     * the method source code. It utilizes the original source, method source,
+     * global rules, and project-specific rules to generate a fixed version of the method.
+     * It delegates the fix to {@link #updateMethodFromDevQuery(String, String,
+     * String, String, String)} using a formatted query parameter.
+     *
+     * @param error the description or message of the compilation error encountered
+     * @param source the complete source code context in which the method resides (the class plus all referenced classes)
+     * @param methodSource the source code of the affected method
+     * @param globalRules general rules to be applied for fixing method errors
+     * @param projectRules project-specific rules to be applied for fixing method errors
+     *
+     * @return a {@code String} containing the updated method source with the compilation error addressed
+     *
+     * @implSpec
+     **/
     default String fixMethodCompilationError(
         final String error, final String source, final String methodSource, final String globalRules, final String projectRules
     ) {
         return updateMethodFromDevQuery(
-            String.format(FIX_METHOD_COMPILATION_ERROR, error), source, methodSource, globalRules, projectRules
+            String.format(FIX_COMPILATION_ERROR, error), source, methodSource, globalRules, projectRules
+        );
+    }
+
+    default String fixVariableError(
+        final String source, final String error, final String globalRules, final String projectRules
+    ) {
+        return updateMethodFromDevQuery(
+            String.format(FIX_COMPILATION_ERROR, error), source, "", globalRules, projectRules
+        );
+    }
+
+    default String enhanceVariableName(
+        final String currentName, final String methodContent, final String classContent, final String globalRules, final String projectRules
+    ) {
+        return updateMethodFromDevQuery(
+            String.format(PROMPT_ENHANCE_VARIABLE_NAME, currentName),
+            classContent, methodContent, globalRules, projectRules
         );
     }
 }

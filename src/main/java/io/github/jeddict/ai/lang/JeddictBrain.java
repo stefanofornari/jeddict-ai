@@ -296,49 +296,6 @@ public class JeddictBrain {
                 .build();
     }
 
-    public String fixVariableError(Project project, String javaClassContent, String errorMessage, String classDatas) {
-        String prompt = """
-            You are an API server that fixes variable-related compilation errors in Java classes based on the provided error messages.
-            Given the following Java class content and the error message, correct given variable-related issues based on error message at class level.
-            Ensure that all compilation errors indicated by the error message, such as undeclared variables, incorrect variable types, or misuse of variables, are resolved.
-            Include any necessary imports relevant to the fixed method or class.
-            Return only the corrected variable content and its necessary imports, without including any unnecessary boilerplate code.
-            Do not include any additional text or explanation—just the imports and the corrected variable source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'variableContent' (corrected variable line or content).
-            Error Message:
-            """ + errorMessage + """
-
-            Java Class Content:
-            """ + javaClassContent;
-
-        prompt = loadClassData(prompt, classDatas);
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String enhanceVariableName(String variableContext, String methodContent, String classContent) {
-        StringBuilder prompt = new StringBuilder("""
-            You are an API server that suggests a more meaningful and descriptive name for a specific variable in a given Java class.
-            Based on the provided Java class content and the variable context, suggest an improved name for the variable.
-            Return only the new variable name. Do not include any additional text or explanation.
-
-            Variable Context:
-            """ + variableContext + "\n\n");
-
-        if (methodContent != null) {
-            prompt.append("Java Method Content:\n").append(methodContent).append("\n\n");
-        }
-        if (classContent != null) {
-            prompt.append("Java Class Content:\n").append(classContent);
-        }
-
-        String response = generate(null, prompt.toString());
-        LOG.finest(response);
-        return response;
-    }
-
     public List<String> suggestVariableNames(String classDatas, String variablePrefix, String classContent, String variableExpression) {
         String prompt = """
         You are an API server that suggests a list of meaningful and descriptive names for a specific variable in a given Java class.

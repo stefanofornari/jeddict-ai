@@ -63,16 +63,32 @@ public class CodeSpecialistTest extends PairProgrammerTestBase {
         fixMethodCompilationError_returns_AI_provided_response("the class", "the method", "\n- global rule 1", "\n- project rule 1", pair::fixMethodCompilationError);
     }
 
+    @Test
+    public void fixVariableError_returns_AI_provided_response_with_and_without_rules() {
+        fixVariableError_returns_AI_provided_response("the source", "the error", "no rules", "no rules", pair::fixVariableError);
+        fixVariableError_returns_AI_provided_response("the source", "the error", "\n- global rule 1", "no rules", pair::fixVariableError);
+        fixVariableError_returns_AI_provided_response("the source", "the error", "no rules", "\n- project rule 1", pair::fixVariableError);
+        fixVariableError_returns_AI_provided_response("the source", "the error", "\n- global rule 1", "\n- project rule 1", pair::fixVariableError);
+    }
+
+    @Test
+    public void enhanceVariableName_returns_AI_provided_response_with_and_without_rules() {
+        enhanceVariableName_returns_AI_provided_response("currentVariableName", "the method content", "the class content", "no rules", "no rules", pair::enhanceVariableName);
+        enhanceVariableName_returns_AI_provided_response("currentVariableName", "the method content", "the class content", "\n- global rule 1", "no rules", pair::enhanceVariableName);
+        enhanceVariableName_returns_AI_provided_response("currentVariableName", "the method content", "the class content", "no rules", "\n- project rule 1", pair::enhanceVariableName);
+        enhanceVariableName_returns_AI_provided_response("currentVariableName", "the method content", "the class content", "\n- global rule 1", "\n- project rule 1", pair::enhanceVariableName);
+    }
+
     // --------------------------------------------------------- private methods
 
 
     @FunctionalInterface
-    protected static interface CodeGenerator1 {
-        String apply(String msg, String code, String method, String globalRules, String projectRules);
+    protected static interface CodeGenerator3 {
+        String apply(String arg1, String arg2, String arg3, String globalRules, String projectRules);
     }
     @FunctionalInterface
     protected static interface CodeGenerator2 {
-        String apply(String code, String method, String globalRules, String projectRules);
+        String apply(String arg1, String arg2, String globalRules, String projectRules);
     }
 
     protected void updateMethodFromDevQuery_returns_AI_provided_response(
@@ -81,7 +97,7 @@ public class CodeSpecialistTest extends PairProgrammerTestBase {
         final String method,
         final String globalRules,
         final String projectRules,
-        final CodeGenerator1 generator
+        final CodeGenerator3 generator
     ) {
         //
         // invoke the agent
@@ -99,7 +115,7 @@ public class CodeSpecialistTest extends PairProgrammerTestBase {
         final String method,
         final String globalRules,
         final String projectRules,
-        final CodeGenerator1 generator
+        final CodeGenerator3 generator
     ) {
         final String ERROR = "the error";
 
@@ -112,8 +128,29 @@ public class CodeSpecialistTest extends PairProgrammerTestBase {
         // proper prompt messages has been generated and provided
         //
         updateMethod_returns_AI_provided_response(
-            String.format(CodeSpecialist.FIX_METHOD_COMPILATION_ERROR, ERROR),
+            String.format(CodeSpecialist.FIX_COMPILATION_ERROR, ERROR),
             code, method, globalRules, projectRules
+        );
+    }
+
+    protected void fixVariableError_returns_AI_provided_response(
+        final String source,
+        final String error,
+        final String globalRules,
+        final String projectRules,
+        final CodeGenerator2 generator
+    ) {
+        //
+        // invoke the agent
+        //
+        generator.apply(source, error, globalRules, projectRules);
+
+        //
+        // proper prompt messages has been generated and provided
+        //
+        updateMethod_returns_AI_provided_response(
+            String.format(CodeSpecialist.FIX_COMPILATION_ERROR, error),
+            source, "", globalRules, projectRules
         );
     }
 
@@ -133,6 +170,28 @@ public class CodeSpecialistTest extends PairProgrammerTestBase {
         // proper prompt messages has been generated and provided
         //
         updateMethod_returns_AI_provided_response(CodeSpecialist.PROMPT_ENHANCE_METHOD_FROM_METHOD_CODE, code, method, globalRules, projectRules);
+    }
+
+    protected void enhanceVariableName_returns_AI_provided_response(
+        final String variableContext,
+        final String methodContent,
+        final String classContent,
+        final String globalRules,
+        final String projectRules,
+        final CodeGenerator3 generator
+    ) {
+        //
+        // invoke the agent
+        //
+        generator.apply(variableContext, methodContent, classContent, globalRules, projectRules);
+
+        //
+        // proper prompt messages has been generated and provided
+        //
+        updateMethod_returns_AI_provided_response(
+            String.format(CodeSpecialist.PROMPT_ENHANCE_VARIABLE_NAME, variableContext),
+            classContent, methodContent, globalRules, projectRules
+        );
     }
 
     protected void updateMethod_returns_AI_provided_response(
