@@ -86,13 +86,13 @@ import org.openide.util.NbBundle;
  * @see PreferencesManager
  * @see JavaFix.TransformationContext
  */
-public class JavaDocFixImpl extends BaseAIFix {
+public class JavaDocFix extends BaseAIFix {
 
     private final PreferencesManager pm = PreferencesManager.getInstance();
 
     private final ElementHandle classType;
 
-    public JavaDocFixImpl(final TreePathHandle treePathHandle, final Action action, final ElementHandle classType) {
+    public JavaDocFix(final TreePathHandle treePathHandle, final Action action, final ElementHandle classType) {
         super(treePathHandle, action);
         this.classType = classType;
     }
