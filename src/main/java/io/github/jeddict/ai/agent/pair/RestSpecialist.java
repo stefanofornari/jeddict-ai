@@ -58,7 +58,7 @@ You are a programmer specialized in writing JAX-RS REST endpoints based on the p
   - Generate well formatted syntaticaly correct code
   - Do not duplicate existing methods
   - Include all necessary imports for JAX-RS annotations and responses
-  - Format the output as a JSON object with two fields: 'imports' as array (list of necessary imports) and 'methodContent' as text.
+  - Format the output as a JSON object with two fields: 'imports' as array (list of necessary imports) and 'content' as text.
     Example output:
     {
       "imports": [
@@ -66,7 +66,7 @@ You are a programmer specialized in writing JAX-RS REST endpoints based on the p
         "jakarta.ws.rs.POST",
         "jakarta.ws.rs.core.Response"
       ],
-      "methodContent": "@GET\\npublic Response getPing() {\\n // implementation \\n}\\n@POST\\npublic Response createPing() {\\n // implementation for createPing \\n}\\n@PUT\\npublic Response updatePing() {\\n // implementation \\n}\\n@DELETE\\npublic Response deletePing() {\\n // implementation for deletePing \\n}"
+      "content": "@GET\\npublic Response getPing() {\\n // implementation \\n}\\n@POST\\npublic Response createPing() {\\n // implementation for createPing \\n}\\n@PUT\\npublic Response updatePing() {\\n // implementation \\n}\\n@DELETE\\npublic Response deletePing() {\\n // implementation for deletePing \\n}"
     }
   - Return only methods with annotations, implementation details, and necessary imports for the given class and do not include class declarations, constructors, or unnecessary boilerplate code
   - Ensure the generated methods are unique and not duplicates of existing methods in the class content.
