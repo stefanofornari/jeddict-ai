@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -81,5 +82,9 @@ public class TestBase {
     @AfterEach
     public void afterEach() {
         Logger.getLogger(getClass().getPackageName()).removeHandler(logHandler);
+    }
+
+    protected void thenPathsAreEqual(final Path p1, final Path p2) {
+        then(p1.toUri().getPath()).isEqualTo(p2.toUri().getPath());
     }
 }
