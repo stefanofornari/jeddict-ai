@@ -36,7 +36,7 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.service.AiServices;
 import io.github.jeddict.ai.agent.AbstractTool;
 import io.github.jeddict.ai.agent.Assistant;
-import io.github.jeddict.ai.agent.PairProgrammer;
+import io.github.jeddict.ai.agent.pair.PairProgrammer;
 import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.response.TokenHandler;
 import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
@@ -290,155 +290,10 @@ public class JeddictBrain {
         return response.toString();
     }
 
-    public PairProgrammer pairProgrammer() {
-        return AgenticServices.agentBuilder(PairProgrammer.class)
-                        .chatModel(chatModel.get())
-                        .build();
-    }
-
-    public String generateRestEndpointForClass(Project project, String classContent) {
-        // Define a prompt to generate unique JAX-RS resource methods with necessary imports
-        String prompt = """
-        You are an API server that generates JAX-RS REST endpoints based on the provided Java class definition. \
-        Analyze the context and functionality of the class to create meaningful and relevant REST endpoints. \
-        Ensure that you create new methods for various HTTP operations (GET, POST, PUT, DELETE) and include all necessary imports for JAX-RS annotations and responses. \
-        The generated methods should have some basic implementation and should not be empty. Avoid duplicating existing methods from the class content. \
-        Format the output as a JSON object with two fields: 'imports' as array (list of necessary imports) and 'methodContent' as text. \
-        Include all required imports such as Response, GET, POST, PUT, DELETE, Path, etc. \
-        Example output:
-        {
-          "imports": [
-            "jakarta.ws.rs.GET",
-            "jakarta.ws.rs.POST",
-            "jakarta.ws.rs.core.Response"
-          ],
-          "methodContent": "@GET public Response getPing() { // implementation }@POST public Response createPing() { // implementation for createPing }@PUT public Response updatePing() { // implementation }@DELETE public Response deletePing() { // implementation for deletePing }"
-        }
-
-        Only return methods with annotations, implementation details, and necessary imports for the given class. \
-        Do not include class declarations, constructors, or unnecessary boilerplate code. Ensure the generated methods are unique and not duplicates of existing methods in the class content.
-
-        """ + classContent;
-
-        // Generate the unique JAX-RS methods with imports
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    @Deprecated
-    public String updateMethodFromDevQuery(Project project, String javaClassContent, String methodContent, String developerRequest) {
-        String prompt = """
-            You are an API server that enhances Java methods based on user requests.
-            Given the following Java method and the developer's request, modify and enhance the method accordingly.
-            Incorporate any specific details or requirements mentioned by the developer. Do not include any additional text or explanation, just return the enhanced Java method source code.
-
-            Include all necessary imports relevant to the enhanced or newly created method.
-            Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
-            Do not include full java class, any additional text or explanation, just the imports and the method source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'.
-            Developer Request:
-            """ + developerRequest + """
-
-            Java Class Content:
-            """ + javaClassContent + """
-
-            Java Method Content:
-            """ + methodContent;
-
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    @Deprecated
-    public String enhanceMethodFromMethodContent(Project project, String javaClassContent, String methodContent) {
-        String prompt = """
-            You are an API server that enhances or creates Java methods based on the method name, comments, and its content.
-            Given the following Java class content and Java method content, modify and enhance the method accordingly.
-            Include all necessary imports relevant to the enhanced or newly created method.
-            Return only the Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
-            Do not include full java class, any additional text or explanation, just the imports and the method source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'.
-            Java Class Content:
-            """ + javaClassContent + """
-
-            Java Method Content:
-            """ + methodContent;
-
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String fixMethodCompilationError(Project project, String javaClassContent, String methodContent, String errorMessage, String classDatas) {
-        String prompt = """
-            You are an API server that fixes compilation errors in Java methods based on the provided error messages.
-            Given the following Java method content, class content, and the error message, correct the method accordingly.
-            Ensure that all compilation errors indicated by the error message are resolved.
-            Include any necessary imports relevant to the fixed method.
-            Return only the corrected Java method and its necessary imports, without including any class declarations, constructors, or other boilerplate code.
-            Do not include full Java class, any additional text, or explanation—just the imports and the corrected method source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'methodContent'.
-            Error Message:
-            """ + errorMessage + """
-
-            Java Class Content:
-            """ + javaClassContent + """
-
-            Java Method Content:
-            """ + methodContent;
-
-        prompt = loadClassData(prompt, classDatas);
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String fixVariableError(Project project, String javaClassContent, String errorMessage, String classDatas) {
-        String prompt = """
-            You are an API server that fixes variable-related compilation errors in Java classes based on the provided error messages.
-            Given the following Java class content and the error message, correct given variable-related issues based on error message at class level.
-            Ensure that all compilation errors indicated by the error message, such as undeclared variables, incorrect variable types, or misuse of variables, are resolved.
-            Include any necessary imports relevant to the fixed method or class.
-            Return only the corrected variable content and its necessary imports, without including any unnecessary boilerplate code.
-            Do not include any additional text or explanation—just the imports and the corrected variable source code.
-
-            Format the output as a JSON object with two fields: 'imports' (list of necessary imports) and 'variableContent' (corrected variable line or content).
-            Error Message:
-            """ + errorMessage + """
-
-            Java Class Content:
-            """ + javaClassContent;
-
-        prompt = loadClassData(prompt, classDatas);
-        String response = generate(project, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String enhanceVariableName(String variableContext, String methodContent, String classContent) {
-        StringBuilder prompt = new StringBuilder("""
-            You are an API server that suggests a more meaningful and descriptive name for a specific variable in a given Java class.
-            Based on the provided Java class content and the variable context, suggest an improved name for the variable.
-            Return only the new variable name. Do not include any additional text or explanation.
-
-            Variable Context:
-            """ + variableContext + "\n\n");
-
-        if (methodContent != null) {
-            prompt.append("Java Method Content:\n").append(methodContent).append("\n\n");
-        }
-        if (classContent != null) {
-            prompt.append("Java Class Content:\n").append(classContent);
-        }
-
-        String response = generate(null, prompt.toString());
-        LOG.finest(response);
-        return response;
+    public <T> T pairProgrammer(final PairProgrammer.Specialist specialist) {
+        return (T)AgenticServices.agentBuilder(specialist.specialistClass)
+                .chatModel(chatModel.get())
+                .build();
     }
 
     public List<String> suggestVariableNames(String classDatas, String variablePrefix, String classContent, String variableExpression) {

@@ -13,47 +13,30 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.github.jeddict.ai.agent;
+package io.github.jeddict.ai.agent.pair;
 
+import io.github.jeddict.ai.agent.pair.JavadocSpecialist;
 import dev.langchain4j.agentic.AgenticServices;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.ChatMessageType;
-import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
-import static io.github.jeddict.ai.agent.PairProgrammer.ELEMENT_CLASS;
-import static io.github.jeddict.ai.agent.PairProgrammer.ELEMENT_MEMBER;
-import static io.github.jeddict.ai.agent.PairProgrammer.ELEMENT_METHOD;
-import io.github.jeddict.ai.models.DummyChatModel;
-import io.github.jeddict.ai.test.DummyChatModelListener;
-import io.github.jeddict.ai.test.TestBase;
-import java.util.List;
-import static org.assertj.core.api.BDDAssertions.then;
+import static io.github.jeddict.ai.agent.pair.JavadocSpecialist.ELEMENT_CLASS;
+import static io.github.jeddict.ai.agent.pair.JavadocSpecialist.ELEMENT_MEMBER;
+import static io.github.jeddict.ai.agent.pair.JavadocSpecialist.ELEMENT_METHOD;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  *
  */
-public class PairProgrammerTest extends TestBase {
+public class JavadocSpecialistTest extends PairProgrammerTestBase {
 
-    final String TEXT = "use mock 'hello world.txt'";
     final String JAVADOC = "this is a javadoc comment";
-
-    DummyChatModel model;
-    DummyChatModelListener listener;
-    PairProgrammer pair;
+    private JavadocSpecialist pair;
 
     @BeforeEach
     public void beforeEach() throws Exception {
         super.beforeEach();
 
-        model = new DummyChatModel();
-        listener = new DummyChatModelListener();
-
-        model.addListener(listener);
-
-        pair = AgenticServices.agentBuilder(PairProgrammer.class)
+        pair = AgenticServices.agentBuilder(JavadocSpecialist.class)
             .chatModel(model)
             .build();
 
@@ -131,10 +114,10 @@ public class PairProgrammerTest extends TestBase {
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
                 request.chatRequest().messages(),
-                PairProgrammer.SYSTEM_MESSAGE
+                JavadocSpecialist.SYSTEM_MESSAGE
                         .replace("{{globalRules}}", (globalRules.trim().isEmpty()) ? "no rules" : globalRules)
                         .replace("{{projectRules}}", (projectRules.trim().isEmpty()) ? "no rules" : projectRules),
-                PairProgrammer.USER_MESSAGE
+                JavadocSpecialist.USER_MESSAGE
                         .replace("{{element}}", element)
                         .replace("{{code}}", code)
                         .replace("{{javadoc}}", "")
@@ -163,34 +146,14 @@ public class PairProgrammerTest extends TestBase {
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
             request.chatRequest().messages(),
-            PairProgrammer.SYSTEM_MESSAGE
+            JavadocSpecialist.SYSTEM_MESSAGE
                 .replace("{{globalRules}}", (globalRules.trim().isEmpty()) ? "no rules" : globalRules)
                 .replace("{{projectRules}}", (projectRules.trim().isEmpty()) ? "no rules" : projectRules),
-            PairProgrammer.USER_MESSAGE
+            JavadocSpecialist.USER_MESSAGE
                 .replace("{{element}}", element)
                 .replace("{{code}}", code)
                 .replace("{{javadoc}}", javadoc)
         );
     }
 
-    private void thenMessagesMatch(
-        final List<ChatMessage> messages, final String system, final String user
-    ) {
-        boolean systemOK = false, userOK = false;
-        int i = 0;
-
-        while (i<messages.size()) {
-            final ChatMessage msg = messages.get(i++);
-            LOG.info(() -> String.valueOf(msg));
-            if (msg.type() == ChatMessageType.SYSTEM) {
-                systemOK = systemOK || ((SystemMessage)msg).equals(new SystemMessage(system));
-            } else if (msg.type() == ChatMessageType.USER) {
-                LOG.info(() -> '\n' + String.valueOf(msg) + '\n' + String.valueOf(new UserMessage(user)));
-                userOK = userOK || ((UserMessage)msg).equals(new UserMessage(user));
-            }
-        }
-
-        then(systemOK).isTrue();
-        then(userOK).isTrue();
-    }
 }
