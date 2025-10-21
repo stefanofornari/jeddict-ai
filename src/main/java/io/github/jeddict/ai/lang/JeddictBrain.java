@@ -47,7 +47,6 @@ import io.github.jeddict.ai.util.Utilities;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -294,31 +293,6 @@ public class JeddictBrain {
         return (T)AgenticServices.agentBuilder(specialist.specialistClass)
                 .chatModel(chatModel.get())
                 .build();
-    }
-
-    public List<String> suggestVariableNames(String classDatas, String variablePrefix, String classContent, String variableExpression) {
-        String prompt = """
-        You are an API server that suggests a list of meaningful and descriptive names for a specific variable in a given Java class.
-        Based on the provided Java class content, variable prefix, and variable expression, generate a list of improved names for the variable.
-        Return only the list of suggested names, one per line, without any additional text or explanation.
-
-        Variable Prefix: %s
-
-        Variable Expression Line:
-        %s
-
-        Java Class Content:
-        %s
-
-        Here is the context of all classes in the project, including variable names and method signatures (method bodies are excluded to avoid sending unnecessary code):
-        %s
-        """.formatted(variablePrefix, variableExpression, classContent, classDatas);
-
-        String response = generate(null, prompt);
-        LOG.finest(response);
-
-        // Split the response into a list and return
-        return Arrays.asList(response.split("\n"));
     }
 
     private String loadClassData(String prompt, String classDatas) {
