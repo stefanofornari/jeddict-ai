@@ -21,6 +21,8 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+import io.github.jeddict.ai.agent.pair.CodeAdvisor;
+import io.github.jeddict.ai.agent.pair.PairProgrammer;
 import io.github.jeddict.ai.lang.JeddictBrain;
 import io.github.jeddict.ai.lang.Snippet;
 import io.github.jeddict.ai.scanner.MyTreePathScanner;
@@ -339,7 +341,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
         @Override
         protected void filter(CompletionResultSet resultSet) {
-            
+
 //            CompletionContext context = new CompletionContext(component.getDocument(),
 //                    component.getCaretPosition(), queryType);
 //            SpringCompletionResult springCompletionResult = completor.filter(context);
@@ -622,8 +624,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     } else if (kind == Tree.Kind.VARIABLE && resultSet != null) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_VAR_NAMES_LIST}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
-                        List<String> sugs = newJeddictBrain()
-                                .suggestVariableNames(classDataContent, updateddoc, line);
+                        List<String> sugs = getAdvisor().suggestVariableNames(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
                             JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
                             resultSet.addItem(var);
@@ -815,6 +816,10 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
         private JeddictBrain newJeddictBrain() {
             return new JeddictBrain(pm.getModelName(), false, List.of());
+        }
+
+        private CodeAdvisor getAdvisor() {
+            return newJeddictBrain().pairProgrammer(PairProgrammer.Specialist.ADVISOR);
         }
 
         private static boolean isJavaIdentifierPart(String text, boolean allowForDor) {

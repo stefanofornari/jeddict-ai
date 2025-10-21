@@ -1,0 +1,66 @@
+ /**
+ * Copyright 2025 the original author or authors from the Jeddict project (https://jeddict.github.io/).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package io.github.jeddict.ai.agent.pair;
+
+import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import java.util.List;
+import static org.assertj.core.api.BDDAssertions.then;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ *
+ */
+public class CodeAdvisorTest extends PairProgrammerTestBase {
+
+    private CodeAdvisor pair;
+
+    @BeforeEach
+    @Override
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+
+        pair = AgenticServices.agentBuilder(CodeAdvisor.class)
+            .chatModel(model)
+            .build();
+
+    }
+
+    @Test
+    public void suggestVariableNames_returns_AI_provided_response() {
+        final String LINE = "String name=\"this is the line of code\";";
+        final String CLASS = "use mock 'suggest variable names.txt'";
+        final String CLASSES = "classes data";
+
+        final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
+        final String expectedUser =
+            CodeAdvisor.USER_MESSAGE.replace("{{line}}", LINE)
+                .replace("{{class}}", CLASS).replace("{{classes}}", CLASSES)
+            +
+            "\nYou must put every item on a separate line.";
+
+        List<String> names = pair.suggestVariableNames(LINE, CLASS, CLASSES);
+
+        final ChatModelRequestContext request = listener.lastRequestContext.get();
+        thenMessagesMatch(
+            request.chatRequest().messages(), expectedSystem, expectedUser
+        );
+
+        then(names).containsExactly("one", "two", "three");
+
+    }
+}

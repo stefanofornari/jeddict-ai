@@ -25,7 +25,8 @@ package io.github.jeddict.ai.agent.pair;
 public interface PairProgrammer {
 
     public static enum Specialist {
-        CODE(CodeSpecialist.class),
+        ADVISOR(CodeAdvisor.class),
+        REFACTOR(RefactorSpecialist.class),
         JAVADOC(JavadocSpecialist.class),
         REST(RestSpecialist.class);
 
