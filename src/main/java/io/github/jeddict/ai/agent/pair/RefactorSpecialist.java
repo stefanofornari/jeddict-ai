@@ -22,6 +22,31 @@ import dev.langchain4j.service.V;
 
 
 
+/**
+ * Provides an interface for AI-powered Java code refactoring utilities. This
+ * specialist adapts or enhances methods, variable names, and fixes compilation
+ * errors based on specific user requests and project rules.<p>
+ *
+ * The interface defines prompts, message constants, and processing methods to
+ * allow Java code modification and generation workflows. Returned results are
+ * formatted as JSON objects containing necessary imports and code content.<p>
+ *
+ * Responsibilities include:
+ * <ul>
+ *   <li>Generating new method code or enhancing existing methods</li>
+ *   <li>Fixing compilation errors in method implementations</li>
+ *   <li>Refining variable names for improved clarity</li>
+ *   <li>Integrating user, global, and project-specific requirements</li>
+ * </ul>
+ *
+ * All enhancement and refactoring logic is ultimately handled by
+ * {@link #updateMethodFromDevQuery(String, String, String, String, String, String)},
+ * which takes custom prompt, source, and context arguments.<p>
+ *
+ * The interface also provides default convenience methods to streamline common
+ * refactoring and code enhancement tasks.<p>
+ *
+ */
 public interface RefactorSpecialist {
     public static final String SYSTEM_MESSAGE = """
 You are a programmer specialized in writing Java code. Base on user request, you will:

@@ -26,6 +26,17 @@ import javax.lang.model.SourceVersion;
 
 
 
+/**
+ * Provides an interface for suggesting improved variable names based on the context of Java code.
+ *
+ * Implementations of this interface analyze a given line of code, its containing class,
+ * and all relevant project classes to generate a list of up to three descriptive names
+ * suitable for a variable according to Java naming conventions and best practices.
+ *
+ * Example usage:
+ *   List<String> suggestions = codeAdvisor.suggestVariableNames(line, classSource, allClasses);
+ *
+ */
 public interface CodeAdvisor {
     public static final String SYSTEM_MESSAGE = """
 "You are an expert programmer that can suggest code based on the context of the
@@ -58,6 +69,20 @@ The project classes are: {{classes}}
         @V("classes") final String classes
     );
 
+    /**
+     * Suggests a list of valid Java variable names based on provided source line,
+     * code snippet, and relevant class names.
+     *
+     * This method analyzes the input line, code, and classes to generate candidate
+     * variable names, filters out empty names, names that do not match Java identifier
+     * rules, and reserved Java keywords.
+     *
+     * @param line the source code line where the variable is to be inserted
+     * @param code the surrounding source code context used for name suggestion
+     * @param classes the related class names or definitions as context
+     * 
+     * @return a list of filtered variable names valid in Java, excluding keywords
+     */
     default List<String> suggestVariableNames(
         final String line,
         final String code,

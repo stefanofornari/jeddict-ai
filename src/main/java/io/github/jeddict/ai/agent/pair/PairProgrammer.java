@@ -17,7 +17,7 @@ package io.github.jeddict.ai.agent.pair;
 
 
 /**
- * THis is just a marker for PairProgrammer agents like JavadocSpecialist,
+ * This is just a marker for PairProgrammer agents like JavadocSpecialist,
  * RestSpecialist, etc.
  *
  *
