@@ -304,23 +304,6 @@ public class JeddictBrain {
         return prompt;
     }
 
-    public List<String> suggestVariableNames(String classDatas, String classContent, String lineText) {
-        String prompt = "You are an API server that suggests multiple meaningful and descriptive names for a specific variable in a given Java class. "
-                + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a list of improved names for the variable represented by the placeholder ${SUGGEST_VAR_NAMES_LIST} in Java Class. "
-                + "Do not include additional text; return only the suggestions as a JSON array.\n\n"
-                + "Java Class Content:\n" + classContent;
-
-        prompt = loadClassData(prompt, classDatas);
-
-        // Generate the list of new variable names
-        String jsonResponse = generate(null, prompt);
-
-        // Parse the JSON response into a List
-        List<String> variableNames = parseJsonToList(jsonResponse);
-
-        return variableNames;
-    }
-
     public List<String> suggestMethodNames(String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests multiple meaningful and descriptive names for a specific method in a given Java class. "
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a list of improved names for the method represented by the placeholder ${SUGGEST_METHOD_NAMES_LIST} in Java Class. "
