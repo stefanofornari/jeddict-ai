@@ -622,7 +622,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             }
                         }
                     } else if (kind == Tree.Kind.VARIABLE && resultSet != null) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_VAR_NAMES_LIST}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
                         List<String> sugs = getAdvisor().suggestVariableNames(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
@@ -630,9 +630,9 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             resultSet.addItem(var);
                         }
                     } else if (kind == Tree.Kind.METHOD && resultSet != null) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_METHOD_NAMES_LIST}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
-                        List<String> sugs = newJeddictBrain()
+                        List<String> sugs = getAdvisor()
                                 .suggestMethodNames(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
                             JeddictItem var = new JeddictItem(null, null, snippet, "", Collections.emptyList(), caretOffset - currentVarName.length(), true, false, -1);
@@ -650,7 +650,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         }
                     } else if (kind == Tree.Kind.STRING_LITERAL && resultSet != null) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_STRING_LITERAL_LIST}");
-                        List<String> sugs = newJeddictBrain().suggestStringLiterals(classDataContent, updateddoc, line);
+                        List<String> sugs = getAdvisor().suggestStringLiterals(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
                             resultSet.addItem(createItem(new Snippet(snippet), line, lineTextBeforeCaret, javaToken, kind, doc));
                         }

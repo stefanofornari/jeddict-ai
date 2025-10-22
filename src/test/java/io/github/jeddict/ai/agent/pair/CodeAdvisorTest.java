@@ -27,6 +27,10 @@ import org.junit.jupiter.api.Test;
  */
 public class CodeAdvisorTest extends PairProgrammerTestBase {
 
+    private static final String LINE = "String name=\"this is the line of code\";";
+    private static final String CLASS = "use mock 'suggest names.txt'";
+    private static final String CLASSES = "classes data";
+
     private CodeAdvisor pair;
 
     @BeforeEach
@@ -42,18 +46,14 @@ public class CodeAdvisorTest extends PairProgrammerTestBase {
 
     @Test
     public void suggestVariableNames_returns_AI_provided_response() {
-        final String LINE = "String name=\"this is the line of code\";";
-        final String CLASS = "use mock 'suggest variable names.txt'";
-        final String CLASSES = "classes data";
-
         final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
-            CodeAdvisor.USER_MESSAGE.replace("{{line}}", LINE)
-                .replace("{{class}}", CLASS).replace("{{classes}}", CLASSES)
+            CodeAdvisor.USER_MESSAGE.replace("{{element}}", "variable")
+                .replace("{{line}}", LINE).replace("{{class}}", CLASS).replace("{{classes}}", CLASSES)
             +
             "\nYou must put every item on a separate line.";
 
-        List<String> names = pair.suggestVariableNames(LINE, CLASS, CLASSES);
+        final List<String> names = pair.suggestVariableNames(CLASSES, CLASS, LINE);
 
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
@@ -61,6 +61,49 @@ public class CodeAdvisorTest extends PairProgrammerTestBase {
         );
 
         then(names).containsExactly("one", "two", "three");
+    }
 
+    @Test
+    public void suggestMethodNames_returns_AI_provided_response() {
+        final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
+        final String expectedUser =
+            CodeAdvisor.USER_MESSAGE.replace("{{element}}", "method")
+                .replace("{{line}}", LINE).replace("{{class}}", CLASS).replace("{{classes}}", CLASSES)
+            +
+            "\nYou must put every item on a separate line.";
+
+        final List<String> names = pair.suggestMethodNames(CLASSES, CLASS, LINE);
+
+        final ChatModelRequestContext request = listener.lastRequestContext.get();
+        thenMessagesMatch(
+            request.chatRequest().messages(), expectedSystem, expectedUser
+        );
+
+        then(names).containsExactly("one", "two", "three");
+    }
+
+    @Test
+    public void suggestStringLiterals_returns_AI_provided_response() {
+        final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
+        final String expectedUser =
+            CodeAdvisor.USER_MESSAGE.replace("{{element}}", "string literals")
+                .replace("{{line}}", LINE).replace("{{class}}", CLASS).replace("{{classes}}", CLASSES)
+            +
+            "\nYou must put every item on a separate line.";
+
+        final List<String> names = pair.suggestStringLiterals(CLASSES, CLASS, LINE);
+
+        final ChatModelRequestContext request = listener.lastRequestContext.get();
+        thenMessagesMatch(
+            request.chatRequest().messages(), expectedSystem, expectedUser
+        );
+
+        then(names).containsExactly(
+            "one",
+            "one and an half (not a valid identifier)",
+            "two",
+            "three",
+            "-four"
+        );
     }
 }

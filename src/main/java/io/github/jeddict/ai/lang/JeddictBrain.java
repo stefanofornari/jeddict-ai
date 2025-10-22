@@ -304,38 +304,6 @@ public class JeddictBrain {
         return prompt;
     }
 
-    public List<String> suggestMethodNames(String classDatas, String classContent, String lineText) {
-        String prompt = "You are an API server that suggests multiple meaningful and descriptive names for a specific method in a given Java class. "
-                + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a list of improved names for the method represented by the placeholder ${SUGGEST_METHOD_NAMES_LIST} in Java Class. "
-                + "Do not include additional text; return only the suggestions as a JSON array.\n\n"
-                + "Java Class Content:\n" + classContent;
-
-        prompt = loadClassData(prompt, classDatas);
-        // Generate the list of new method names
-        String jsonResponse = generate(null, prompt);
-
-        // Parse the JSON response into a List
-        List<String> methodNames = parseJsonToList(jsonResponse);
-
-        return methodNames;
-    }
-
-    public List<String> suggestStringLiterals(String classDatas, String classContent, String lineText) {
-        String prompt = "You are an API server that suggests multiple meaningful and descriptive string literals for a specific context in a given Java class. "
-                + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a list of improved string literals represented by the placeholder ${SUGGEST_STRING_LITERAL_LIST} in Java Class. "
-                + "Do not include additional text; return only the suggestions as a JSON array.\n\n"
-                + "Java Class Content:\n" + classContent;
-
-        prompt = loadClassData(prompt, classDatas);
-        // Generate the list of new string literals
-        String jsonResponse = generate(null, prompt);
-
-        // Parse the JSON response into a List
-        List<String> stringLiterals = parseJsonToListWithSplit(jsonResponse);
-
-        return stringLiterals;
-    }
-
     public List<String> suggestMethodInvocations(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests multiple meaningful and appropriate method invocations for a specific context in a given Java class. "
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a list of improved method invocations represented by the placeholder ${SUGGEST_METHOD_INVOCATION} in Java Class. "
