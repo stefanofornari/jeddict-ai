@@ -30,7 +30,7 @@ import dev.langchain4j.service.V;
  * <p>The generated output is a well-formatted JSON object containing an array of required imports
  * and the annotated JAX-RS method declarations as a text string.</p>
  */
-public interface RestSpecialist {
+public interface RestSpecialist extends PairProgrammer {
         public static final String SYSTEM_MESSAGE = """
 You are a programmer specialized in writing JAX-RS REST endpoints based on the provided Java class acordingly to the rules:
   - Analyze the code of the class to create meaningful REST endpoints

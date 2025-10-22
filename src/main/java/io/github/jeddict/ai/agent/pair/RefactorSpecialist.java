@@ -47,7 +47,7 @@ import dev.langchain4j.service.V;
  * refactoring and code enhancement tasks.<p>
  *
  */
-public interface RefactorSpecialist {
+public interface RefactorSpecialist extends PairProgrammer {
     public static final String SYSTEM_MESSAGE = """
 You are a programmer specialized in writing Java code. Base on user request, you will:
 - Write new or enhancing existing code

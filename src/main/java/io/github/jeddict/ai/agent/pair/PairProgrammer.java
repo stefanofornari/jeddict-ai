@@ -15,6 +15,8 @@
  */
 package io.github.jeddict.ai.agent.pair;
 
+import java.util.logging.Logger;
+
 
 /**
  * This is just a marker for PairProgrammer agents like JavadocSpecialist,
@@ -23,6 +25,8 @@ package io.github.jeddict.ai.agent.pair;
  *
  */
 public interface PairProgrammer {
+
+    final Logger LOG = Logger.getLogger(PairProgrammer.class.getCanonicalName());
 
     public static enum Specialist {
         ADVISOR(CodeAdvisor.class),
@@ -36,6 +40,5 @@ public interface PairProgrammer {
             this.specialistClass = specialist;
         }
     }
-
 
 }
