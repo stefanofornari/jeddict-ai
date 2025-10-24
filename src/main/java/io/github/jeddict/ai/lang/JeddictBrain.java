@@ -176,6 +176,7 @@ public class JeddictBrain {
 
     //
     // TODO: P3 - better use of langchain4j functionalities (see https://docs.langchain4j.dev/tutorials/agents)
+    // TODO: P3 - after refactory project should not be needed any more
     //
     private String generateInternal(Project project, boolean agentEnabled, String prompt, List<String> images, List<Response> responseHistory) {
         if (chatModel.isEmpty() && streamingChatModel.isEmpty()) {
@@ -302,23 +303,6 @@ public class JeddictBrain {
         prompt += "\n\nHere is the context of all classes in the project, including variable names and method signatures (method bodies are excluded to avoid sending unnecessary code):\n"
                 + classDatas;
         return prompt;
-    }
-
-    public List<String> suggestMethodInvocations(Project project, String classDatas, String classContent, String lineText) {
-        String prompt = "You are an API server that suggests multiple meaningful and appropriate method invocations for a specific context in a given Java class. "
-                + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a list of improved method invocations represented by the placeholder ${SUGGEST_METHOD_INVOCATION} in Java Class. "
-                + "Do not include additional text; return only the suggestions as a JSON array.\n\n"
-                + "Java Class Content:\n" + classContent;
-
-        prompt = loadClassData(prompt, classDatas);
-
-        // Generate the list of new method invocations
-        String jsonResponse = generate(project, prompt);
-
-        // Parse the JSON response into a List
-        List<String> methodInvocations = parseJsonToList(jsonResponse);
-
-        return methodInvocations;
     }
 
     public List<Snippet> suggestNextLineCode(
