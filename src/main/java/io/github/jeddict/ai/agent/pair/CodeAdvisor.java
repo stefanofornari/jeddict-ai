@@ -38,7 +38,7 @@ import org.apache.commons.lang3.StringUtils;
  *   List<String> suggestions = codeAdvisor.suggestVariableNames(line, classSource, allClasses);
  *
  */
-public interface Ghostwriter extends PairProgrammer {
+public interface CodeAdvisor extends PairProgrammer {
     public static final String SYSTEM_MESSAGE = """
 "You are an expert programmer that can suggest code based on the context of the
 program and best practices to write good quality code. Based on user request you will:
@@ -66,7 +66,7 @@ Project info: {{project}}
     //
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
-    @Agent("Suggest up to 3 names for a variable")
+    @Agent("Suggest up to 3 names for a variable, method or other elements")
     List<String> suggest(
         @V("element") final String element,
         @V("classes") final String classes,

@@ -25,21 +25,21 @@ import org.junit.jupiter.api.Test;
 /**
  *
  */
-public class GhostwriterTest extends PairProgrammerTestBase {
+public class CodeAdvisorTest extends PairProgrammerTestBase {
 
     private static final String LINE = "String name=\"this is the line of code\";";
     private static final String CLASS = "use mock 'suggest names.txt'";
     private static final String CLASSES = "classes data";
     private static final String PROJECT_INFO = "JDK 17";
 
-    private Ghostwriter pair;
+    private CodeAdvisor pair;
 
     @BeforeEach
     @Override
     public void beforeEach() throws Exception {
         super.beforeEach();
 
-        pair = AgenticServices.agentBuilder(Ghostwriter.class)
+        pair = AgenticServices.agentBuilder(CodeAdvisor.class)
             .chatModel(model)
             .build();
 
@@ -47,9 +47,9 @@ public class GhostwriterTest extends PairProgrammerTestBase {
 
     @Test
     public void suggestVariableNames_returns_AI_provided_response() {
-        final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE;
+        final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
-            Ghostwriter.USER_MESSAGE.replace("{{element}}", "variable")
+            CodeAdvisor.USER_MESSAGE.replace("{{element}}", "variable")
                 .replace("{{line}}", LINE).replace("{{class}}", CLASS)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", "")
             +
@@ -67,9 +67,9 @@ public class GhostwriterTest extends PairProgrammerTestBase {
 
     @Test
     public void suggestMethodNames_returns_AI_provided_response() {
-        final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE;
+        final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
-            Ghostwriter.USER_MESSAGE.replace("{{element}}", "method")
+            CodeAdvisor.USER_MESSAGE.replace("{{element}}", "method")
                 .replace("{{line}}", LINE).replace("{{class}}", CLASS)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", "")
             +
@@ -87,9 +87,9 @@ public class GhostwriterTest extends PairProgrammerTestBase {
 
     @Test
     public void suggestStringLiterals_returns_AI_provided_response() {
-        final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE;
+        final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
-            Ghostwriter.USER_MESSAGE.replace("{{element}}", "string literals")
+            CodeAdvisor.USER_MESSAGE.replace("{{element}}", "string literals")
                 .replace("{{line}}", LINE).replace("{{class}}", CLASS)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", "")
             +
@@ -113,9 +113,9 @@ public class GhostwriterTest extends PairProgrammerTestBase {
 
     @Test
     public void suggestMethodInvocations_returns_AI_provided_response() {
-        final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE;
+        final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
-            Ghostwriter.USER_MESSAGE.replace("{{element}}", "method invocation")
+            CodeAdvisor.USER_MESSAGE.replace("{{element}}", "method invocation")
                 .replace("{{line}}", LINE).replace("{{class}}", CLASS)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", PROJECT_INFO)
             +

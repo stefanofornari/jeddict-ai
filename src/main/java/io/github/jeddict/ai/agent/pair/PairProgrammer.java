@@ -29,7 +29,7 @@ public interface PairProgrammer {
     final Logger LOG = Logger.getLogger(PairProgrammer.class.getCanonicalName());
 
     public static enum Specialist {
-        ADVISOR(Ghostwriter.class),
+        ADVISOR(CodeAdvisor.class),
         REFACTOR(RefactorSpecialist.class),
         JAVADOC(JavadocSpecialist.class),
         REST(RestSpecialist.class);

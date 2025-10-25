@@ -89,11 +89,11 @@ import org.netbeans.spi.editor.completion.support.AsyncCompletionTask;
 import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
-import io.github.jeddict.ai.agent.pair.Ghostwriter;
 import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import java.util.logging.Logger;
+import io.github.jeddict.ai.agent.pair.CodeAdvisor;
 
 @MimeRegistration(mimeType = "", service = CompletionProvider.class, position = 100)
 public class JeddictCompletionProvider implements CompletionProvider {
@@ -703,7 +703,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             }
                         }
                     } else {
-                        System.out.println("Skipped : " + kind + " " + path.getLeaf().toString());
+                        LOG.finest(() -> "Skipped : " + kind + " " + path.getLeaf().toString());
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_CODE}");
                         List<Snippet> sugs = newJeddictBrain()
                                 .suggestNextLineCode(project, classDataContent, updateddoc, line, path, hintContext, queryType == -1, description);
@@ -836,7 +836,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
             return new JeddictBrain(pm.getModelName(), false, List.of());
         }
 
-        private Ghostwriter getGhostwriter() {
+        private CodeAdvisor getGhostwriter() {
             return newJeddictBrain().pairProgrammer(PairProgrammer.Specialist.ADVISOR);
         }
 
