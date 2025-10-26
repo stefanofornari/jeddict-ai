@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import javax.tools.JavaCompiler;
@@ -214,15 +213,16 @@ public class GhostwriterTest extends PairProgrammerTestBase {
     // --------------------------------------------------------- private methods
 
     private JavacTask parseSayHello() throws IOException {
+        final File sayHelloFile = new File("src/test/java/io/github/jeddict/ai/test/SayHello.java");
+
         JavaFileObject fileObject = new SimpleJavaFileObject(
-            URI.create("src/test/io/github/jeddict/ai/test/SayHello.java"),
-            JavaFileObject.Kind.SOURCE
+            sayHelloFile.toURI(), JavaFileObject.Kind.SOURCE
         ) {
             @Override
             public CharSequence getCharContent(boolean ignoreEncodingErrors) {
                 try {
                     return FileUtils.readFileToString(
-                        new File("src/test/java/io/github/jeddict/ai/test/SayHello.java"), "UTF8"
+                        sayHelloFile.toPath().toAbsolutePath().toFile(), "UTF8"
                     );
                 } catch (IOException x) {
                     x.printStackTrace();
