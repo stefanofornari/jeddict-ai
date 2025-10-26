@@ -495,16 +495,8 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
         @Override
         protected void query(CompletionResultSet resultSet, Document doc, int caretOffset) {
-            //
-            // TODO: remove after review
-            //
-            // CHECK: for completion tasks, description is not needed (or a
-            // different policy should be implemented, something like put the
-            // description in a comment...
-            //
-            // final PreferencesManager pm = PreferencesManager.getInstance();
-            // final boolean description = pm.isDescriptionEnabled();
-            final boolean description = false;
+            final PreferencesManager pm = PreferencesManager.getInstance();
+            final boolean description = pm.isDescriptionEnabled();
 
             try {
                 FileObject fileObject = getFileObjectFromEditor(doc);
@@ -517,6 +509,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 done = true;
 
                 final Project project = FileOwnerQuery.getOwner(fileObject);
+                final String projectInfo = ProjectMetadataInfo.get(project);
 
                 this.caretOffset = caretOffset;
                 String mimeType = (String) doc.getProperty("mimeType");
@@ -549,8 +542,9 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     if (kind == Tree.Kind.VARIABLE || kind == Tree.Kind.METHOD || kind == Tree.Kind.STRING_LITERAL) {
                         activeClassContext = pm.getVarContext();
                     }
+
                     final String classDataContent = getClassDataContent(fileObject, compilationUnit, activeClassContext);
-                    final String projectInfo = ProjectMetadataInfo.get(project);
+
                     if (tree == null || kind == Tree.Kind.ERRONEOUS || kind == Tree.Kind.COMPILATION_UNIT) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
                         List<Snippet> sugs = getGhostwriter()
@@ -661,17 +655,12 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     }
                 } else if ((COMPLETION_QUERY_TYPE == queryType || COMPLETION_ALL_QUERY_TYPE == queryType) && JAVA_MIME.equals(mimeType)) {
                     String line = getLineText(doc, caretOffset);
-                    JavacTask task = getJavacTask(doc);
-                    Iterable<? extends CompilationUnitTree> ast = task.parse();
-                    task.analyze();
-                    CompilationUnitTree compilationUnit = ast.iterator().next();
 
-                    TreePath path = SourceUtil.findTreePathAtCaret(compilationUnit, task, caretOffset);
                     List<String> sugs;
                     if (line.trim().startsWith("//")) {
                         String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_JAVA_COMMENT}");
-                        sugs = newJeddictBrain()
-                                .suggestJavaComment(project, "", updateddoc, line);
+                        sugs = getGhostwriter()
+                                .suggestJavaComment("", updateddoc, line, projectInfo);
                         for (String varName : sugs) {
                             int newcaretOffset = caretOffset;
                             if (varName.startsWith(line.trim())) {

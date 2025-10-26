@@ -7,13 +7,9 @@ import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 import io.github.jeddict.ai.lang.Snippet;
-import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
-import java.util.ArrayList;
-import java.util.Collections;
+import io.github.jeddict.ai.util.JSONUtil;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public interface Ghostwriter extends PairProgrammer {
 
@@ -68,9 +64,8 @@ Ensure that the suggestions fit the context of the entire file.
         "Suggest a relevant single line of code or a multi-line code block as appropriate for the context represented by the placeholder ${SUGGESTION} in the Java class." +
         "Ensure that the suggestions are relevant to the context.";
 
-    static final String USER_MESSAGE_LINES2 =
-        "Suggest a relevant single line of code or a multi-line code block as appropriate for provided context." +
-        "Ensure that the suggestions are relevant to the context.";
+    static final String USER_MESSAGE_COMMENT =
+        "Suggest relevant Java comment as appropriate for the context represented by the placeholder ${SUGGESTION} in the Java Class.";
 
     static final String OUTPUT_JSON_OBJECT = """
 Return a JSON object with a single best suggestion without any additional text or explanation. The object should contain two fields: 'imports' and 'snippet'.
@@ -79,14 +74,14 @@ Return a JSON object with a single best suggestion without any additional text o
 Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid.
 """;
 
-    static final String OUTPUT_JSON_ARRAY = """
+    static final String OUTPUT_SNIPPET_JSON_ARRAY = """
 Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing two fields: 'imports' and 'snippet'.
 'imports' should be an array of required Java import statements (if no imports are required, return an empty array).
 'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks.
 Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid.
 """;
 
-    static final String OUTPUT_JSON_ARRAY_WITH_DESCRIPTION = """
+    static final String OUTPUT_SNIPPET_JSON_ARRAY_WITH_DESCRIPTION = """
 Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing three fields: 'imports', 'snippet', and 'description'.
 'imports' should be an array of required Java import statements (if no imports are required, return an empty array).
 'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks.
@@ -94,27 +89,30 @@ Return a JSON array with a few best suggestions without any additional text or e
 Make sure to escape any double quotes within the snippet and description using a backslash (\\) so that the JSON remains valid.
 """;
 
+    static final String OUTPUT_STRING_JSON_ARRAY =
+        "Return a JSON array where each element must be single line comment.";
+
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
     @Agent("Suggest code for the given content and cotext")
     String suggest(
-            @V("message") final String message, // additional user request
-            @V("classes") final String classes, // the relevant classes and methods signature
-            @V("code") final String code, // the current code (e.g. class)
-            @V("line") final String line, // the current line
-            @V("hint") final String hint, // the hint context
-            @V("project") final String project, // some project info
-            @V("format") final String format // the output format
+        @V("message") final String message, // additional user request
+        @V("classes") final String classes, // the relevant classes and methods signature
+        @V("code") final String code, // the current code (e.g. class)
+        @V("line") final String line, // the current line
+        @V("hint") final String hint, // the hint context
+        @V("project") final String project, // some project info
+        @V("format") final String format // the output format
     );
 
     default List<Snippet> suggestNextLineCode(
-            final String classes,
-            final String code,
-            final String line,
-            final String project,
-            final String hint,
-            final TreePath tree,
-            boolean description
+        final String classes,
+        final String code,
+        final String line,
+        final String project,
+        final String hint,
+        final TreePath tree,
+        boolean description
     ) {
         log(classes, code, line, project, hint, description);
 
@@ -123,23 +121,36 @@ Make sure to escape any double quotes within the snippet and description using a
         }
 
         final String output = (description)
-                ? OUTPUT_JSON_ARRAY_WITH_DESCRIPTION
-                : OUTPUT_JSON_ARRAY;
+                ? OUTPUT_SNIPPET_JSON_ARRAY_WITH_DESCRIPTION
+                : OUTPUT_SNIPPET_JSON_ARRAY;
 
-        return jsonToSnippets(suggest(userMessage(tree), classes, code, line, "", project, output));
+        return JSONUtil.jsonToSnippets(suggest(userMessage(tree), classes, code, line, "", project, output));
     }
 
     default List<Snippet> suggestNextLineCodeWithHint(
-            final String classes,
-            final String code,
-            final String line,
-            final String project,
-            final String hint
+        final String classes,
+        final String code,
+        final String line,
+        final String project,
+        final String hint
     ) {
         log(classes, code, line, project, hint, false);
 
-        return jsonToSnippets(suggest("", classes, code, line, hint, project, OUTPUT_JSON_OBJECT));
+        return JSONUtil.jsonToSnippets(suggest("", classes, code, line, hint, project, OUTPUT_JSON_OBJECT));
     }
+
+    default List<String> suggestJavaComment(
+        final String classes,
+        final String code,
+        final String line,
+        final String project
+    ) {
+        log(classes, code, line, project, "", false);
+        
+        return JSONUtil.jsonToList(suggest(USER_MESSAGE_COMMENT, classes, code, line, "", project, OUTPUT_STRING_JSON_ARRAY));
+    }
+
+    // --------------------------------------------------------- Utility methods
 
     default String userMessage(final TreePath tree) {
         //
@@ -199,57 +210,6 @@ Make sure to escape any double quotes within the snippet and description using a
         }
 
         return USER_MESSAGE_LINES;
-    }
-
-    default List<Snippet> jsonToSnippets(String jsonResponse) {
-        if (jsonResponse == null) {
-            return Collections.EMPTY_LIST;
-        }
-        List<Snippet> snippets = new ArrayList<>();
-
-        JSONArray jsonArray;
-
-        if (jsonResponse.contains("```json")) {
-            int index = jsonResponse.indexOf("```json") + 7;
-            jsonResponse = jsonResponse.substring(index, jsonResponse.indexOf("```", index)).trim();
-        } else {
-            jsonResponse = removeCodeBlockMarkers(jsonResponse);
-        }
-        try {
-            // Parse the JSON response
-            jsonArray = new JSONArray(jsonResponse);
-        } catch (org.json.JSONException jsone) {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            jsonArray = new JSONArray();
-            jsonArray.put(jsonObject);
-        }
-
-        // Loop through each element in the JSON array
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-            List<String> importsList = new ArrayList<>();
-            if (jsonObject.has("imports")) {
-                // Extract the "imports" array
-                JSONArray importsJsonArray = jsonObject.getJSONArray("imports");
-                for (int j = 0; j < importsJsonArray.length(); j++) {
-                    importsList.add(importsJsonArray.getString(j));
-                }
-            }
-
-            // Extract the "snippet" field
-            String snippet = jsonObject.getString("snippet");
-            if (jsonObject.has("description")) {
-                String descripion = jsonObject.getString("description");
-                Snippet snippetObj = new Snippet(snippet, descripion, importsList);
-                snippets.add(snippetObj);
-            } else {
-                Snippet snippetObj = new Snippet(snippet, importsList);
-                snippets.add(snippetObj);
-            }
-        }
-
-        return snippets;
     }
 
     /**

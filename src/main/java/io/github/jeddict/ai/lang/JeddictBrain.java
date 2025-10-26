@@ -19,7 +19,6 @@ package io.github.jeddict.ai.lang;
  *
  * @author Shiwani Gupta
  */
-import com.sun.source.util.TreePath;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -40,21 +39,19 @@ import io.github.jeddict.ai.response.Response;
 import io.github.jeddict.ai.response.TokenHandler;
 import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import io.github.jeddict.ai.settings.PreferencesManager;
+import io.github.jeddict.ai.util.JSONUtil;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import io.github.jeddict.ai.util.Utilities;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.netbeans.api.project.Project;
 
 public class JeddictBrain {
@@ -304,62 +301,6 @@ public class JeddictBrain {
         return prompt;
     }
 
-    public List<Snippet> hintNextLineCode(
-        final Project project, final String classDatas, final String classContent,
-        final String lineText, final TreePath path, final String hintContext,
-        final boolean singleCodeSnippet, final boolean description
-    ) {
-        StringBuilder promptBuilder = new StringBuilder();
-
-        promptBuilder.append("You are an API server that suggests relevant Java code at the placeholder ${SUGGEST_CODE}.\n")
-                .append("The goal is to generate context-aware, meaningful, and syntactically valid Java code suggestions that fit naturally in the given location.\n");
-
-        if (hintContext != null && !hintContext.isEmpty()) {
-            promptBuilder.append("Hint:\n").append(hintContext).append("\n");
-        }
-
-        if (lineText != null && !lineText.trim().isEmpty()) {
-            promptBuilder.append("Current Line:\n\"").append(lineText).append("\"\n");
-        }
-
-        promptBuilder.append("Full Java Context:\n")
-                .append(classContent).append("\n");
-
-        // Choose the appropriate JSON request variant
-        String request = singleCodeSnippet
-                ? singleJsonRequest
-                : (description ? jsonRequestWithDescription : jsonRequest);
-
-        promptBuilder.append(request);
-
-        // Replace placeholders with class-related data
-        String prompt = loadClassData(promptBuilder.toString(), classDatas);
-
-        // Generate suggestions using the AI model
-        String jsonResponse = generate(project, prompt);
-
-        LOG.finest(() -> "jsonResponse " + jsonResponse);
-
-        // Parse and return results
-        return parseJsonToSnippets(jsonResponse);
-    }
-
-    public List<String> suggestJavaComment(Project project, String classDatas, String classContent, String lineText) {
-        String prompt = "You are an API server that suggests appropriate Java comments for a specific context in a given Java class at the placeholder location ${SUGGEST_JAVA_COMMENT}. "
-                + "Based on the provided Java class content and the line of comment: \"" + lineText + " ${SUGGEST_JAVA_COMMENT} \", suggest relevant Java comment as appropriate for the context represented by the placeholder ${SUGGEST_JAVA_COMMENT} in the Java Class. "
-                + "Return a JSON array where each element must be single line comment. \n\n"
-                + "Java Class Content:\n" + classContent;
-        // Generate the list of suggested Javadoc or comments
-        String jsonResponse = generate(project, prompt);
-
-        LOG.finest(() -> "jsonResponse " + jsonResponse);
-
-        // Parse the JSON response into a List
-        List<String> comments = parseJsonToList(jsonResponse);
-
-        return comments;
-    }
-
     public List<String> suggestJavadocOrComment(Project project, String classDatas, String classContent, String lineText) {
         String prompt = "You are an API server that suggests appropriate Javadoc or comments for a specific context in a given Java class at the placeholder location ${SUGGEST_JAVADOC}. "
                 + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant Javadoc or a comment block as appropriate for the context represented by the placeholder ${SUGGEST_JAVADOC} in the Java Class. "
@@ -370,7 +311,7 @@ public class JeddictBrain {
         String jsonResponse = generate(project, prompt);
         LOG.finest(() -> "jsonResponse " + jsonResponse);
         // Parse the JSON response into a List
-        List<String> comments = parseJsonToList(jsonResponse);
+        List<String> comments = JSONUtil.jsonToList(jsonResponse);
         return comments;
     }
 
@@ -398,121 +339,8 @@ public class JeddictBrain {
         LOG.finest(() -> "jsonResponse " + jsonResponse);
 
         // Parse the JSON response into a List
-        List<Snippet> annotations = parseJsonToSnippets(jsonResponse);
+        List<Snippet> annotations = JSONUtil.jsonToSnippets(jsonResponse);
         return annotations;
-    }
-
-    public List<Snippet> parseJsonToSnippets(String jsonResponse) {
-        if (jsonResponse == null) {
-            return Collections.EMPTY_LIST;
-        }
-        List<Snippet> snippets = new ArrayList<>();
-
-        JSONArray jsonArray;
-
-        if (jsonResponse.contains("```json")) {
-            int index = jsonResponse.indexOf("```json") + 7;
-            jsonResponse = jsonResponse.substring(index, jsonResponse.indexOf("```", index)).trim();
-        } else {
-            jsonResponse = removeCodeBlockMarkers(jsonResponse);
-        }
-        try {
-            // Parse the JSON response
-            jsonArray = new JSONArray(jsonResponse);
-        } catch (org.json.JSONException jsone) {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            jsonArray = new JSONArray();
-            jsonArray.put(jsonObject);
-        }
-
-        // Loop through each element in the JSON array
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-            List<String> importsList = new ArrayList<>();
-            if (jsonObject.has("imports")) {
-                // Extract the "imports" array
-                JSONArray importsJsonArray = jsonObject.getJSONArray("imports");
-                for (int j = 0; j < importsJsonArray.length(); j++) {
-                    importsList.add(importsJsonArray.getString(j));
-                }
-            }
-
-            // Extract the "snippet" field
-            String snippet = jsonObject.getString("snippet");
-            if (jsonObject.has("description")) {
-                String descripion = jsonObject.getString("description");
-                Snippet snippetObj = new Snippet(snippet, descripion, importsList);
-                snippets.add(snippetObj);
-            } else {
-                Snippet snippetObj = new Snippet(snippet, importsList);
-                snippets.add(snippetObj);
-            }
-        }
-
-        return snippets;
-    }
-
-    private List<String> parseJsonToList(String json) {
-        List<String> variableNames = new ArrayList<>();
-        try {
-            // Use JSONArray to parse the JSON array string
-            JSONArray jsonArray = new JSONArray(removeCodeBlockMarkers(json));
-            boolean split = false;
-            int docCount = 0;
-            for (int i = 0; i < jsonArray.length(); i++) {
-                variableNames.add(jsonArray.getString(i));
-                String line = jsonArray.getString(i).trim();
-                if (line.startsWith("}")) {
-                    split = true;
-                }
-                if (line.trim().startsWith("*")) {
-                    docCount++;
-                }
-            }
-            if (split || jsonArray.length() - 1 == docCount) {
-                return Collections.singletonList(String.join("\n", variableNames));
-            }
-        } catch (Exception e) {
-            return parseJsonToListWithSplit(removeCodeBlockMarkers(json));
-        }
-        return variableNames;
-    }
-
-    private List<String> parseJsonToListWithSplit(String json) {
-        List<String> variableNames = new ArrayList<>();
-        if (json == null || json.isEmpty()) {
-            return variableNames;
-        }
-
-        json = removeCodeBlockMarkers(json).trim();
-        String newjson = json;
-        if (json.startsWith("[") && json.endsWith("]")) {
-            newjson = json.substring(1, json.length() - 1).trim();
-        }
-        // Remove square brackets and split by new lines
-        String[] lines = newjson.split("\\n");
-
-        if (lines.length > 1) {
-            for (String line : lines) {
-                // Trim each line and add to the list if it's not empty
-                line = line.trim();
-                if (line.startsWith("\"")) {
-                    if (line.endsWith("\"")) {
-                        line = line.substring(1, line.length() - 1).trim();
-                    } else if (line.endsWith("\",")) {
-                        line = line.substring(1, line.length() - 2).trim();
-                    }
-                }
-                if (!line.isEmpty()) {
-                    variableNames.add(line);
-                }
-            }
-        } else {
-            variableNames = parseJsonToList(json);
-        }
-
-        return variableNames;
     }
 
     public String fixGrammar(String text, String classContent) {
@@ -899,7 +727,7 @@ public class JeddictBrain {
 
         LOG.finest(jsonResponse);
 
-        return parseJsonToSnippets(jsonResponse);
+        return JSONUtil.jsonToSnippets(jsonResponse);
     }
 
     public List<Snippet> suggestSQLQuery(
@@ -932,9 +760,7 @@ public class JeddictBrain {
 
         prompt.append("Database Metadata:\n").append(dbMetadata);
 
-        String jsonResponse = generate(null, prompt.toString());
-        List<Snippet> sqlQueries = parseJsonToSnippets(jsonResponse);
-        return sqlQueries;
+        return JSONUtil.jsonToSnippets(generate(null, prompt.toString()));
     }
 
     /**

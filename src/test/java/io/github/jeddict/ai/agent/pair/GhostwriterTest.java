@@ -45,7 +45,8 @@ import org.junit.jupiter.api.Test;
 public class GhostwriterTest extends PairProgrammerTestBase {
 
     private static final String LINE = "String name=\"this is the line of code\";";
-    private static final String CODE = "use mock 'suggest code.txt'";
+    private static final String CODE1 = "use mock 'suggest code.txt'";
+    private static final String CODE2 = "use mock 'suggest comments.txt'";
     private static final String CLASSES = "classes data";
     private static final String PROJECT = "JDK 17";
     private static final String HINT = "this is an hint";
@@ -93,14 +94,14 @@ public class GhostwriterTest extends PairProgrammerTestBase {
         final String expectedUser = Ghostwriter.USER_MESSAGE
                 .replace("{{message}}", "")
                 .replace("{{classes}}", CLASSES)
-                .replace("{{code}}", CODE)
+                .replace("{{code}}", CODE1)
                 .replace("{{line}}", LINE)
                 .replace("{{project}}", PROJECT)
                 .replace("{{hint}}", HINT);
 
         for (boolean description: new boolean[] { true, false} ) {
             final List<Snippet> snippets =
-                pair.suggestNextLineCode(CLASSES, CODE, LINE, PROJECT, HINT, null, description);
+                pair.suggestNextLineCode(CLASSES, CODE1, LINE, PROJECT, HINT, null, description);
 
             final ChatModelRequestContext request = listener.lastRequestContext.get();
             thenMessagesMatch(
@@ -121,9 +122,8 @@ public class GhostwriterTest extends PairProgrammerTestBase {
 
     @Test
     public void suggestNextLineCode_without_hint_without_tree_returns_AI_provided_response() {
-        // TODO: remove withDescription after review
         boolean withDescription = true;
-        for(String output: new String[] { Ghostwriter.OUTPUT_JSON_ARRAY_WITH_DESCRIPTION, Ghostwriter.OUTPUT_JSON_ARRAY}) {
+        for(String output: new String[] { Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY_WITH_DESCRIPTION, Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY}) {
             LOG.info(() -> "output: " + output);
 
             final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
@@ -131,13 +131,13 @@ public class GhostwriterTest extends PairProgrammerTestBase {
             final String expectedUser = Ghostwriter.USER_MESSAGE
                     .replace("{{message}}", pair.userMessage(null))
                     .replace("{{classes}}", CLASSES)
-                    .replace("{{code}}", CODE)
+                    .replace("{{code}}", CODE1)
                     .replace("{{line}}", LINE)
                     .replace("{{project}}", PROJECT)
                     .replace("{{hint}}", "");
 
             final List<Snippet> snippets =
-                pair.suggestNextLineCode(CLASSES, CODE, LINE, PROJECT, null, null, withDescription);
+                pair.suggestNextLineCode(CLASSES, CODE1, LINE, PROJECT, null, null, withDescription);
 
             final ChatModelRequestContext request = listener.lastRequestContext.get();
             thenMessagesMatch(
@@ -155,7 +155,6 @@ public class GhostwriterTest extends PairProgrammerTestBase {
             );
 
             withDescription = false;
-
         }
     }
 
@@ -170,24 +169,20 @@ public class GhostwriterTest extends PairProgrammerTestBase {
             final TreePath tree = findTreePathAtCaret(unit, task, prompt.offset);
             LOG.info(() -> "tree: " + tree + ", kind: " + ((tree != null) ? String.valueOf(tree.getLeaf().getKind()) : "-"));
 
-            // TODO: fix after review
-            //
-            //boolean withDescription = true;
-            //for(String output: new String[] { Ghostwriter.OUTPUT_JSON_ARRAY_WITH_DESCRIPTION, Ghostwriter.OUTPUT_JSON_ARRAY }) {
-            final String output = Ghostwriter.OUTPUT_JSON_ARRAY;
-            final boolean withDescription = false;
+            boolean withDescription = true;
+            for(String output: new String[] { Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY_WITH_DESCRIPTION, Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY }) {
                 final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
                     .replace("{{format}}", output);
                 final String expectedUser = Ghostwriter.USER_MESSAGE
                         .replace("{{message}}", prompt.prompt)
                         .replace("{{classes}}", CLASSES)
-                        .replace("{{code}}", CODE)
+                        .replace("{{code}}", CODE1)
                         .replace("{{line}}", LINE)
                         .replace("{{project}}", PROJECT)
                         .replace("{{hint}}", "");
 
                 final List<Snippet> snippets =
-                    pair.suggestNextLineCode(CLASSES, CODE, LINE, PROJECT, null, tree, withDescription);
+                    pair.suggestNextLineCode(CLASSES, CODE1, LINE, PROJECT, null, tree, withDescription);
 
                 final ChatModelRequestContext request = listener.lastRequestContext.get();
                 thenMessagesMatch(
@@ -204,10 +199,34 @@ public class GhostwriterTest extends PairProgrammerTestBase {
                     "System.out.println(\"Hello World!\");"
                 );
 
-                // TODO: fix after review
-//                withDescription = false;
-//            }
+                withDescription = false;
+            }
         }
+    }
+
+    @Test
+    public void suggestJavaComment_with_tree_returns_AI_provided_response() throws Exception {
+        final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
+                .replace("{{format}}", Ghostwriter.OUTPUT_STRING_JSON_ARRAY);
+        final String expectedUser = Ghostwriter.USER_MESSAGE
+                .replace("{{message}}", Ghostwriter.USER_MESSAGE_COMMENT)
+                .replace("{{classes}}", CLASSES)
+                .replace("{{code}}", CODE2)
+                .replace("{{line}}", LINE)
+                .replace("{{project}}", PROJECT)
+                .replace("{{hint}}", "");
+
+        final List<String> comments =
+                pair.suggestJavaComment(CLASSES, CODE2, LINE, PROJECT);
+
+            final ChatModelRequestContext request = listener.lastRequestContext.get();
+            thenMessagesMatch(
+                request.chatRequest().messages(), expectedSystem, expectedUser
+            );
+
+            then(comments).containsExactlyInAnyOrder(
+                "comment one","comment two", "comment three"
+            );
     }
 
     // --------------------------------------------------------- private methods

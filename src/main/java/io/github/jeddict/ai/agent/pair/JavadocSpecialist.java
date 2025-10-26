@@ -53,7 +53,7 @@ import io.github.jeddict.ai.util.AgentUtil;
  */
 public interface JavadocSpecialist extends PairProgrammer {
     public static final String SYSTEM_MESSAGE = """
-You are a programmer that writes only with Javadoc comments for the provided code accordingly to the rules:
+You are a programmer that writes only Javadoc comments for the provided code accordingly to the rules:
 - Generate completely new Javadoc or enahance the existing Javadoc based on user request
 - Generate the Javadoc wrapped with in /** ${javadoc} **/
 - Generate javadoc only for the element (class, methods or members) requested by the user
