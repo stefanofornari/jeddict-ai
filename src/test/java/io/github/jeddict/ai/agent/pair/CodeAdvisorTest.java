@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 public class CodeAdvisorTest extends PairProgrammerTestBase {
 
     private static final String LINE = "String name=\"this is the line of code\";";
-    private static final String CLASS = "use mock 'suggest names.txt'";
+    private static final String CODE = "use mock 'suggest names.txt'";
     private static final String CLASSES = "classes data";
     private static final String PROJECT_INFO = "JDK 17";
 
@@ -50,12 +50,12 @@ public class CodeAdvisorTest extends PairProgrammerTestBase {
         final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
             CodeAdvisor.USER_MESSAGE.replace("{{element}}", "variable")
-                .replace("{{line}}", LINE).replace("{{class}}", CLASS)
+                .replace("{{line}}", LINE).replace("{{code}}", CODE)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", "")
             +
             "\nYou must put every item on a separate line.";
 
-        final List<String> names = pair.suggestVariableNames(CLASSES, CLASS, LINE);
+        final List<String> names = pair.suggestVariableNames(CLASSES, CODE, LINE);
 
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
@@ -70,12 +70,12 @@ public class CodeAdvisorTest extends PairProgrammerTestBase {
         final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
             CodeAdvisor.USER_MESSAGE.replace("{{element}}", "method")
-                .replace("{{line}}", LINE).replace("{{class}}", CLASS)
+                .replace("{{line}}", LINE).replace("{{code}}", CODE)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", "")
             +
             "\nYou must put every item on a separate line.";
 
-        final List<String> names = pair.suggestMethodNames(CLASSES, CLASS, LINE);
+        final List<String> names = pair.suggestMethodNames(CLASSES, CODE, LINE);
 
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
@@ -90,12 +90,12 @@ public class CodeAdvisorTest extends PairProgrammerTestBase {
         final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
             CodeAdvisor.USER_MESSAGE.replace("{{element}}", "string literals")
-                .replace("{{line}}", LINE).replace("{{class}}", CLASS)
+                .replace("{{line}}", LINE).replace("{{code}}", CODE)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", "")
             +
             "\nYou must put every item on a separate line.";
 
-        final List<String> names = pair.suggestStringLiterals(CLASSES, CLASS, LINE);
+        final List<String> names = pair.suggestStringLiterals(CLASSES, CODE, LINE);
 
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
@@ -116,12 +116,12 @@ public class CodeAdvisorTest extends PairProgrammerTestBase {
         final String expectedSystem = CodeAdvisor.SYSTEM_MESSAGE;
         final String expectedUser =
             CodeAdvisor.USER_MESSAGE.replace("{{element}}", "method invocation")
-                .replace("{{line}}", LINE).replace("{{class}}", CLASS)
+                .replace("{{line}}", LINE).replace("{{code}}", CODE)
                 .replace("{{classes}}", CLASSES).replace("{{project}}", PROJECT_INFO)
             +
             "\nYou must put every item on a separate line.";
 
-        final List<String> names = pair.suggestMethodInvocations(PROJECT_INFO, CLASSES, CLASS, LINE);
+        final List<String> names = pair.suggestMethodInvocations(PROJECT_INFO, CLASSES, CODE, LINE);
 
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(

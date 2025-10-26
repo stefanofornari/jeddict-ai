@@ -53,7 +53,7 @@ Based on the below line of code, the class it belowngs to and project classes da
 suggest a list of improved elelement to replace the placeholder ${SUGGESTION} in Java Class.
 The element is a: {{element}}
 The line of code is: {{line}}
-The class is: {{class}}
+The code is: {{code}}
 The project classes are: {{classes}}
 Project info: {{project}}
 """;
@@ -68,11 +68,11 @@ Project info: {{project}}
     @UserMessage(USER_MESSAGE)
     @Agent("Suggest up to 3 names for a variable, method or other elements")
     List<String> suggest(
-        @V("element") final String element,
-        @V("classes") final String classes,
-        @V("class") final String code,
-        @V("line") final String line,
-        @V("project") final String projectInfo
+        @V("element") final String element,    // variable, method, method invocation
+        @V("classes") final String classes,    // related classes and method signatures
+        @V("code") final String code,          // the class code or other code
+        @V("line") final String line,          // the current line of code
+        @V("project") final String projectInfo // general project info
     );
 
     default List<String> cleanNames(final List<String> in) {
