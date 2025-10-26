@@ -19,7 +19,6 @@ package io.github.jeddict.ai.lang;
  *
  * @author Shiwani Gupta
  */
-import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.data.message.AiMessage;
@@ -303,98 +302,6 @@ public class JeddictBrain {
         prompt += "\n\nHere is the context of all classes in the project, including variable names and method signatures (method bodies are excluded to avoid sending unnecessary code):\n"
                 + classDatas;
         return prompt;
-    }
-
-    public List<Snippet> suggestNextLineCode(
-        final Project project, final String classDatas, final String classContent,
-        final String lineText, final TreePath path, final String hintContext,
-        final boolean hint, final boolean description
-    ) {
-        String prompt;
-        if (hint) {
-            prompt = "You are an API server that suggests relevant Java code to be inserted at the placeholder ${SUGGEST_CODE}.\n"
-                    + "The goal is to generate context-aware, meaningful, and syntactically valid Java code suggestions "
-                    + "that naturally fit into the surrounding code to improve code clarity or functionality.\n"
-                    + "Do not repeat existing methods or duplicate code that already follows the placeholder.\n"
-                    + "Avoid suggesting code that would not compile if inserted exactly where `${SUGGEST_CODE}` is.\n";
-            prompt = prompt + "Java Class Content:\n" + classContent
-                    + "\n" + singleJsonRequest;
-            if (hintContext != null && !hintContext.isEmpty()) {
-                prompt = prompt + "\n" + hintContext;
-            }
-        } else {
-            final String descriptionText = (description ? jsonRequestWithDescription : jsonRequest);
-            if (path == null) {
-                prompt = "You are an API server that suggests Java code for the outermost context of a Java source file, outside of any existing class. "
-                        + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE}. "
-                        + "Suggest additional classes, interfaces, enums, or other top-level constructs. "
-                        + "Ensure that the suggestions fit the context of the entire file. "
-                        + descriptionText
-                        + "Java Source File Content:\n" + classContent;
-            } else if (path.getLeaf().getKind() == Tree.Kind.COMPILATION_UNIT) {
-                prompt = "You are an API server that suggests Java code for the outermost context of a Java source file, outside of any existing class. "
-                        + "Based on the provided Java source file content, suggest relevant code to be added at the placeholder location ${SUGGEST_CODE}. "
-                        + "Suggest package declarations, import statements, comments, or annotations for public class. "
-                        + "Ensure that the suggestions fit the context of the entire file. "
-                        + descriptionText
-                        + "Java Source File Content:\n" + classContent;
-            } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
-                    && path.getParentPath() != null
-                    && path.getParentPath().getLeaf().getKind() == Tree.Kind.CLASS) {
-                prompt = "You are an API server that suggests Java code modifications for a class. "
-                        + "At the placeholder location ${SUGGEST_CODE}, suggest either a class-level modifier such as 'public', 'protected', 'private', 'abstract', 'final', or a relevant class-level annotation. "
-                        + "Ensure that the suggestions are appropriate for the class context provided. "
-                        + descriptionText
-                        + "Java Class Content:\n" + classContent;
-            } else if (path.getLeaf().getKind() == Tree.Kind.MODIFIERS
-                    && path.getParentPath() != null
-                    && path.getParentPath().getLeaf().getKind() == Tree.Kind.METHOD) {
-                prompt = "You are an API server that suggests Java code modifications for a method. "
-                        + "At the placeholder location ${SUGGEST_CODE}, suggest method-level modifiers such as 'public', 'protected', 'private', 'abstract', 'static', 'final', 'synchronized', or relevant method-level annotations. "
-                        + "Additionally, you may suggest method-specific annotations. "
-                        + "Ensure that the suggestions are appropriate for the method context provided. "
-                        + descriptionText
-                        + "Java Method Content:\n" + classContent;
-            } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
-                    && path.getParentPath() != null
-                    && path.getParentPath().getLeaf().getKind() == Tree.Kind.CLASS) {
-                prompt = "You are an API server that suggests Java code for an inner class at the placeholder location ${SUGGEST_CODE}. "
-                        + "Based on the provided Java class content, suggest either relevant inner class modifiers such as 'public', 'private', 'protected', 'static', 'abstract', 'final', or a full inner class definition. "
-                        + "Additionally, you may suggest class-level annotations for the inner class. Ensure that the suggestions are contextually appropriate for an inner class. "
-                        + descriptionText
-                        + "Java Class Content:\n" + classContent;
-            } else if (path.getLeaf().getKind() == Tree.Kind.CLASS
-                    && path.getParentPath() != null
-                    && path.getParentPath().getLeaf().getKind() == Tree.Kind.COMPILATION_UNIT) {
-                prompt = "You are an API server that suggests Java code for an class at the placeholder location ${SUGGEST_CODE}. "
-                        + "Based on the provided Java class content, suggest either relevant class level members, attributes, constants, methods or blocks. "
-                        + "Ensure that the suggestions are contextually appropriate for an class. "
-                        + descriptionText
-                        + "Java Class Content:\n" + classContent;
-            } else if (path.getLeaf().getKind() == Tree.Kind.PARENTHESIZED
-                    && path.getParentPath() != null
-                    && path.getParentPath().getLeaf().getKind() == Tree.Kind.IF) {
-                prompt = "You are an API server that suggests Java code to enhance an if-statement. "
-                        + "At the placeholder location ${SUGGEST_IF_CONDITIONS}, suggest additional conditional checks or actions within the if-statement. "
-                        + "Ensure that the suggestions are contextually appropriate for the condition. "
-                        + descriptionText
-                        + "Java If Statement Content:\n" + classContent;
-            } else {
-                prompt = "You are an API server that suggests Java code for a specific context in a given Java class at the placeholder location ${SUGGEST_CODE}. "
-                        + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest a relevant single line of code or a multi-line code block as appropriate for the context represented by the placeholder ${SUGGEST_CODE} in the Java class. "
-                        + "Ensure that the suggestions are relevant to the context. "
-                        + descriptionText
-                        + "Java Class Content:\n" + classContent;
-            }
-        }
-        prompt = loadClassData(prompt, classDatas);
-
-        // Generate the list of suggested next lines of code
-        String jsonResponse = generate(project, prompt);
-        LOG.finest(() -> "jsonResponse " + jsonResponse);
-        // Parse the JSON response into a List
-        List<Snippet> nextLines = parseJsonToSnippets(jsonResponse);
-        return nextLines;
     }
 
     public List<Snippet> hintNextLineCode(
