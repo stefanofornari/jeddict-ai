@@ -101,6 +101,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
     private static final String HIGHLIGHTED_TEXT_KEY = "HIGHLIGHTED_TEXT_KEY";
     private static final String HIGHLIGHTED_TEXT_LOC_KEY = "HIGHLIGHTED_TEXT_LOC_KEY";
+    private static final String PLACEHOLDER = "${SUGGESTION}";
     private static final Object KEY_PRE_TEXT = new Object();
 
     public OffsetsBag getPreTextBag(Document doc, JTextComponent component) {
@@ -514,6 +515,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                 this.caretOffset = caretOffset;
                 String mimeType = (String) doc.getProperty("mimeType");
                 JavaToken javaToken = isJavaContext(component.getDocument(), caretOffset, true);
+                System.out.println("queryType: " + queryType + " javaToken: " + javaToken.isJavaContext());
                 if ((COMPLETION_QUERY_TYPE == queryType || -1 == queryType || COMPLETION_ALL_QUERY_TYPE == queryType)
                         && JAVA_MIME.equals(mimeType)
                         && javaToken.isJavaContext()) {
@@ -546,7 +548,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     final String classDataContent = getClassDataContent(fileObject, compilationUnit, activeClassContext);
 
                     if (tree == null || kind == Tree.Kind.ERRONEOUS || kind == Tree.Kind.COMPILATION_UNIT) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         List<Snippet> sugs = getGhostwriter()
                                 .suggestNextLineCode(classDataContent, updateddoc, line, projectInfo, hintContext, tree, description);
                         for (Snippet snippet : sugs) {
@@ -560,15 +562,15 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     } else if (resultSet != null &&
                             ((trimLeadingSpaces(line).length() > 0
                             && trimLeadingSpaces(line).charAt(0) == '@') || kind == Tree.Kind.ANNOTATION)) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
-                        List<Snippet> annotationSuggestions = newJeddictBrain()
-                                .suggestAnnotations(project, classDataContent, updateddoc, line, hintContext, queryType == -1, description);
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
+                        List<Snippet> annotationSuggestions = getGhostwriter()
+                                .suggestAnnotations(classDataContent, updateddoc, line, hintContext, projectInfo, description);
                         for (Snippet annotationSuggestion : annotationSuggestions) {
                             resultSet.addItem(createItem(annotationSuggestion, line, lineTextBeforeCaret, javaToken, kind, doc));
                         }
                     } else if (kind == Tree.Kind.MODIFIERS
                             || kind == Tree.Kind.IDENTIFIER) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         List<Snippet> sugs = getGhostwriter()
                                 .suggestNextLineCode(classDataContent, updateddoc, line, projectInfo, hintContext, tree, description);;
                         for (Snippet snippet : sugs) {
@@ -580,7 +582,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             }
                         }
                     } else if (kind == Tree.Kind.CLASS || kind == Tree.Kind.BLOCK || kind == Tree.Kind.EXPRESSION_STATEMENT) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         List<Snippet> sugs = getGhostwriter()
                                 .suggestNextLineCode(classDataContent, updateddoc, line, projectInfo, hintContext, tree, description);
                         for (Snippet snippet : sugs) {
@@ -593,7 +595,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             }
                         }
                     } else if (kind == Tree.Kind.VARIABLE && resultSet != null) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
                         List<String> sugs = getCodeAdvisor().suggestVariableNames(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
@@ -601,7 +603,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             resultSet.addItem(var);
                         }
                     } else if (kind == Tree.Kind.METHOD && resultSet != null) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
                         List<String> sugs = getCodeAdvisor().suggestMethodNames(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
@@ -609,7 +611,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             resultSet.addItem(var);
                         }
                     } else if (kind == Tree.Kind.METHOD_INVOCATION && resultSet != null) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         String currentVarName = getVariableNameAtCaret(doc, caretOffset);
                         List<String> sugs = getCodeAdvisor().suggestMethodInvocations(ProjectMetadataInfo.get(project), classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
@@ -618,7 +620,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             resultSet.addItem(var);
                         }
                     } else if (kind == Tree.Kind.STRING_LITERAL && resultSet != null) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         List<String> sugs = getCodeAdvisor().suggestStringLiterals(classDataContent, updateddoc, line);
                         for (String snippet : sugs) {
                             resultSet.addItem(createItem(new Snippet(snippet), line, lineTextBeforeCaret, javaToken, kind, doc));
@@ -626,7 +628,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                     } else if ((kind == Tree.Kind.PARENTHESIZED || kind == Tree.Kind.MEMBER_SELECT)
                             && parentKind != null
                             && parentKind == Tree.Kind.IF) {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         List<Snippet> sugs = getGhostwriter()
                                 .suggestNextLineCode(classDataContent, updateddoc, line, projectInfo, hintContext, tree, description);
                         for (Snippet snippet : sugs) {
@@ -640,7 +642,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         }
                     } else {
                         LOG.finest(() -> "Skipped : " + kind + " " + tree.getLeaf().toString());
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         List<Snippet> sugs = getGhostwriter()
                                 .suggestNextLineCode(classDataContent, updateddoc, line, projectInfo, hintContext, tree, description);
                         for (Snippet snippet : sugs) {
@@ -654,6 +656,9 @@ public class JeddictCompletionProvider implements CompletionProvider {
                         }
                     }
                 } else if ((COMPLETION_QUERY_TYPE == queryType || COMPLETION_ALL_QUERY_TYPE == queryType) && JAVA_MIME.equals(mimeType)) {
+                    //
+                    // Here we are not in a java code context, for example in the middle of a multiline javadoc
+                    //
                     String line = getLineText(doc, caretOffset);
 
                     List<String> sugs;
@@ -673,9 +678,10 @@ public class JeddictCompletionProvider implements CompletionProvider {
 
                         }
                     } else {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGEST_JAVADOC}");
-                        sugs = newJeddictBrain()
-                                .suggestJavadocOrComment(project, "", updateddoc, line);
+                        System.out.println("CHECK, caretOffset: " + caretOffset);
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
+                        sugs = getGhostwriter()
+                                .suggestJavadocOrComment("", updateddoc, line, projectInfo);
                         for (String snippet : sugs) {
                             int newcaretOffset = caretOffset;
                             if (snippet.trim().startsWith(line.trim())) {
@@ -711,7 +717,7 @@ public class JeddictCompletionProvider implements CompletionProvider {
                             }
                         }
                     } else {
-                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, "${SUGGESTION}");
+                        String updateddoc = insertPlaceholderAtCaret(doc, caretOffset, PLACEHOLDER);
                         List<Snippet> sugs = newJeddictBrain()
                                 .suggestNextLineCode(project, updateddoc, line, mimeType, hintContext, queryType == -1);
                         for (Snippet snippet : sugs) {

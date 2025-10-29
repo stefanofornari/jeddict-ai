@@ -58,14 +58,14 @@ public class GhostwriterTest extends PairProgrammerTestBase {
      * a Tree.Kind type to the offset in the source code of io.github.jeddict.ai.test.SayHeelo
      */
     enum SayHelloPrompt {
-        PROMPT_DEFAULT(-1, Ghostwriter.USER_MESSAGE_DEFAULT),                    // simulate null tree
-        PROMPT_COMPILATION_UNIT(151, Ghostwriter.USER_MESSAGE_COMPILATION_UNIT),  // at the end of the package declaration
-        PROMPT_CLASS_MODIFIERS(240, Ghostwriter.USER_MESSAGE_CLASS_MODIFIERS),   // at the beginning of the class declaration
-        PROMPT_CLASS_NAME(253, Ghostwriter.USER_MESSAGE_CLASS_NAME),             // at the beginning of the class name
-        PROMPT_METHOD_MODIFIERS(268, Ghostwriter.USER_MESSAGE_METHOD_MODIFIERS), // at the beginning of the sayHello() method declaration
-        PROMPT_LINES(302, Ghostwriter.USER_MESSAGE_LINES),                       // at the very beginning of the sayHello() body, just after '{'
-        PROMPT_IF_CONDITION(327, Ghostwriter.USER_MESSAGE_IF_CONDITION),         // at the end of an if condition, just before the ')'
-        PROMPT_INNER_CLASS(488, Ghostwriter.USER_MESSAGE_INNER_CLASS);           // at the beginning of the name of the inner class (just before InnerClass)
+        PROMPT_DEFAULT(-1, Ghostwriter.USER_MESSAGE_DEFAULT),                   // simulate null tree
+        PROMPT_COMPILATION_UNIT(151, Ghostwriter.USER_MESSAGE_COMPILATION_UNIT),// at the end of the package declaration
+        PROMPT_CLASS_MODIFIERS(240, Ghostwriter.USER_MESSAGE_CLASS_MODIFIERS),  // at the beginning of the class declaration
+        PROMPT_CLASS_NAME(253, Ghostwriter.USER_MESSAGE_CLASS_NAME),            // at the beginning of the class name
+        PROMPT_METHOD_MODIFIERS(268, Ghostwriter.USER_MESSAGE_METHOD_MODIFIERS),// at the beginning of the sayHello() method declaration
+        PROMPT_LINES(302, Ghostwriter.USER_MESSAGE_LINES),                      // at the very beginning of the sayHello() body, just after '{'
+        PROMPT_IF_CONDITION(327, Ghostwriter.USER_MESSAGE_IF_CONDITION),        // at the end of an if condition, just before the ')'
+        PROMPT_INNER_CLASS(488, Ghostwriter.USER_MESSAGE_INNER_CLASS);          // at the beginning of the name of the inner class (just before InnerClass)
 
         final int offset;
         final String prompt;
@@ -84,7 +84,6 @@ public class GhostwriterTest extends PairProgrammerTestBase {
         pair = AgenticServices.agentBuilder(Ghostwriter.class)
             .chatModel(model)
             .build();
-
     }
 
     @Test
@@ -124,8 +123,6 @@ public class GhostwriterTest extends PairProgrammerTestBase {
     public void suggestNextLineCode_without_hint_without_tree_returns_AI_provided_response() {
         boolean withDescription = true;
         for(String output: new String[] { Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY_WITH_DESCRIPTION, Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY}) {
-            LOG.info(() -> "output: " + output);
-
             final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
                 .replace("{{format}}", output);
             final String expectedUser = Ghostwriter.USER_MESSAGE
@@ -205,7 +202,7 @@ public class GhostwriterTest extends PairProgrammerTestBase {
     }
 
     @Test
-    public void suggestJavaComment_with_tree_returns_AI_provided_response() throws Exception {
+    public void suggestJavaComment_returns_AI_provided_response() throws Exception {
         final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
                 .replace("{{format}}", Ghostwriter.OUTPUT_STRING_JSON_ARRAY);
         final String expectedUser = Ghostwriter.USER_MESSAGE
@@ -227,6 +224,73 @@ public class GhostwriterTest extends PairProgrammerTestBase {
             then(comments).containsExactlyInAnyOrder(
                 "comment one","comment two", "comment three"
             );
+    }
+
+    @Test
+    public void suggestJavadocOrComment_with_tree_returns_AI_provided_response() throws Exception {
+        final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
+                .replace("{{format}}", Ghostwriter.OUTPUT_JSON_COMMENT_OR_JAVADOC);
+        final String expectedUser = Ghostwriter.USER_MESSAGE
+                .replace("{{message}}", Ghostwriter.USER_MESSAGE_COMMENT_OR_JAVADOC)
+                .replace("{{classes}}", CLASSES)
+                .replace("{{code}}", CODE2)
+                .replace("{{line}}", LINE)
+                .replace("{{project}}", PROJECT)
+                .replace("{{hint}}", "");
+
+        final List<String> comments =
+                pair.suggestJavadocOrComment(CLASSES, CODE2, LINE, PROJECT);
+
+            final ChatModelRequestContext request = listener.lastRequestContext.get();
+            thenMessagesMatch(
+                request.chatRequest().messages(), expectedSystem, expectedUser
+            );
+
+            then(comments).containsExactlyInAnyOrder(
+                "comment one","comment two", "comment three"
+            );
+    }
+
+    @Test
+    public void suggestAnnotations_returns_AI_provided_response() throws Exception {
+        final String[] HINTS = new String[] { "", null, HINT };
+        final String[] MSGS = new String[] {
+            "", "", Ghostwriter.USER_MESSAGE_ANNOTATIONS
+        };
+
+        for (boolean withDescription: new boolean[] { true, false} ) {
+            for (int i=0; i<HINTS.length; ++i) {
+                final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
+                        .replace("{{format}}", (withDescription) ? Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY_WITH_DESCRIPTION
+                                                                 : Ghostwriter.OUTPUT_SNIPPET_JSON_ARRAY);
+                final String expectedUser = Ghostwriter.USER_MESSAGE
+                        .replace("{{message}}", MSGS[i])
+                        .replace("{{classes}}", CLASSES)
+                        .replace("{{code}}", CODE1)
+                        .replace("{{line}}", LINE)
+                        .replace("{{project}}", PROJECT)
+                        .replace("{{hint}}", (HINTS[i] == null) ? "" : HINTS[i]);
+
+                final List<Snippet> snippets =
+                    pair.suggestAnnotations(CLASSES, CODE1, LINE, HINTS[i], PROJECT, withDescription);
+
+                final ChatModelRequestContext request = listener.lastRequestContext.get();
+
+                thenMessagesMatch(
+                    request.chatRequest().messages(), expectedSystem, expectedUser
+                );
+
+                then(snippets).hasSize(1);
+                    then(snippets.get(0).getImports()).containsExactlyInAnyOrder(
+                        "java.io.File",
+                        "java.util.List",
+                        "io.github.jeddict.ai.test.SayHello"
+                    );
+                    then(snippets.get(0).getSnippet()).isEqualTo(
+                        "System.out.println(\"Hello World!\");"
+                    );
+            }
+        }
     }
 
     // --------------------------------------------------------- private methods

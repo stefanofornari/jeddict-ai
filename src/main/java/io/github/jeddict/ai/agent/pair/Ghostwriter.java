@@ -67,6 +67,12 @@ Ensure that the suggestions fit the context of the entire file.
     static final String USER_MESSAGE_COMMENT =
         "Suggest relevant Java comment as appropriate for the context represented by the placeholder ${SUGGESTION} in the Java Class.";
 
+    static final String USER_MESSAGE_COMMENT_OR_JAVADOC =
+        "Suggest relevant Javadoc or a comment block as appropriate at the placeholder location ${SUGGESTION} in the Java Class.";
+
+    static final String USER_MESSAGE_ANNOTATIONS =
+        "Suggest relevant annotations that can be applied at the placeholder location ${SUGGESTTION} in the Java Class. ";
+
     static final String OUTPUT_JSON_OBJECT = """
 Return a JSON object with a single best suggestion without any additional text or explanation. The object should contain two fields: 'imports' and 'snippet'.
 'imports' should be an array of required Java import statements (if no imports are required, return an empty array).
@@ -91,6 +97,11 @@ Make sure to escape any double quotes within the snippet and description using a
 
     static final String OUTPUT_STRING_JSON_ARRAY =
         "Return a JSON array where each element must be single line comment.";
+
+    static final String OUTPUT_JSON_COMMENT_OR_JAVADOC = """
+Return a JSON array where each element can either be a single-line comment, a multi-line comment block, or a Javadoc comment formatted as a single string using \\n for line breaks.
+Do not split multi line javadoc comments to array, the full comment must be at same index in json array.
+""";
 
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
@@ -146,9 +157,41 @@ Make sure to escape any double quotes within the snippet and description using a
         final String project
     ) {
         log(classes, code, line, project, "", false);
-        
+
         return JSONUtil.jsonToList(suggest(USER_MESSAGE_COMMENT, classes, code, line, "", project, OUTPUT_STRING_JSON_ARRAY));
     }
+
+    default List<String> suggestJavadocOrComment(
+        final String classes,
+        final String code,
+        final String line,
+        final String project
+    ) {
+        log(classes, code, line, project, "", false);
+
+        return JSONUtil.jsonToList(suggest(USER_MESSAGE_COMMENT_OR_JAVADOC, classes, code, line, "", project, OUTPUT_JSON_COMMENT_OR_JAVADOC));
+    }
+
+    default List<Snippet> suggestAnnotations(
+        final String classes,
+        final String code,
+        final String line,
+        final String hint,
+        final String project,
+        final boolean description
+    ) {
+        log(classes, code, line, project, hint, description);
+
+        final boolean hasHint = hint != null && !hint.isEmpty();
+        final String prompt = (hasHint) ? USER_MESSAGE_ANNOTATIONS : "";
+        final String format = (description) ? OUTPUT_SNIPPET_JSON_ARRAY_WITH_DESCRIPTION
+                                            : OUTPUT_SNIPPET_JSON_ARRAY;
+
+        return JSONUtil.jsonToSnippets(
+            suggest(prompt, classes, code, line, (hasHint) ? hint : "", project, format)
+        );
+    }
+
 
     // --------------------------------------------------------- Utility methods
 

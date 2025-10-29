@@ -301,48 +301,6 @@ public class JeddictBrain {
         return prompt;
     }
 
-    public List<String> suggestJavadocOrComment(Project project, String classDatas, String classContent, String lineText) {
-        String prompt = "You are an API server that suggests appropriate Javadoc or comments for a specific context in a given Java class at the placeholder location ${SUGGEST_JAVADOC}. "
-                + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant Javadoc or a comment block as appropriate for the context represented by the placeholder ${SUGGEST_JAVADOC} in the Java Class. "
-                + "Return a JSON array where each element can either be a single-line comment, a multi-line comment block, or a Javadoc comment formatted as a single string using \\n for line breaks. "
-                + " Do not split multi line javadoc comments to array, must be at same index in json array. \n\n"
-                + "Java Class Content:\n" + classContent;
-        // Generate the list of suggested Javadoc or comments
-        String jsonResponse = generate(project, prompt);
-        LOG.finest(() -> "jsonResponse " + jsonResponse);
-        // Parse the JSON response into a List
-        List<String> comments = JSONUtil.jsonToList(jsonResponse);
-        return comments;
-    }
-
-    public List<Snippet> suggestAnnotations(
-        final Project project, final String classDatas, final String classContent,
-        final String lineText, final String hintContext,
-        final boolean singleCodeSnippet, final boolean description) {
-        String prompt;
-
-        boolean hasHint = hintContext != null && !hintContext.isEmpty();
-        if (hasHint) {
-            prompt = "You are an API server that suggest relevant code for ${SUGGEST_ANNOTATION_LIST} in the given Java class based on the line: "
-                    + lineText + "\n\n Class: \n" + classContent + "\n" + singleJsonRequest + "\n"
-                    + ((hintContext != null) ? hintContext + "\n" : "");
-        } else {
-            prompt = "You are an API server that suggests Java annotations for a specific context in a given Java class at the placeholder location ${SUGGEST_ANNOTATION_LIST}. "
-                    + "Based on the provided Java class content and the line of code: \"" + lineText + "\", suggest relevant annotations that can be applied at the placeholder location represented by ${SUGGEST_ANNOTATION_LIST} in the Java Class. "
-                    + (description ? jsonRequestWithDescription : jsonRequest)
-                    + "Ensure that the suggestions are appropriate for the given Java Class Content:\n\n" + classContent;
-        }
-
-        // Generate the list of suggested annotations
-        String jsonResponse = generate(project, prompt);
-
-        LOG.finest(() -> "jsonResponse " + jsonResponse);
-
-        // Parse the JSON response into a List
-        List<Snippet> annotations = JSONUtil.jsonToSnippets(jsonResponse);
-        return annotations;
-    }
-
     public String fixGrammar(String text, String classContent) {
         String prompt
                 = "You are an AI model designed to correct grammar mistakes. "
