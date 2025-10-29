@@ -33,7 +33,8 @@ public interface PairProgrammer {
         GHOSTWRITER(Ghostwriter.class),
         JAVADOC(JavadocSpecialist.class),
         REFACTOR(RefactorSpecialist.class),
-        REST(RestSpecialist.class);
+        REST(RestSpecialist.class),
+        SHAKESPEARE(Shakespeare.class);
 
         public final Class specialistClass;
 
