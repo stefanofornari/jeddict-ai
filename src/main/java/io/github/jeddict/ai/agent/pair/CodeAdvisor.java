@@ -40,7 +40,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public interface CodeAdvisor extends PairProgrammer {
     public static final String SYSTEM_MESSAGE = """
-"You are an expert programmer that can suggest code based on the context of the
+You are an expert programmer that can suggest code based on the context of the
 program and best practices to write good quality code. Based on user request you will:
 - Suggest multiple meaningful and descriptive names for a variable in a given Java class.
 - Suggest multiple meaningful and descriptive string literals for the given context in a given Java class.

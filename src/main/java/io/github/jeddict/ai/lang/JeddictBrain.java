@@ -301,34 +301,6 @@ public class JeddictBrain {
         return prompt;
     }
 
-    public String fixGrammar(String text, String classContent) {
-        String prompt
-                = "You are an AI model designed to correct grammar mistakes. "
-                + "Given the following text and the context of the Java class, correct any grammar issues in the text. "
-                + "Return only the fixed text. Do not include any additional details or explanations.\n\n"
-                + "Java Class Content:\n" + classContent + "\n\n"
-                + "Text to Fix:\n" + text;
-
-        // Generate the grammar-fixed text
-        String response = generate(null, prompt);
-        LOG.finest(response);
-        return response;
-    }
-
-    public String enhanceText(String text, String classContent) {
-        String prompt = "You are an AI model designed to improve text. "
-                + "Given the following text and the context of the Java class, enhance the text to be more engaging, clear, and polished. "
-                + "Ensure the text is well-structured and free of any grammatical errors or awkward phrasing. "
-                + "Return only the enhanced text. Do not include any additional details or explanations.\n\n"
-                + "Java Class Content:\n" + classContent + "\n\n"
-                + "Text to Enhance:\n" + text;
-
-        // Generate the enhanced text
-        String enhancedText = generate(null, prompt);
-        LOG.finest(enhancedText);
-        return enhancedText;
-    }
-
     public String enhanceExpressionStatement(
             Project project, String classContent, String parentContent, String expressionStatementContent) {
         // Construct the prompt for enhancing the expression statement

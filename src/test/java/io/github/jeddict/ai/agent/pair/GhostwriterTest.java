@@ -216,14 +216,14 @@ public class GhostwriterTest extends PairProgrammerTestBase {
         final List<String> comments =
                 pair.suggestJavaComment(CLASSES, CODE2, LINE, PROJECT);
 
-            final ChatModelRequestContext request = listener.lastRequestContext.get();
-            thenMessagesMatch(
-                request.chatRequest().messages(), expectedSystem, expectedUser
-            );
+        final ChatModelRequestContext request = listener.lastRequestContext.get();
+        thenMessagesMatch(
+            request.chatRequest().messages(), expectedSystem, expectedUser
+        );
 
-            then(comments).containsExactlyInAnyOrder(
-                "comment one","comment two", "comment three"
-            );
+        then(comments).containsExactlyInAnyOrder(
+            "comment one","comment two", "comment three"
+        );
     }
 
     @Test
@@ -241,14 +241,14 @@ public class GhostwriterTest extends PairProgrammerTestBase {
         final List<String> comments =
                 pair.suggestJavadocOrComment(CLASSES, CODE2, LINE, PROJECT);
 
-            final ChatModelRequestContext request = listener.lastRequestContext.get();
-            thenMessagesMatch(
-                request.chatRequest().messages(), expectedSystem, expectedUser
-            );
+        final ChatModelRequestContext request = listener.lastRequestContext.get();
+        thenMessagesMatch(
+            request.chatRequest().messages(), expectedSystem, expectedUser
+        );
 
-            then(comments).containsExactlyInAnyOrder(
-                "comment one","comment two", "comment three"
-            );
+        then(comments).containsExactlyInAnyOrder(
+            "comment one","comment two", "comment three"
+        );
     }
 
     @Test

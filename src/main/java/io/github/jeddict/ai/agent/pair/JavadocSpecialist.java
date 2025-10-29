@@ -77,7 +77,7 @@ The Javadoc is: {{javadoc}}
     @Agent("Generate or enhance javadoccomments based on the class or class member code")
     String javadoc(
         @V("element") final String element,
-        @V("code") final String sourece,
+        @V("code") final String code,
         @V("javadoc") final String javadoc,
         @V("globalRules") final String globalRules,
         @V("projectRules") final String projectRules
