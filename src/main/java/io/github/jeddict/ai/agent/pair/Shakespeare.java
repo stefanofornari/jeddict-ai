@@ -19,38 +19,21 @@ import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
-import io.github.jeddict.ai.util.AgentUtil;
 import org.apache.commons.lang3.StringUtils;
 
 
 /**
- * The JavadocSpecialist interface provides a structured approach to generating
- * and enhancing Javadoc comments for Java elements such as classes, methods, and members.
+ * The Shakespeare interface defines an agent for fixing or enhancing text in
+ * java strings.
  *
- *
- * Core functionality includes:
+ * <p>Key features include:
  * <ul>
- *   <li>Generating new Javadoc comments for classes, methods, and members</li>
- *   <li>Enhancing existing Javadoc comments while preserving original content</li>
- *   <li>Context-aware processing that incorporates both global coding standards and project-specific documentation rules</li>
- *   <li>Rule normalization through {@link AgentUtil} to ensure consistent processing</li>
+ *   <li>Reviewing provided text with respect to the associated Java code.</li>
+ *   <li>Correcting and improving text to ensure clarity, engagement, and polish.</li>
  * </ul>
  *
- * Implementation notes:
- * <ul>
- *   <li>All methods return Javadoc content wrapped in Javadoc comment boundaries</li>
- *   <li>Empty strings are used when generating new Javadoc (enhancement methods expect existing content)</li>
- * </ul>
- *
- * Typical usage pattern:
- * <pre>
- *   JavadocSpecialist programmer = AgenticServices.agentBuilder(PairProgrammer.Specialist.JAVADOC)
- *                              ...
- *                              .build();
- *   String text = programmer.generate[Class/Method/Member]Javadoc(classCode, globalRules, projectRules);
- *   String text = programmer.enhance[Class/Method/Member]Javadoc(methodCode, existingJavadoc, globalRules, projectRules);
- * </pre>
- *
+ * This interface extends {@link PairProgrammer}, thereby fitting into a broader
+ * programming assistance context.
  */
 public interface Shakespeare extends PairProgrammer {
     public static final String SYSTEM_MESSAGE = """
@@ -71,7 +54,7 @@ The code is: {{code}}
 
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
-    @Agent("Generate or enhance javadoccomments based on the class or class member code")
+    @Agent("Review and fix or enhance java strings")
     String review(
         @V("message") final String message,
         @V("text") final String text,
