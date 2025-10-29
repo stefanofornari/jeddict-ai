@@ -83,31 +83,6 @@ public class JeddictBrain {
 
     protected final PropertyChangeSupport progressListeners = new PropertyChangeSupport(this);
 
-    private static final String jsonRequest = """
-    Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing two fields: 'imports' and 'snippet'.
-    'imports' should be an array of required Java import statements (if no imports are required, return an empty array).
-    'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks.
-    Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid.
-
-    """;
-
-    private static final String singleJsonRequest = """
-    Return a JSON object with a single best suggestion without any additional text or explanation. The object should contain two fields: 'imports' and 'snippet'.
-    'imports' should be an array of required Java import statements (if no imports are required, return an empty array).
-    'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks.
-    Make sure to escape any double quotes within the snippet using a backslash (\\) so that the JSON remains valid.
-
-    """;
-
-    private static final String jsonRequestWithDescription = """
-    Return a JSON array with a few best suggestions without any additional text or explanation. Each element should be an object containing three fields: 'imports', 'snippet', and 'description'.
-    'imports' should be an array of required Java import statements (if no imports are required, return an empty array).
-    'snippet' should contain the suggested code as a text block, which may include multiple lines formatted as a single string using \\n for line breaks.
-    'description' should be a very short explanation of what the snippet does and why it might be appropriate in this context, formatted with <b>, <br> and optionally, if required, include any important link with <a href=''> tags.
-    Make sure to escape any double quotes within the snippet and description using a backslash (\\) so that the JSON remains valid.
-
-    """;
-
     public JeddictBrain(
         final boolean streaming
     ) {
@@ -299,22 +274,6 @@ public class JeddictBrain {
         prompt += "\n\nHere is the context of all classes in the project, including variable names and method signatures (method bodies are excluded to avoid sending unnecessary code):\n"
                 + classDatas;
         return prompt;
-    }
-
-    public String enhanceExpressionStatement(
-            Project project, String classContent, String parentContent, String expressionStatementContent) {
-        // Construct the prompt for enhancing the expression statement
-        String prompt = "You are an API server that enhances Java code snippets. "
-                + "Given the following Java class content, the parent content of the EXPRESSION_STATEMENT, "
-                + "and the content of the EXPRESSION_STATEMENT itself, enhance the EXPRESSION_STATEMENT to be more efficient, "
-                + "clear, or follow best practices. Do not include any additional text or explanation, just return the enhanced code snippet.\n\n"
-                + "Java Class Content:\n" + classContent + "\n\n"
-                + "Parent Content of EXPRESSION_STATEMENT:\n" + parentContent + "\n\n"
-                + "EXPRESSION_STATEMENT Content:\n" + expressionStatementContent;
-
-        String enhanced = generate(project, prompt);
-        LOG.finest(enhanced);
-        return enhanced;
     }
 
     public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage, List<String> images, List<Response> previousChatResponse) {
