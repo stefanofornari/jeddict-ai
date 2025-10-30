@@ -20,6 +20,7 @@ import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
 import static io.github.jeddict.ai.agent.pair.JavadocSpecialist.ELEMENT_CLASS;
 import static io.github.jeddict.ai.agent.pair.JavadocSpecialist.ELEMENT_MEMBER;
 import static io.github.jeddict.ai.agent.pair.JavadocSpecialist.ELEMENT_METHOD;
+import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,11 @@ public class JavadocSpecialistTest extends PairProgrammerTestBase {
         pair = AgenticServices.agentBuilder(JavadocSpecialist.class)
             .chatModel(model)
             .build();
+    }
 
+    @Test
+    public void pair_is_a_PairProgrammer() {
+        then(pair).isInstanceOf(PairProgrammer.class);
     }
 
     @Test

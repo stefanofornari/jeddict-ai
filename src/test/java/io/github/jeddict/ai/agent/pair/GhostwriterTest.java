@@ -87,6 +87,11 @@ public class GhostwriterTest extends PairProgrammerTestBase {
     }
 
     @Test
+    public void pair_is_a_PairProgrammer() {
+        then(pair).isInstanceOf(PairProgrammer.class);
+    }
+
+    @Test
     public void suggestNextLineCode_with_hint_returns_AI_provided_response() {
         final String expectedSystem = Ghostwriter.SYSTEM_MESSAGE
             .replace("{{format}}", Ghostwriter.OUTPUT_JSON_OBJECT);

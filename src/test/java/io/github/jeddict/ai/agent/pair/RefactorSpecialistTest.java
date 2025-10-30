@@ -17,6 +17,7 @@ package io.github.jeddict.ai.agent.pair;
 
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,11 @@ public class RefactorSpecialistTest extends PairProgrammerTestBase {
         pair = AgenticServices.agentBuilder(RefactorSpecialist.class)
             .chatModel(model)
             .build();
+    }
 
+    @Test
+    public void pair_is_a_PairProgrammer() {
+        then(pair).isInstanceOf(PairProgrammer.class);
     }
 
     @Test

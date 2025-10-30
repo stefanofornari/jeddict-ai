@@ -38,7 +38,11 @@ public class ShakespeareTest extends PairProgrammerTestBase {
         pair = AgenticServices.agentBuilder(Shakespeare.class)
             .chatModel(model)
             .build();
+    }
 
+    @Test
+    public void pair_is_a_PairProgrammer() {
+        then(pair).isInstanceOf(PairProgrammer.class);
     }
 
     @Test
