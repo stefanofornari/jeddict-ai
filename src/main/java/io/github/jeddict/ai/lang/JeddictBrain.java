@@ -41,7 +41,6 @@ import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.JSONUtil;
 import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
-import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import io.github.jeddict.ai.util.Utilities;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -274,40 +273,6 @@ public class JeddictBrain {
         prompt += "\n\nHere is the context of all classes in the project, including variable names and method signatures (method bodies are excluded to avoid sending unnecessary code):\n"
                 + classDatas;
         return prompt;
-    }
-
-    public String generateCommitMessageSuggestions(String gitDiffOutput, String referenceCommitMessage, List<String> images, List<Response> previousChatResponse) {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("You are an API server that generates commit message suggestions based on the provided 'git diff' and 'git status' output. ")
-                .append("""
-                    Please provide various types of commit messages based on the changes:
-                    Your goal is to create commit messages that reflect business or domain features rather than technical details like dependency updates or refactoring.
-                    """)
-                .append("- Very Short\n")
-                .append("- Short\n")
-                .append("- Medium\n")
-                .append("- Long\n")
-                .append("- Descriptive\n\n")
-                .append("Here is the 'git diff' and 'git status' output:\n")
-                .append(gitDiffOutput)
-                .append("\n");
-
-        // Add reference commit message to the prompt if it is not empty or null
-        if (referenceCommitMessage != null && !referenceCommitMessage.isEmpty()) {
-            prompt.append("Reference Commit Message:\n").append(referenceCommitMessage).append("<br><br>")
-                    .append("Ensure that all the following commit message suggestions are aligned with this reference message. "
-                            + "The suggestions should reflect the intent and context of the reference commit message, focusing on the business or domain features, adapting it as necessary to fit the changes in the 'git diff' output. "
-                            + "The goal is to keep all suggestions consistent with the meaning of the reference commit message.<br>");
-        } else {
-            prompt.append("No reference commit message provided.<br><br>")
-                    .append("Please generate commit message suggestions based on the 'git diff' output and the context of the changes, emphasizing business or domain features.");
-        }
-
-        // Generate the commit message suggestions
-        String response = generate(null, prompt.toString(), images, previousChatResponse);
-        LOG.finest(response);
-        response = removeCodeBlockMarkers(response);
-        return response;
     }
 
     public String generateCodeReviewSuggestions(

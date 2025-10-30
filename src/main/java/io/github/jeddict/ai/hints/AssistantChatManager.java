@@ -34,6 +34,8 @@ import io.github.jeddict.ai.agent.FileSystemTools;
 import io.github.jeddict.ai.agent.GradleTools;
 import io.github.jeddict.ai.agent.MavenTools;
 import io.github.jeddict.ai.agent.RefactoringTools;
+import io.github.jeddict.ai.agent.pair.DiffSpecialist;
+import io.github.jeddict.ai.agent.pair.PairProgrammer;
 import static io.github.jeddict.ai.classpath.JeddictQueryCompletionQuery.JEDDICT_EDITOR_CALLBACK;
 import io.github.jeddict.ai.completion.Action;
 import io.github.jeddict.ai.completion.SQLCompletion;
@@ -1021,8 +1023,8 @@ public class AssistantChatManager extends JavaFix {
                     if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
                         context = context + "\n\n Files:\n" + messageScopeContent;
                     }
-                    List<String> messageScopeImages = getImageFilesContext(messageContext);
-                    response = newJeddictBrain(handler, getModelName()).generateCommitMessageSuggestions(context, question, messageScopeImages, prevChatResponses);
+                    final DiffSpecialist pair = newJeddictBrain(handler, getModelName()).pairProgrammer(PairProgrammer.Specialist.DIFF);
+                    response = pair.suggestCommitMessages(context, question);
                 } else if (codeReview && commitChanges != null) {
                     String context = commitChanges;
                     String messageScopeContent = getTextFilesContext(messageContext, getProject(), agentEnabled);
