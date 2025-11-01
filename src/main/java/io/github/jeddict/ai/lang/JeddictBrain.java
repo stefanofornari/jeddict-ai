@@ -40,7 +40,6 @@ import io.github.jeddict.ai.response.TokenHandler;
 import io.github.jeddict.ai.scanner.ProjectMetadataInfo;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import io.github.jeddict.ai.util.JSONUtil;
-import static io.github.jeddict.ai.util.MimeUtil.MIME_TYPE_DESCRIPTIONS;
 import static io.github.jeddict.ai.util.StringUtil.removeCodeBlockMarkers;
 import io.github.jeddict.ai.util.Utilities;
 import java.beans.PropertyChangeListener;
@@ -686,48 +685,6 @@ public class JeddictBrain {
         LOG.finest(response);
 
         return response;
-    }
-
-    public List<Snippet> suggestNextLineCode(
-        final Project project,
-        final String fileContent, final String currentLine, final String mimeType,
-        final String hintContext, final boolean singleCodeSnippet
-    ) {
-        final StringBuilder description = new StringBuilder(MIME_TYPE_DESCRIPTIONS.getOrDefault(mimeType, "code snippets"));
-        StringBuilder prompt = new StringBuilder("You are an API server that provides ").append(description).append(" suggestions based on the file content. ");
-
-        boolean hasHint = hintContext != null && !hintContext.isEmpty();
-        if (hasHint) {
-            prompt.append("Suggest code for ${SUGGEST_CODE} based on the file's context. ");
-            if (currentLine != null && !currentLine.isEmpty()) {
-                prompt.append("Current line:\n").append(currentLine).append("\n");
-            }
-            prompt.append("Return a JSON object with 'snippet' as a single string using \\n for line breaks.\n\nFile Content:\n")
-                    .append(fileContent).append(hintContext).append("\n");
-
-        } else {
-            if (currentLine == null || currentLine.isEmpty()) {
-                prompt.append("Analyze the content and recommend appropriate additions at the placeholder ${SUGGEST_CODE}. ");
-            } else {
-                prompt.append("Analyze the content and the current line: \n")
-                        .append(currentLine)
-                        .append("\nRecommend appropriate additions at the placeholder ${SUGGEST_CODE}. ");
-            }
-            prompt.append("""
-                  Ensure the suggestions align with the file's context and structure.
-                  Respond with a JSON array containing a few of the best options.
-                  Each entry should have one field, 'snippet', holding the recommended code block.
-                  The code block can contain multiple lines, formatted as a single string using \\n for line breaks.
-
-                  File Content:
-                  """).append(fileContent);
-        }
-
-        String jsonResponse = generate(project, prompt.toString());
-
-        LOG.finest(jsonResponse);
-
-        return JSONUtil.jsonToSnippets(jsonResponse);
     }
 
     public List<Snippet> suggestSQLQuery(
