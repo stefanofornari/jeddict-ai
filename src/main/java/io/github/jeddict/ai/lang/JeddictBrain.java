@@ -275,50 +275,6 @@ public class JeddictBrain {
         return prompt;
     }
 
-    public String generateCodeReviewSuggestions(
-            final String gitDiffOutput, final String query,
-            final List<String> images, final List<Response> previousChatResponse,
-            final String reviewPrompt
-    ) {
-
-        String prompt = """
-            Instructions:
-            - Base your review strictly on the provided Git diff.
-            - Anchor each suggestion to a specific hunk header from the diff.
-            - DO NOT infer or hallucinate line numbers not present in the diff.
-            - DO NOT reference line numbers or attempt to estimate exact start/end lines.
-
-            %s
-
-            Respond only with a YAML array of review suggestions. Each suggestion must include:
-            - file: the file name
-            - hunk: the Git diff hunk header (e.g., "@@ -10,7 +10,9 @@")
-            - type: one of "security", "warning", "info", or "suggestion"
-                - "security" for vulnerabilities or high-risk flaws
-                - "warning" for potential bugs or unsafe behavior
-                - "info" for minor issues or readability
-                - "suggestion" for non-critical improvements or refactoring
-            - title: a short title summarizing the issue
-            - description: a longer explanation or recommendation
-
-            Output raw YAML with no markdown, code block, or extra formatting.
-
-            Expected YAML format:
-
-            - file: src/com/example/MyService.java
-              hunk: "@@ -42,6 +42,10 @@"
-              type: warning
-              title: "Possible null pointer exception"
-              description: "The 'items' list might be null before iteration. Add a null check to avoid NPE."
-
-            %s
-            """.formatted(query, gitDiffOutput);
-
-        // pm.getPrompts().get("codereview")
-
-        return generate(null, reviewPrompt  + '\n' + prompt, images, previousChatResponse);
-    }
-
     public String assistDbMetadata(
         final String dbMetadata, final String query, final List<String> images,
         final List<Response> previousChatResponse, final String sessionRules
@@ -615,27 +571,6 @@ public class JeddictBrain {
         prompt.append("Database Metadata:\n").append(dbMetadata);
 
         return JSONUtil.jsonToSnippets(generate(null, prompt.toString()));
-    }
-
-    /**
-     * Makes a simple query to explain the provided code.
-     *
-     * @param text the code to explain
-     * @param agentEnabled is agent mode enabled?
-     *
-     * @return the AI explaination of the given content
-     */
-    public String aboutCode(final String text, final boolean agentEnabled) {
-        final String prompt = new StringBuilder()
-            .append("Plese explain the following source code:\n")
-            .append(text)
-            .toString();
-
-        final String response = generate(null, agentEnabled, prompt.toString());
-
-        logPromptResponse(prompt, response);
-
-        return response;
     }
 
     public void addProgressListener(final PropertyChangeListener listener) {

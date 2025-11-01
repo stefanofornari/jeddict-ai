@@ -17,6 +17,7 @@ package io.github.jeddict.ai.agent.pair;
 
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import io.github.jeddict.ai.agent.pair.DiffSpecialist.CodeReviewLevel;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,8 +27,7 @@ import org.junit.jupiter.api.Test;
  */
 public class DiffSpecialistTest extends PairProgrammerTestBase {
 
-    final String DIFF = "use mock 'hello world.txt'";
-    final String REFERENCE = "this is the reference message";
+    final String DESCRIPTION = "additional user provided context";
 
     private DiffSpecialist pair;
 
@@ -47,17 +47,44 @@ public class DiffSpecialistTest extends PairProgrammerTestBase {
 
     @Test
     public void suggestCommitMessage_AI_provided_response() {
-        final String expectedSystem = DiffSpecialist.SYSTEM_MESSAGE;
+        final String DIFF = "use mock 'hello world.txt'";
+        final String expectedSystem = DiffSpecialist.SYSTEM_MESSAGE
+            .replace("{{format}}", "");
         final String expectedUser = DiffSpecialist.USER_MESSAGE
-            .replace("{{diff}}", TEXT)
-            .replace("{{reference}}", REFERENCE);
+            .replace("{{prompt}}", DiffSpecialist.USER_MESSAGE_COMMENT.formatted(DESCRIPTION))
+            .replace("{{diff}}", DIFF)
+            .replace("{{description}}", DESCRIPTION);
 
-        pair.suggestCommitMessages(DIFF, REFERENCE);
+        pair.suggestCommitMessages(DIFF, DESCRIPTION);
 
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
             request.chatRequest().messages(), expectedSystem, expectedUser
         );
+    }
+
+    @Test
+    public void reviewChanges_AI_provided_response() {
+        final String DIFF = "use mock 'changes review.txt'";
+        final String expectedSystem = DiffSpecialist.SYSTEM_MESSAGE
+            .replace("{{format}}", DiffSpecialist.OUTPUT_REVIEW);
+
+        for (CodeReviewLevel l: CodeReviewLevel.values()) {
+            final String expectedUser = DiffSpecialist.USER_MESSAGE
+                .replace("{{prompt}}", l.prompt())
+                .replace("{{diff}}", "use mock 'changes review.txt'")
+                .replace("{{description}}", DESCRIPTION);
+
+            final String result = pair.reviewChanges(DIFF, l.level, DESCRIPTION);
+
+            final ChatModelRequestContext request = listener.lastRequestContext.get();
+            thenMessagesMatch(
+                request.chatRequest().messages(), expectedSystem, expectedUser
+            );
+
+
+            then(result).startsWith("- file: src/com/example/MyService.java");
+        }
     }
 
 }

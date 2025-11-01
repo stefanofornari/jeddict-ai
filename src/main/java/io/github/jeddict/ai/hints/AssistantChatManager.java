@@ -97,6 +97,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -179,6 +180,7 @@ public class AssistantChatManager extends JavaFix {
     private String commitChanges;
     private final PreferencesManager pm = PreferencesManager.getInstance();
     private Tree leaf;
+    private final Map<String, String> params = new HashMap();
 
     private Project getProject() {
         if (project == null) {
@@ -230,6 +232,17 @@ public class AssistantChatManager extends JavaFix {
         super(null);
         this.action = action;
         this.sessionContext.add(selectedFileObject);
+    }
+
+    public AssistantChatManager(
+        final Action action,
+        final Project project,
+        final Map<String, String> params
+    ) {
+        super(null);
+        this.action = action;
+        this.projectContext = project;
+        this.params.putAll(params);
     }
 
     @Override
@@ -327,13 +340,12 @@ public class AssistantChatManager extends JavaFix {
 
     private boolean commitMessage, codeReview;
 
-    public void askQueryForCodeReview(Project project, String commitChanges, String contextMessage) {
-        ProjectInformation info = ProjectUtils.getInformation(project);
+    public void askQueryForCodeReview() {
+        ProjectInformation info = ProjectUtils.getInformation(projectContext);
         String projectName = info.getDisplayName();
         displayHtmlContent(null, projectName + " Code Review");
-        this.commitChanges = commitChanges;
         this.codeReview = true;
-        handleQuestion(contextMessage, messageContext, true);
+        handleQuestion("", messageContext, true);
     }
 
     public void displayHtmlContent(String filename, String title) {
@@ -1025,15 +1037,18 @@ public class AssistantChatManager extends JavaFix {
                     }
                     final DiffSpecialist pair = newJeddictBrain(handler, getModelName()).pairProgrammer(PairProgrammer.Specialist.DIFF);
                     response = pair.suggestCommitMessages(context, question);
-                } else if (codeReview && commitChanges != null) {
-                    String context = commitChanges;
-                    String messageScopeContent = getTextFilesContext(messageContext, getProject(), agentEnabled);
+                } else if (codeReview) {
+                    String context = params.get("diff");
+                    if (context == null) {
+                        context = "";
+                    }
+                    final String messageScopeContent = getTextFilesContext(messageContext, projectContext, agentEnabled);
                     if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
                         context = context + "\n\n Files:\n" + messageScopeContent;
                     }
-                    List<String> messageScopeImages = getImageFilesContext(messageContext);
-                    response = newJeddictBrain(handler, getModelName())
-                        .generateCodeReviewSuggestions(context, question, messageScopeImages, prevChatResponses, pm.getPrompts().get("codereview"));
+                    final DiffSpecialist pair =
+                        newJeddictBrain(handler, getModelName()).pairProgrammer(PairProgrammer.Specialist.DIFF);
+                    response = pair.reviewChanges(context, params.get("granularity"), params.get("feature"));
                 } else if (projectContext != null || sessionContext != null) {
                     Set<FileObject> mainSessionContext;
                     String sessionScopeContent;
