@@ -281,8 +281,8 @@ public class GhostwriterTest extends PairProgrammerTestBase {
             public CharSequence getCharContent(boolean ignoreEncodingErrors) {
                 try {
                     return FileUtils.readFileToString(
-                        sayHelloFile.toPath().toAbsolutePath().toFile(), "UTF8"
-                    );
+                        sayHelloFile.getAbsoluteFile(), "UTF8"
+                    ).replaceAll("\r\n", "\n");
                 } catch (IOException x) {
                     x.printStackTrace();
                     return null;
