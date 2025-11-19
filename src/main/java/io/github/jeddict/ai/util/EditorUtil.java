@@ -70,30 +70,27 @@ public class EditorUtil {
     private static final Set<String> TEXT_BLOCK_TYPES = Set.of("text", "web", "html");
     private static final Logger LOG = Logger.getLogger(EditorUtil.class.getName());
 
-    public static String updateEditors(BiConsumer<String, Set<FileObject>> queryUpdate, Project project, AssistantChat topComponent, Response response, Set<FileObject> threadContext) {
+    public static String updateEditors(BiConsumer<String, Set<FileObject>> queryUpdate, Project project,
+            AssistantChat topComponent, Response response, Set<FileObject> threadContext) {
         StringBuilder code = new StringBuilder();
 
         topComponent.clear();
 
         if (response.getQuery() != null && !response.getQuery().isEmpty()) {
-            topComponent.createUserQueryPane(queryUpdate, response.getQuery(), response.getMessageContext());
+            // topComponent.createUserQueryPane(queryUpdate, response.getQuery(),
+            // response.getMessageContext());
+            // TODO: Handle user query display in JavaFX if needed, or just rely on chat
+            // history
         }
 
-        JComponent firstPane = null;
         Block prevBlock = null;
         for (Block block : response.getBlocks()) {
-            JComponent pane = printBlock(code, prevBlock, block, project, topComponent);
-            if (firstPane == null) {
-                firstPane = pane;
-            }
+            printBlock(code, prevBlock, block, project, topComponent);
             prevBlock = block;
         }
 
-        if (firstPane != null) {
-            firstPane.scrollRectToVisible(firstPane.getBounds());
-        }
-        topComponent.revalidate();
-        topComponent.repaint();
+        // topComponent.revalidate();
+        // topComponent.repaint();
         List<FileObject> context = new ArrayList<>();
         if (threadContext != null && !threadContext.isEmpty()) {
             context.addAll(threadContext);
@@ -101,15 +98,15 @@ public class EditorUtil {
         if (response.getMessageContext() != null && !response.getMessageContext().isEmpty()) {
             context.addAll(response.getMessageContext());
         }
-        topComponent.getParseCodeEditor(context);
-        topComponent.attachMenusToEditors();
+        // topComponent.getParseCodeEditor(context);
+        // topComponent.attachMenusToEditors();
         return code.toString();
     }
 
-    public static JComponent printBlock(StringBuilder code, Block prevBlock, Block block, Project project, AssistantChat topComponent) {
+    public static void printBlock(StringBuilder code, Block prevBlock, Block block, Project project,
+            AssistantChat topComponent) {
         LOG.finest(() -> "printing blocks \n" + prevBlock + "\n" + block);
 
-        JComponent pane;
         if (block != null && (TEXT_BLOCK_TYPES.contains(block.getType()))) {
             String html;
             if (block.getType().equals("text")) {
@@ -118,36 +115,32 @@ public class EditorUtil {
             } else {
                 html = String.format("<html><body>%s</body></html>", block.getContent());
             }
-            JEditorPane htmlPane = topComponent.createHtmlPane(html);
-            pane = htmlPane;
-            htmlPane.addHyperlinkListener(e -> {
-                if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-                    String fileName = e.getDescription();
-                    if (fileName.endsWith(".java")) {
-                        String javaClass = fileName.substring(0, fileName.length() - 5);
-                        FileObject path = findClassInSourcePath(javaClass, true);
-                        if (path != null) {
-                            openFileInEditor(path);
-                        }
+
+            topComponent.addHtmlMessage(html, fileName -> {
+                if (fileName.endsWith(".java")) {
+                    String javaClass = fileName.substring(0, fileName.length() - 5);
+                    FileObject path = findClassInSourcePath(javaClass, true);
+                    if (path != null) {
+                        openFileInEditor(path);
                     }
-                    if (fileName.startsWith("#")) {
-                        int lineNumber = -1;
-                        String javaClass = fileName.substring(1);
-                        if (javaClass.contains("@")) {
-                            String[] javaClassLoc = javaClass.split("@");
-                            javaClass = javaClassLoc[0];
-                            lineNumber = Integer.parseInt(javaClassLoc[1]);
-                        }
-                        FileObject path = findFileInProjects(javaClass);
-                        if (path == null) {
-                            path = findClassInSourcePath(javaClass, true);
-                        }
-                        if (path != null) {
-                            if (lineNumber < 0) {
-                                openFileInEditor(path);
-                            } else {
-                                openFileInEditorAtLine(path, lineNumber);
-                            }
+                }
+                if (fileName.startsWith("#")) {
+                    int lineNumber = -1;
+                    String javaClass = fileName.substring(1);
+                    if (javaClass.contains("@")) {
+                        String[] javaClassLoc = javaClass.split("@");
+                        javaClass = javaClassLoc[0];
+                        lineNumber = Integer.parseInt(javaClassLoc[1]);
+                    }
+                    FileObject path = findFileInProjects(javaClass);
+                    if (path == null) {
+                        path = findClassInSourcePath(javaClass, true);
+                    }
+                    if (path != null) {
+                        if (lineNumber < 0) {
+                            openFileInEditor(path);
+                        } else {
+                            openFileInEditorAtLine(path, lineNumber);
                         }
                     }
                 }
@@ -155,14 +148,14 @@ public class EditorUtil {
         } else {
             code.append('\n').append(block.getContent()).append('\n');
             String mimeType = getMimeType(block.getType());
-            pane = switch (mimeType) {
-                case MIME_PUML -> topComponent.createSVGPane(block);
-                case MIME_MARKDOWN -> topComponent.createMarkdownPane(block);
-                case MIME_MERMAID -> topComponent.createMermaidPane(block);
-                default -> topComponent.createCodePane(mimeType, block);
-            };
+            switch (mimeType) {
+                case MIME_PUML -> topComponent.addSVGMessage(block);
+                case MIME_MARKDOWN -> topComponent.addMarkdownMessage(block);
+                case MIME_MERMAID -> topComponent.addMermaidMessage(block);
+                default -> topComponent.addCodeMessage(mimeType, block);
+            }
+            ;
         }
-        return pane;
     }
 
     public static String addLineBreaksToMarkdown(String markdown, int maxLineLength) {
@@ -266,7 +259,7 @@ public class EditorUtil {
         OPENAI_NETBEANS_EDITOR_MAP.put("ada", "text/x-ada"); // Ada
         OPENAI_NETBEANS_EDITOR_MAP.put("scratch", "text/x-scratch"); // Scratch
 
-// Missing types added
+        // Missing types added
         OPENAI_NETBEANS_EDITOR_MAP.put("properties", "text/x-properties"); // Properties files
         OPENAI_NETBEANS_EDITOR_MAP.put("dockerfile", "text/x-dockerfile"); // Dockerfiles
         OPENAI_NETBEANS_EDITOR_MAP.put("csv", "text/csv"); // CSV files
@@ -276,7 +269,7 @@ public class EditorUtil {
         OPENAI_NETBEANS_EDITOR_MAP.put("ini", "text/x-ini"); // INI files
         OPENAI_NETBEANS_EDITOR_MAP.put("html5", "text/html"); // HTML5 files
 
-// OpenAI Code Block and NetBeans Editor MIME type mappings for Jakarta EE
+        // OpenAI Code Block and NetBeans Editor MIME type mappings for Jakarta EE
         OPENAI_NETBEANS_EDITOR_MAP.put("jakarta", JAVA_MIME); // General Jakarta EE Java files
         OPENAI_NETBEANS_EDITOR_MAP.put("jsp", "text/x-jsp"); // JavaServer Pages
         OPENAI_NETBEANS_EDITOR_MAP.put("faces", "text/x-jsf"); // JavaServer Faces
@@ -340,110 +333,114 @@ public class EditorUtil {
         java.awt.Color backgroundColor = getBackgroundColorFromMimeType("text/html"); // Get background color
         boolean isDark = ColorUtil.isDarkColor(backgroundColor);
         String newContent = """
-    <html>
-      <head>
-        <style>
-            html, body {
-              margin: 0;
-              padding: 10px;
-              width: NB_WRAP_WIDTHpx;
-              font-family: 'NB_FONT_NAME';
-              font-size: NB_FONT_SIZEpx;
-              line-height: 1.5;
-              color: NB_FONT_COLOR;
-              background-color: NB_BACKGROUND_COLOR;
-              word-wrap: break-word;
-              overflow-wrap: break-word;
-              white-space: normal;
-            }
+                <html>
+                  <head>
+                    <style>
+                        html, body {
+                          margin: 0;
+                          padding: 10px;
+                          width: NB_WRAP_WIDTHpx;
+                          font-family: 'NB_FONT_NAME';
+                          font-size: NB_FONT_SIZEpx;
+                          line-height: 1.5;
+                          color: NB_FONT_COLOR;
+                          background-color: NB_BACKGROUND_COLOR;
+                          word-wrap: break-word;
+                          overflow-wrap: break-word;
+                          white-space: normal;
+                        }
 
-            h1, h2, h3, h4, h5, h6 {
-              margin: 0 0 10px 0;
-              font-weight: bold;
-              font-size: inherit;
-            }
+                        h1, h2, h3, h4, h5, h6 {
+                          margin: 0 0 10px 0;
+                          font-weight: bold;
+                          font-size: inherit;
+                        }
 
-            p {
-              margin: 0 0 10px 0;
-            }
+                        p {
+                          margin: 0 0 10px 0;
+                        }
 
-            a {
-              color: #007bff;
-              text-decoration: none;
-            }
-            code a {
-              color: #007bff;
-            }
-            a:hover {
-              text-decoration: underline;
-            }
+                        a {
+                          color: #007bff;
+                          text-decoration: none;
+                        }
+                        code a {
+                          color: #007bff;
+                        }
+                        a:hover {
+                          text-decoration: underline;
+                        }
 
-            strong {
-              font-weight: bold;
-            }
+                        strong {
+                          font-weight: bold;
+                        }
 
-            code {
-              font-size: NB_FONT_SIZEpx;
-              font-family: monospace;
-              padding: 2px 4px;
-              border-radius: 3px;
-              color: #ff6600;
-            }
+                        code {
+                          font-size: NB_FONT_SIZEpx;
+                          font-family: monospace;
+                          padding: 2px 4px;
+                          border-radius: 3px;
+                          color: #ff6600;
+                        }
 
-            pre {
-              font-size: NB_FONT_SIZEpx;
-              padding: 10px;
-              overflow-x: auto;
-              border-radius: 3px;
-              font-family: monospace;
-              margin: 10px 0;
-            }
+                        pre {
+                          font-size: NB_FONT_SIZEpx;
+                          padding: 10px;
+                          overflow-x: auto;
+                          border-radius: 3px;
+                          font-family: monospace;
+                          margin: 10px 0;
+                        }
 
-            pre code {
-              padding: 0;
-              background: none;
-            }
-            ul {
-                list-style-type: none;
-                padding: 0;
-            }
-            li {
-                margin-bottom: 10px;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 20px;
-            }
-            th, td {
-                border: 1px solid NB_HEADER_BACKGROUND_COLOR;
-            }
-            th {
-                background-color: NB_HEADER_BACKGROUND_COLOR;
-            }
-            .highlight {
-                color: #007bff;
-            }
-        </style>
-      </head>
-      <body>
-        """ + bodyContent + """
-      </body>
-    </html>
-    """;
+                        pre code {
+                          padding: 0;
+                          background: none;
+                        }
+                        ul {
+                            list-style-type: none;
+                            padding: 0;
+                        }
+                        li {
+                            margin-bottom: 10px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                        }
+                        th, td {
+                            border: 1px solid NB_HEADER_BACKGROUND_COLOR;
+                        }
+                        th {
+                            background-color: NB_HEADER_BACKGROUND_COLOR;
+                        }
+                        .highlight {
+                            color: #007bff;
+                        }
+                    </style>
+                  </head>
+                  <body>
+                    """ + bodyContent + """
+                  </body>
+                </html>
+                """;
         newContent = newContent.replace("NB_FONT_SIZE", String.valueOf(newFont.getSize()));
         newContent = newContent.replace("NB_FONT_NAME", newFont.getName());
         newContent = newContent.replace("NB_WRAP_WIDTH", String.valueOf(wrapWidth));
 
         if (textColor != null) {
-            newContent = newContent.replace("NB_FONT_COLOR", "#" + Integer.toHexString(textColor.getRGB()).substring(2).toUpperCase());
+            newContent = newContent.replace("NB_FONT_COLOR",
+                    "#" + Integer.toHexString(textColor.getRGB()).substring(2).toUpperCase());
         }
         if (backgroundColor != null) {
-            newContent = newContent.replace("NB_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
+            newContent = newContent.replace("NB_BACKGROUND_COLOR",
+                    "#" + Integer.toHexString(backgroundColor.getRGB()).substring(2).toUpperCase());
             if (isDark) {
-                newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.brighter().getRGB()).substring(2).toUpperCase());
+                newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR",
+                        "#" + Integer.toHexString(backgroundColor.brighter().getRGB()).substring(2).toUpperCase());
             } else {
-                newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR", "#" + Integer.toHexString(backgroundColor.darker().getRGB()).substring(2).toUpperCase());
+                newContent = newContent.replace("NB_HEADER_BACKGROUND_COLOR",
+                        "#" + Integer.toHexString(backgroundColor.darker().getRGB()).substring(2).toUpperCase());
             }
         }
         return newContent;
@@ -523,7 +520,7 @@ public class EditorUtil {
      * Get text for a specified line.
      *
      * @param document document
-     * @param line line number
+     * @param line     line number
      * @return line text
      */
     public static String getLineText(BaseDocument document, int line) {

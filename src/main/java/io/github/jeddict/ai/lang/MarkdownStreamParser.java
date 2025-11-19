@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
 public class MarkdownStreamParser {
@@ -137,9 +136,9 @@ public class MarkdownStreamParser {
                     if (block != null) {
                         // Here you can add processing logic if needed
                         SwingUtilities.invokeLater(() -> {
-                            JComponent comp = printBlock(code, null, block, null, topComponent);
-                            comp.requestFocusInWindow();
-                            comp.scrollRectToVisible(comp.getVisibleRect());
+                            printBlock(code, null, block, null, topComponent);
+                            // comp.requestFocusInWindow(); // No longer applicable for JavaFX
+                            // comp.scrollRectToVisible(comp.getVisibleRect()); // Handled by JavaFX view
                             doneBlocks.offer(block);
                             if (blockListener != null) {
                                 blockListener.onBlockDone(block);

@@ -134,7 +134,6 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.Document;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
@@ -171,11 +170,12 @@ public class AssistantChatManager extends JavaFix {
     private JComboBox<String> models;
     private JComboBox<AssistantAction> actionComboBox;
     private Timer timer;
-    private JButton prevButton, nextButton, openInBrowserButton, submitButton;//copyButton, saveButton,
+    private JButton prevButton, nextButton, openInBrowserButton, submitButton;// copyButton, saveButton,
     private AssistantChat topComponent;
     private JEditorPane questionPane;
     private JScrollPane questionScrollPane;
-    private final List<Response> responseHistory = new ArrayList<>(); // TODO: to be reviewed/removed once all agents will use buit-in memory
+    private final List<Response> responseHistory = new ArrayList<>(); // TODO: to be reviewed/removed once all agents
+                                                                      // will use buit-in memory
     private int currentResponseIndex = -1;
     private String sourceCode;
     private Project projectContext;
@@ -252,10 +252,9 @@ public class AssistantChatManager extends JavaFix {
     }
 
     public AssistantChatManager(
-        final Action action,
-        final Project project,
-        final Map<String, String> params
-    ) {
+            final Action action,
+            final Project project,
+            final Map<String, String> params) {
         super(null);
         this.action = action;
         this.projectContext = project;
@@ -307,7 +306,8 @@ public class AssistantChatManager extends JavaFix {
                             super.onCompleteResponse(response);
 
                             final Response r = new Response(null, response.aiMessage().text(), messageContextCopy);
-                            sourceCode = EditorUtil.updateEditors(null, getProject(), topComponent, r, getContextFiles());
+                            sourceCode = EditorUtil.updateEditors(null, getProject(), topComponent, r,
+                                    getContextFiles());
 
                             // TODO: to be removed once all agents will use buit-in memory
                             responseHistory.add(r);
@@ -320,13 +320,16 @@ public class AssistantChatManager extends JavaFix {
                         final String prompt = pm.getPrompts().get("test");
                         final String rules = pm.getSessionRules();
                         if (leaf instanceof MethodTree) {
-                            async(() -> pair.generateTestCase(null, null, null, leaf.toString(), prompt, rules), handler);
+                            async(() -> pair.generateTestCase(null, null, null, leaf.toString(), prompt, rules),
+                                    handler);
                         } else {
-                            async(() -> pair.generateTestCase(null, null, treePath.getCompilationUnit().toString(), null, prompt, rules), handler);
+                            async(() -> pair.generateTestCase(null, null, treePath.getCompilationUnit().toString(),
+                                    null, prompt, rules), handler);
                         }
                     } else {
                         final String rules = pm.getSessionRules();
-                        final TechWriter pair = newJeddictBrain(handler, getModelName()).pairProgrammer(PairProgrammer.Specialist.TECHWRITER);
+                        final TechWriter pair = newJeddictBrain(handler, getModelName())
+                                .pairProgrammer(PairProgrammer.Specialist.TECHWRITER);
                         if (leaf instanceof MethodTree) {
                             async(() -> pair.describeCode(leaf.toString(), rules), handler);
                         } else {
@@ -367,8 +370,8 @@ public class AssistantChatManager extends JavaFix {
         prefs.putBoolean(AssistantChat.PREFERENCE_KEY, true);
         topComponent = new AssistantChat(title, null, getProject());
         topComponent.putClientProperty(ASSISTANT_CHAT_MANAGER_KEY, new WeakReference<>(AssistantChatManager.this));
-        JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
-        topComponent.add(scrollPane, BorderLayout.CENTER);
+        // JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
+        // topComponent.add(scrollPane, BorderLayout.CENTER);
         topComponent.add(createBottomPanel(null, filename, null), BorderLayout.SOUTH);
         topComponent.open();
         topComponent.requestActive();
@@ -387,17 +390,18 @@ public class AssistantChatManager extends JavaFix {
             Preferences prefs = Preferences.userNodeForPackage(AssistantChat.class);
             prefs.putBoolean(AssistantChat.PREFERENCE_KEY, true);
             topComponent = new AssistantChat(title, type, getProject());
-            topComponent.setLayout(new BorderLayout());
+            // topComponent.setLayout(new BorderLayout()); // Layout is already set in
+            // AssistantChat constructor
             topComponent.putClientProperty(ASSISTANT_CHAT_MANAGER_KEY, new WeakReference<>(AssistantChatManager.this));
-            JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
-            Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
-            boolean isDark = ColorUtil.isDarkColor(bgColor);
-            if (isDark) {
-                scrollPane.getViewport().setBackground(Color.DARK_GRAY);
-                scrollPane.getVerticalScrollBar().setUI(new CustomScrollBarUI());
-                scrollPane.getHorizontalScrollBar().setUI(new CustomScrollBarUI());
-            }
-            topComponent.add(scrollPane, BorderLayout.CENTER);
+            // JScrollPane scrollPane = new JScrollPane(topComponent.getParentPanel());
+            // Color bgColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
+            // boolean isDark = ColorUtil.isDarkColor(bgColor);
+            // if (isDark) {
+            // scrollPane.getViewport().setBackground(Color.DARK_GRAY);
+            // scrollPane.getVerticalScrollBar().setUI(new CustomScrollBarUI());
+            // scrollPane.getHorizontalScrollBar().setUI(new CustomScrollBarUI());
+            // }
+            // topComponent.add(scrollPane, BorderLayout.CENTER);
             topComponent.add(createBottomPanel(type, fileName, action), BorderLayout.SOUTH);
             if (PreferencesManager.getInstance().getChatPlacement().equals("Left")) {
                 WindowManager.getDefault()
@@ -439,27 +443,24 @@ public class AssistantChatManager extends JavaFix {
             + "</div>";
 
     private void initialMessage() {
-        JEditorPane init = topComponent.createHtmlPane(HOME_PAGE);
-        EventQueue.invokeLater(() -> questionPane.requestFocusInWindow());
-        init.addHyperlinkListener(e -> {
-            if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-                String link = e.getDescription();
-                if ("home.html".equals(link)) {
-                    try {
-                        String content = getHTMLContent(getHtmlWrapWidth(init), HOME_PAGE);
-                        init.setText(content);
-                    } catch (Exception ex) {
-                        Exceptions.printStackTrace(ex);
-                    }
-                } else if ("tweet".equals(link)) {
-                    try {
-                        java.awt.Desktop.getDesktop().browse(java.net.URI.create(RandomTweetSelector.getRandomTweet()));
-                    } catch (Exception ex) {
-                        Exceptions.printStackTrace(ex);
-                    }
+        topComponent.addHtmlMessage(HOME_PAGE, link -> {
+            if ("home.html".equals(link)) {
+                try {
+                    // String content = getHTMLContent(getHtmlWrapWidth(init), HOME_PAGE);
+                    // init.setText(content);
+                    // TODO: Handle home link if needed, maybe refresh?
+                } catch (Exception ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+            } else if ("tweet".equals(link)) {
+                try {
+                    java.awt.Desktop.getDesktop().browse(java.net.URI.create(RandomTweetSelector.getRandomTweet()));
+                } catch (Exception ex) {
+                    Exceptions.printStackTrace(ex);
                 }
             }
         });
+        EventQueue.invokeLater(() -> questionPane.requestFocusInWindow());
     }
 
     private JPanel filePanel;
@@ -553,7 +554,8 @@ public class AssistantChatManager extends JavaFix {
         } else {
             actionComboBox.setSelectedItem(AssistantAction.ASK);
         }
-        actionComboBox.setToolTipText("<html><b>Chat</b> – for general queries<br><b>Agent</b> – for file/project generation actions</html>");
+        actionComboBox.setToolTipText(
+                "<html><b>Chat</b> – for general queries<br><b>Agent</b> – for file/project generation actions</html>");
         actionComboBox.addActionListener(e -> {
             AssistantAction selectedAction = (AssistantAction) actionComboBox.getSelectedItem();
             if (selectedAction == AssistantAction.BUILD) {
@@ -563,19 +565,22 @@ public class AssistantChatManager extends JavaFix {
                         project = openProjects[0];
                         DialogDisplayer.getDefault().notify(
                                 new NotifyDescriptor.Message(
-                                        "Connected chat to project: " + ProjectUtils.getInformation(project).getDisplayName(),
-                                        NotifyDescriptor.INFORMATION_MESSAGE
-                                )
-                        );
+                                        "Connected chat to project: "
+                                                + ProjectUtils.getInformation(project).getDisplayName(),
+                                        NotifyDescriptor.INFORMATION_MESSAGE));
                     } else if (openProjects.length > 1) {
                         JComboBox<Project> projectComboBox = new JComboBox<>(openProjects);
                         projectComboBox.setRenderer(new javax.swing.ListCellRenderer<>() {
                             private final javax.swing.DefaultListCellRenderer defaultRenderer = new javax.swing.DefaultListCellRenderer();
 
                             @Override
-                            public java.awt.Component getListCellRendererComponent(javax.swing.JList<? extends Project> list, Project value, int index, boolean isSelected, boolean cellHasFocus) {
-                                String displayName = (value == null) ? "" : ProjectUtils.getInformation(value).getDisplayName();
-                                return defaultRenderer.getListCellRendererComponent(list, displayName, index, isSelected, cellHasFocus);
+                            public java.awt.Component getListCellRendererComponent(
+                                    javax.swing.JList<? extends Project> list, Project value, int index,
+                                    boolean isSelected, boolean cellHasFocus) {
+                                String displayName = (value == null) ? ""
+                                        : ProjectUtils.getInformation(value).getDisplayName();
+                                return defaultRenderer.getListCellRendererComponent(list, displayName, index,
+                                        isSelected, cellHasFocus);
                             }
                         });
                         NotifyDescriptor descriptor = new NotifyDescriptor(
@@ -584,8 +589,7 @@ public class AssistantChatManager extends JavaFix {
                                 NotifyDescriptor.OK_CANCEL_OPTION,
                                 NotifyDescriptor.QUESTION_MESSAGE,
                                 null,
-                                NotifyDescriptor.OK_OPTION
-                        );
+                                NotifyDescriptor.OK_OPTION);
                         Object dialogResult = DialogDisplayer.getDefault().notify(descriptor);
                         if (NotifyDescriptor.OK_OPTION.equals(dialogResult)) {
                             Project selectedProject = (Project) projectComboBox.getSelectedItem();
@@ -593,10 +597,9 @@ public class AssistantChatManager extends JavaFix {
                                 project = selectedProject;
                                 DialogDisplayer.getDefault().notify(
                                         new NotifyDescriptor.Message(
-                                                "Connected chat to project: " + ProjectUtils.getInformation(project).getDisplayName(),
-                                                NotifyDescriptor.INFORMATION_MESSAGE
-                                        )
-                                );
+                                                "Connected chat to project: "
+                                                        + ProjectUtils.getInformation(project).getDisplayName(),
+                                                NotifyDescriptor.INFORMATION_MESSAGE));
                             } else {
                                 actionComboBox.setSelectedItem(AssistantAction.ASK);
                             }
@@ -606,8 +609,7 @@ public class AssistantChatManager extends JavaFix {
                     } else {
                         NotifyDescriptor.Message msg = new NotifyDescriptor.Message(
                                 "To use AI agent mode, connect chat to any project by dropping any source file on chat window or start new chat from project/package/source file context.",
-                                NotifyDescriptor.WARNING_MESSAGE
-                        );
+                                NotifyDescriptor.WARNING_MESSAGE);
                         DialogDisplayer.getDefault().notify(msg);
                         actionComboBox.setSelectedItem(AssistantAction.ASK);
                     }
@@ -622,19 +624,20 @@ public class AssistantChatManager extends JavaFix {
 
         int javaEditorCount = topComponent.getAllCodeEditorCount();
 
-//        copyButton = createIconButton(Labels.COPY, ICON_COPY);
-//        copyButton.setToolTipText("Copy to clipboard");
-//        copyButton.setVisible(javaEditorCount > 0);
-//        leftButtonPanel.add(copyButton);
-//
-//        saveButton = createIconButton(Labels.SAVE, ICON_SAVE);
-//        saveButton.setToolTipText("Save as");
-//        saveButton.setVisible(javaEditorCount == 1);
-//        leftButtonPanel.add(saveButton);
-//        JButton saveToEditorButton = createIconButton(Labels.UPDATE + " " + fileName, ICON_UPDATE);
-//        saveToEditorButton.setToolTipText("Update " + fileName);
-//        saveToEditorButton.setVisible(fileName != null);
-//        leftButtonPanel.add(saveToEditorButton);
+        // copyButton = createIconButton(Labels.COPY, ICON_COPY);
+        // copyButton.setToolTipText("Copy to clipboard");
+        // copyButton.setVisible(javaEditorCount > 0);
+        // leftButtonPanel.add(copyButton);
+        //
+        // saveButton = createIconButton(Labels.SAVE, ICON_SAVE);
+        // saveButton.setToolTipText("Save as");
+        // saveButton.setVisible(javaEditorCount == 1);
+        // leftButtonPanel.add(saveButton);
+        // JButton saveToEditorButton = createIconButton(Labels.UPDATE + " " + fileName,
+        // ICON_UPDATE);
+        // saveToEditorButton.setToolTipText("Update " + fileName);
+        // saveToEditorButton.setVisible(fileName != null);
+        // leftButtonPanel.add(saveToEditorButton);
         JButton showChartsButton = createIconButton(Labels.STATS, ICON_STATS);
         showChartsButton.setToolTipText("Show Token Usage Charts");
         rightButtonPanel.add(showChartsButton);
@@ -681,14 +684,19 @@ public class AssistantChatManager extends JavaFix {
                 updateButton(prevButton, showOnlyIcons, ICON_PREV, Labels.PREV + " " + ICON_PREV);
                 updateButton(nextButton, showOnlyIcons, ICON_NEXT, Labels.NEXT + " " + ICON_NEXT);
                 updateButton(openInBrowserButton, showOnlyIcons, ICON_WEB, Labels.VIEW + " " + ICON_WEB);
-//                updateButton(copyButton, showOnlyIcons, ICON_COPY, Labels.COPY + " " + ICON_COPY);
-//                updateButton(saveButton, showOnlyIcons, ICON_SAVE, Labels.SAVE + " " + ICON_SAVE);
-//                updateButton(saveToEditorButton, showOnlyIcons, ICON_UPDATE, Labels.UPDATE + " " + ICON_UPDATE);
+                // updateButton(copyButton, showOnlyIcons, ICON_COPY, Labels.COPY + " " +
+                // ICON_COPY);
+                // updateButton(saveButton, showOnlyIcons, ICON_SAVE, Labels.SAVE + " " +
+                // ICON_SAVE);
+                // updateButton(saveToEditorButton, showOnlyIcons, ICON_UPDATE, Labels.UPDATE +
+                // " " + ICON_UPDATE);
                 updateButton(newChatButton, showOnlyIcons, ICON_NEW_CHAT, Labels.NEW_CHAT + " " + ICON_NEW_CHAT);
                 updateButton(showChartsButton, showOnlyIcons, ICON_STATS, Labels.STATS + " " + ICON_STATS);
                 updateButton(optionsButton, showOnlyIcons, ICON_SETTINGS, Labels.SETTINGS + " " + ICON_SETTINGS);
-                updateButton(messageContextButton, showOnlyIcons, ICON_ATTACH, Labels.MESSAGE_CONTEXT + " " + ICON_ATTACH);
-                updateButton(sessionContextButton, showOnlyIcons, ICON_CONTEXT, Labels.SESSION_CONTEXT + " " + ICON_CONTEXT);
+                updateButton(messageContextButton, showOnlyIcons, ICON_ATTACH,
+                        Labels.MESSAGE_CONTEXT + " " + ICON_ATTACH);
+                updateButton(sessionContextButton, showOnlyIcons, ICON_CONTEXT,
+                        Labels.SESSION_CONTEXT + " " + ICON_CONTEXT);
                 updateButton(submitButton, showOnlyIcons, ICON_SEND, Labels.SEND + " " + ICON_SEND);
                 updateCombobox(models, showOnlyIcons);
                 updateCombobox(actionComboBox, showOnlyIcons);
@@ -739,19 +747,20 @@ public class AssistantChatManager extends JavaFix {
             }
         });
 
-//        copyButton.addActionListener(e -> {
-//            StringSelection stringSelection = new StringSelection(topComponent.getAllCodeEditorText());
-//            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-//            clipboard.setContents(stringSelection, null);
-//        });
-//        saveButton.addActionListener(e -> {
-//            topComponent.saveAs(null, topComponent.getAllCodeEditorText());
-//        });
-//        saveToEditorButton.addActionListener(e -> {
-//            if (action != null) {
-//                action.accept(topComponent.getAllCodeEditorText());
-//            }
-//        });
+        // copyButton.addActionListener(e -> {
+        // StringSelection stringSelection = new
+        // StringSelection(topComponent.getAllCodeEditorText());
+        // Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        // clipboard.setContents(stringSelection, null);
+        // });
+        // saveButton.addActionListener(e -> {
+        // topComponent.saveAs(null, topComponent.getAllCodeEditorText());
+        // });
+        // saveToEditorButton.addActionListener(e -> {
+        // if (action != null) {
+        // action.accept(topComponent.getAllCodeEditorText());
+        // }
+        // });
         newChatButton.addActionListener(e -> {
             topComponent.clear();
             topComponent.repaint();
@@ -767,7 +776,7 @@ public class AssistantChatManager extends JavaFix {
             try {
                 File latestTempFile = File.createTempFile("gen-ai", ".html");
                 latestTempFile.deleteOnExit();
-                try ( FileWriter writer = new FileWriter(latestTempFile)) {
+                try (FileWriter writer = new FileWriter(latestTempFile)) {
                     writer.write(topComponent.getAllEditorText());
                 }
                 if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
@@ -785,8 +794,7 @@ public class AssistantChatManager extends JavaFix {
                     NotifyDescriptor.Confirmation confirmDialog = new NotifyDescriptor.Confirmation(
                             "The AI Assistant is still processing the request. Do you want to cancel it?",
                             "Interrupt AI Assistant",
-                            NotifyDescriptor.YES_NO_OPTION
-                    );
+                            NotifyDescriptor.YES_NO_OPTION);
                     Object answer = DialogDisplayer.getDefault().notify(confirmDialog);
                     if (NotifyDescriptor.YES_OPTION.equals(answer)) {
                         result.cancel(true);
@@ -811,7 +819,7 @@ public class AssistantChatManager extends JavaFix {
                     promptKeys.addAll(prompts.keySet());
                     promptKeys.sort(Comparator.reverseOrder());
 
-                    for (String key: promptKeys) {
+                    for (String key : promptKeys) {
                         String prompt = prompts.get(key);
 
                         String toReplace = "/" + key;
@@ -835,7 +843,8 @@ public class AssistantChatManager extends JavaFix {
             if (currentResponseIndex > 0) {
                 currentResponseIndex--;
                 Response historyResponse = responseHistory.get(currentResponseIndex);
-                sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, historyResponse, getContextFiles());
+                sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, historyResponse,
+                        getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -845,7 +854,8 @@ public class AssistantChatManager extends JavaFix {
             if (currentResponseIndex < responseHistory.size() - 1) {
                 currentResponseIndex++;
                 Response historyResponse = responseHistory.get(currentResponseIndex);
-                sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, historyResponse, getContextFiles());
+                sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, historyResponse,
+                        getContextFiles());
                 updateButtons(prevButton, nextButton);
             }
         });
@@ -903,8 +913,8 @@ public class AssistantChatManager extends JavaFix {
     }
 
     private void startLoading() {
-        final String[] spinnerFrames = {"◐", "◓", "◑", "◒"};
-        final int[] frameIndex = {0};
+        final String[] spinnerFrames = { "◐", "◓", "◑", "◒" };
+        final int[] frameIndex = { 0 };
         timer = new Timer(200, e -> {
             submitButton.setText(spinnerFrames[frameIndex[0]]);
             frameIndex[0] = (frameIndex[0] + 1) % spinnerFrames.length;
@@ -1006,14 +1016,16 @@ public class AssistantChatManager extends JavaFix {
 
                         final StringBuilder textResponse = new StringBuilder(response.aiMessage().text());
 
-                        LOG.finest(() -> "response completed with\ntext\n" + textResponse + "\nand\ntooling\n" + toolingResponse);
+                        LOG.finest(() -> "response completed with\ntext\n" + textResponse + "\nand\ntooling\n"
+                                + toolingResponse);
 
-                        if(!toolingResponse.isEmpty()) {
+                        if (!toolingResponse.isEmpty()) {
                             textResponse.insert(0, "```tooling\n" + toolingResponse.toString() + "\n```\n");
                         }
                         final Response r = new Response(question, textResponse.toString(), messageContextCopy);
                         // TODO: to be removed once all agents will use buit-in memory
-                        if (responseHistory.isEmpty() || !textResponse.equals(responseHistory.get(responseHistory.size() - 1))) {
+                        if (responseHistory.isEmpty()
+                                || !textResponse.equals(responseHistory.get(responseHistory.size() - 1))) {
                             responseHistory.add(r);
                             currentResponseIndex = responseHistory.size() - 1;
                         }
@@ -1028,7 +1040,8 @@ public class AssistantChatManager extends JavaFix {
                                 r.getBlocks().clear();
                                 r.getBlocks().add(new Block("web", web));
                             }
-                            sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, r, getContextFiles());
+                            sourceCode = EditorUtil.updateEditors(queryUpdate, getProject(), topComponent, r,
+                                    getContextFiles());
 
                             stopLoading();
                             updateButtons(prevButton, nextButton);
@@ -1057,19 +1070,23 @@ public class AssistantChatManager extends JavaFix {
                     if (context == null) {
                         context = "";
                     }
-                    final String messageScopeContent = getTextFilesContext(messageContext, projectContext, agentEnabled);
+                    final String messageScopeContent = getTextFilesContext(messageContext, projectContext,
+                            agentEnabled);
                     if (messageScopeContent != null && !messageScopeContent.isEmpty()) {
                         context = context + "\n\n Files:\n" + messageScopeContent;
                     }
-                    response = diffSpecialist(handler).reviewChanges(context, params.get("granularity"), params.get("feature"));
+                    response = diffSpecialist(handler).reviewChanges(context, params.get("granularity"),
+                            params.get("feature"));
                 } else if (action == Action.TEST) {
                     final TestSpecialist pair = testSpecialist(handler);
                     final String prompt = pm.getPrompts().get("test");
                     final String rules = pm.getSessionRules();
                     if (leaf instanceof MethodTree) {
-                        response = pair.generateTestCase(question, null, null, leaf.toString(), prompt, rules, prevChatResponses);
+                        response = pair.generateTestCase(question, null, null, leaf.toString(), prompt, rules,
+                                prevChatResponses);
                     } else {
-                        response = pair.generateTestCase(question, null, treePath.getCompilationUnit().toString(), null, prompt, rules, prevChatResponses);
+                        response = pair.generateTestCase(question, null, treePath.getCompilationUnit().toString(), null,
+                                prompt, rules, prevChatResponses);
                     }
                 } else if (projectContext != null || sessionContext != null) {
                     Set<FileObject> mainSessionContext;
@@ -1085,19 +1102,25 @@ public class AssistantChatManager extends JavaFix {
 
                     Set<FileObject> fitleredMessageContext = new HashSet<>(messageContext);
                     fitleredMessageContext.removeAll(mainSessionContext);
-                    String messageScopeContent = getTextFilesContext(fitleredMessageContext, getProject(), agentEnabled);
+                    String messageScopeContent = getTextFilesContext(fitleredMessageContext, getProject(),
+                            agentEnabled);
                     List<String> messageScopeImages = getImageFilesContext(fitleredMessageContext);
                     List<String> images = new ArrayList<>();
                     images.addAll(sessionScopeImages);
                     images.addAll(messageScopeImages);
                     response = newJeddictBrain(handler, getModelName())
-                        .generateDescription(getProject(), agentEnabled, sessionScopeContent + '\n' + messageScopeContent, null, images, prevChatResponses, question, pm.getSessionRules());
+                            .generateDescription(getProject(), agentEnabled,
+                                    sessionScopeContent + '\n' + messageScopeContent, null, images, prevChatResponses,
+                                    question, pm.getSessionRules());
                 } else if (treePath == null) {
                     response = newJeddictBrain(handler, getModelName())
-                        .generateDescription(getProject(), null, null, null, prevChatResponses, question, pm.getSessionRules());
+                            .generateDescription(getProject(), null, null, null, prevChatResponses, question,
+                                    pm.getSessionRules());
                 } else {
                     response = newJeddictBrain(handler, getModelName())
-                        .generateDescription(getProject(), treePath.getCompilationUnit().toString(), treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null, null, prevChatResponses, question, pm.getSessionRules());
+                            .generateDescription(getProject(), treePath.getCompilationUnit().toString(),
+                                    treePath.getLeaf() instanceof MethodTree ? treePath.getLeaf().toString() : null,
+                                    null, prevChatResponses, question, pm.getSessionRules());
                 }
 
                 //
@@ -1131,29 +1154,30 @@ public class AssistantChatManager extends JavaFix {
         nextButton.setVisible(currentResponseIndex < responseHistory.size() - 1);
 
         int javaEditorCount = topComponent.getAllCodeEditorCount();
-//        copyButton.setVisible(javaEditorCount > 0);
-//        saveButton.setVisible(javaEditorCount > 0);
+        // copyButton.setVisible(javaEditorCount > 0);
+        // saveButton.setVisible(javaEditorCount > 0);
 
         openInBrowserButton.setVisible(topComponent.getAllEditorCount() > 0);
     }
 
     private JeddictBrain newJeddictBrain(final JeddictBrainListener listener, final String name) {
         final JeddictBrain brain = new JeddictBrain(
-            name, PreferencesManager.getInstance().isStreamEnabled(), buildToolsList(project, listener));
+                name, PreferencesManager.getInstance().isStreamEnabled(), buildToolsList(project, listener));
         brain.addProgressListener(listener);
         return brain;
     }
 
     /**
      * Returns a TestSpecialist with memory reusing a previously created agent
-     * if <code>testSpecialist</code> is not null. If null, a new  instance is
+     * if <code>testSpecialist</code> is not null. If null, a new instance is
      * created.
      *
      * @return
      */
     private TestSpecialist testSpecialist(final JeddictBrainListener listener) {
 
-        if (testSpecialist != null) return testSpecialist;
+        if (testSpecialist != null)
+            return testSpecialist;
 
         int memorySize = pm.getConversationContext();
 
@@ -1165,14 +1189,15 @@ public class AssistantChatManager extends JavaFix {
 
     /**
      * Returns a DBSpecialist with memory reusing a previously created agent
-     * if <code>dbSpecialist</code> is not null. If null, a new  instance is
+     * if <code>dbSpecialist</code> is not null. If null, a new instance is
      * created.
      *
      * @return
      */
     private DBSpecialist dbSpecialist(final JeddictBrainListener listener) {
 
-        if (dbSpecialist != null) return dbSpecialist;
+        if (dbSpecialist != null)
+            return dbSpecialist;
 
         int memorySize = pm.getConversationContext();
 
@@ -1184,14 +1209,15 @@ public class AssistantChatManager extends JavaFix {
 
     /**
      * Returns a DiffSpecialist with memory reusing a previously created agent
-     * if <code>diffSpecialist</code> is not null. If null, a new  instance is
+     * if <code>diffSpecialist</code> is not null. If null, a new instance is
      * created.
      *
      * @return
      */
     private DiffSpecialist diffSpecialist(final JeddictBrainListener listener) {
 
-        if (diffSpecialist != null) return diffSpecialist;
+        if (diffSpecialist != null)
+            return diffSpecialist;
 
         int memorySize = pm.getConversationContext();
 
@@ -1202,8 +1228,7 @@ public class AssistantChatManager extends JavaFix {
     }
 
     private List<AbstractTool> buildToolsList(
-        final Project project, final JeddictBrainListener handler
-    ) {
+            final Project project, final JeddictBrainListener handler) {
         if (project == null) {
             return List.of();
         }
@@ -1211,22 +1236,19 @@ public class AssistantChatManager extends JavaFix {
         // TODO: make this automatic with some discoverability approach (maybe
         // NB lookup registration?)
         //
-        final String basedir =
-            FileUtil.toPath(project.getProjectDirectory())
-            .toAbsolutePath().normalize()
-            .toString();
+        final String basedir = FileUtil.toPath(project.getProjectDirectory())
+                .toAbsolutePath().normalize()
+                .toString();
 
         final List<AbstractTool> toolsList = List.of(
-            new ExecutionTools(
-                basedir, project.getProjectDirectory().getName(),
-                pm.getBuildCommand(project), pm.getTestCommand(project)
-            ),
-            new ExplorationTools(basedir, project.getLookup()),
-            new FileSystemTools(basedir),
-            new GradleTools(basedir),
-            new MavenTools(basedir),
-            new RefactoringTools(basedir)
-        );
+                new ExecutionTools(
+                        basedir, project.getProjectDirectory().getName(),
+                        pm.getBuildCommand(project), pm.getTestCommand(project)),
+                new ExplorationTools(basedir, project.getLookup()),
+                new FileSystemTools(basedir),
+                new GradleTools(basedir),
+                new MavenTools(basedir),
+                new RefactoringTools(basedir));
 
         //
         // The handler wants to know about tool execution
@@ -1247,8 +1269,7 @@ public class AssistantChatManager extends JavaFix {
             protected void done() {
                 try {
                     handler.onCompleteResponse(
-                        ChatResponse.builder().aiMessage(new AiMessage(get())).build()
-                    );
+                            ChatResponse.builder().aiMessage(new AiMessage(get())).build());
                 } catch (InterruptedException | ExecutionException x) {
                     //
                     // TODO: better error handler

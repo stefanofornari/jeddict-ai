@@ -94,6 +94,9 @@ import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.project.Project;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.windows.TopComponent;
@@ -109,7 +112,9 @@ public class AssistantChat extends TopComponent {
     public static final ImageIcon logoIcon = new ImageIcon(AssistantChat.class.getResource("/icons/logo28.png"));
 
     public static final String PREFERENCE_KEY = "AssistantTopComponentOpen";
-    private final JPanel parentPanel;
+    private final JFXPanel jfxPanel;
+    private AssistantChatView chatView;
+    private final JPanel parentPanel; // Kept for legacy compatibility during refactor
     private final Project project;
 
     private final Map<JEditorPane, JPopupMenu> menus = new HashMap<>();
@@ -127,9 +132,68 @@ public class AssistantChat extends TopComponent {
         if (type != null) {
             this.type = type;
         }
-        parentPanel = new JPanel();
-        parentPanel.setLayout(new BoxLayout(parentPanel, BoxLayout.Y_AXIS));
-        add(parentPanel, BorderLayout.CENTER);
+
+        parentPanel = new JPanel(); // Initialize but don't add to layout
+
+        jfxPanel = new JFXPanel();
+        add(jfxPanel, BorderLayout.CENTER);
+
+        Platform.runLater(() -> {
+            chatView = new AssistantChatView();
+            Scene scene = new Scene(chatView);
+            jfxPanel.setScene(scene);
+        });
+    }
+
+    private void handleUserMessage(String message) {
+        // TODO: Callback to manager?
+        // For now just log or echo?
+        // The manager usually handles the question via 'submitButton' in the bottom
+        // panel (which is Swing).
+        // If we move the input to JavaFX, we need to bridge this.
+        // AssistantChatManager has 'handleQuestion'.
+        // We might need to expose a listener here.
+    }
+
+    public void addHtmlMessage(String html, Consumer<String> linkHandler) {
+        Platform.runLater(() -> {
+            if (chatView != null) {
+                // TODO: Use WebView in AssistantChatView for HTML
+                chatView.appendAssistantMessage(html);
+            }
+        });
+    }
+
+    public void addCodeMessage(String mimeType, Block content) {
+        Platform.runLater(() -> {
+            if (chatView != null) {
+                chatView.appendAssistantMessage("Code (" + mimeType + "):\n" + content.getContent());
+            }
+        });
+    }
+
+    public void addMarkdownMessage(Block content) {
+        Platform.runLater(() -> {
+            if (chatView != null) {
+                chatView.appendAssistantMessage("Markdown:\n" + content.getContent());
+            }
+        });
+    }
+
+    public void addMermaidMessage(Block content) {
+        Platform.runLater(() -> {
+            if (chatView != null) {
+                chatView.appendAssistantMessage("Mermaid:\n" + content.getContent());
+            }
+        });
+    }
+
+    public void addSVGMessage(Block content) {
+        Platform.runLater(() -> {
+            if (chatView != null) {
+                chatView.appendAssistantMessage("SVG:\n" + content.getContent());
+            }
+        });
     }
 
     public void lastRemove() {
@@ -139,6 +203,11 @@ public class AssistantChat extends TopComponent {
     public void clear() {
         parentPanel.removeAll();
         menus.clear();
+        Platform.runLater(() -> {
+            if (chatView != null) {
+                chatView.clearChat();
+            }
+        });
     }
 
     private JButton copyButton, editButton, saveButton, cancelButton;
@@ -153,7 +222,8 @@ public class AssistantChat extends TopComponent {
         }
     }
 
-    private void createUserPaneButtons(BiConsumer<String, Set<FileObject>> queryUpdate, Set<FileObject> messageContext, JPanel buttonPanel) {
+    private void createUserPaneButtons(BiConsumer<String, Set<FileObject>> queryUpdate, Set<FileObject> messageContext,
+            JPanel buttonPanel) {
         copyButton = QueryPane.createIconButton(Labels.COPY, ICON_COPY);
         editButton = QueryPane.createIconButton(Labels.EDIT, ICON_EDIT);
         saveButton = QueryPane.createIconButton(Labels.SAVE, ICON_SEND);
@@ -195,7 +265,8 @@ public class AssistantChat extends TopComponent {
         });
     }
 
-    public JEditorPane createUserQueryPane(BiConsumer<String, Set<FileObject>> queryUpdate, String content, Set<FileObject> messageContext) {
+    public JEditorPane createUserQueryPane(BiConsumer<String, Set<FileObject>> queryUpdate, String content,
+            Set<FileObject> messageContext) {
 
         Consumer<FileObject> callback = file -> {
             if (!messageContext.contains(file)) {
@@ -303,7 +374,8 @@ public class AssistantChat extends TopComponent {
         JTextArea textArea = new JTextArea();
         textArea.setEditable(false);
         Font newFont = getFontFromMimeType(MIME_PLAIN_TEXT);
-        Font emojiFont = new Font("Segoe UI Emoji", newFont.getStyle(), newFont.getSize());  // TODO: what if the font does not exist?
+        Font emojiFont = new Font("Segoe UI Emoji", newFont.getStyle(), newFont.getSize()); // TODO: what if the font
+                                                                                            // does not exist?
         java.awt.Color textColor = getTextColorFromMimeType(MIME_PLAIN_TEXT);
         java.awt.Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
         textArea.setFont(emojiFont);
@@ -445,7 +517,8 @@ public class AssistantChat extends TopComponent {
                 if (!targetDir.exists()) {
                     boolean dirsCreated = targetDir.mkdirs();
                     if (!dirsCreated) {
-                        JOptionPane.showMessageDialog(null, "Failed to create directories: " + targetDir.getAbsolutePath());
+                        JOptionPane.showMessageDialog(null,
+                                "Failed to create directories: " + targetDir.getAbsolutePath());
                         return;
                     }
                 }
@@ -467,7 +540,8 @@ public class AssistantChat extends TopComponent {
             }
             String fileExtension = getExtension(mimeType);
             if (fileExtension != null) {
-                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(convertToCapitalized(fileExtension) + " Files", fileExtension));
+                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                        convertToCapitalized(fileExtension) + " Files", fileExtension));
             }
         }
 
@@ -596,17 +670,17 @@ public class AssistantChat extends TopComponent {
         //
         // NOTES (TODO):
         // 1. this code should probably be refactored breaking it in smaller
-        //    pieces at least, but most importantly to separate the collection
-        //    logic and the logic to create the menu
+        // pieces at least, but most importantly to separate the collection
+        // logic and the logic to create the menu
         // 2. the main loop processes multiple times the EditorPane components,
-        //    they should probably be separated into two same-level loops
+        // they should probably be separated into two same-level loops
         // 3. the loops to fill cachedMethodSignatures and editorMethodCache
-        //    can probably be combined into one
+        // can probably be combined into one
         // 4. before changing this logic, a unit test to drive the collection
-        //    logic should be first created.
+        // logic should be first created.
         // 5. editors are processed only if they contain java code; this is a
-        //    limitation that can probably be removed as we should be able to
-        //    do some diffs even for files other than java
+        // limitation that can probably be removed as we should be able to
+        // do some diffs even for files other than java
         //
         //
         for (FileObject fileObject : context) {
@@ -669,32 +743,34 @@ public class AssistantChat extends TopComponent {
                     if (parentPanel.getComponent(i) instanceof JEditorPane) {
                         JEditorPane editorPane = (JEditorPane) parentPanel.getComponent(i);
                         if (editorPane.getEditorKit().getContentType().equals(JAVA_MIME)) {
-                            Map<String, String> cachedMethodSignatures = editorMethodSignCache.computeIfAbsent(editorPane, ep -> {
-                                Map<String, String> snippetSignatures = new HashMap<>();
-                                String editorText = editorPane.getText();
-                                String[] lines = editorText.split("\n");
-                                try {
-                                    // check if snippet is method otherwise throw exception
-                                    extractMethod(snippetSignatures, editorText);
-                                } catch (Exception e1) {
-                                    try {
-                                        CompilationUnit aiCu = StaticJavaParser.parse(editorText);
-                                        extractClasses(aiCu, lines, snippetSignatures, editorText);
-                                        extractMethods(aiCu, lines, snippetSignatures);
-                                    } catch (Exception e2) {
+                            Map<String, String> cachedMethodSignatures = editorMethodSignCache
+                                    .computeIfAbsent(editorPane, ep -> {
+                                        Map<String, String> snippetSignatures = new HashMap<>();
+                                        String editorText = editorPane.getText();
+                                        String[] lines = editorText.split("\n");
                                         try {
-                                            CompilationUnit aiCu = StaticJavaParser.parse(editorText);
-                                            extractClasses(aiCu, lines, snippetSignatures, editorText);
-                                            if (aiCu.getTypes().isNonEmpty()) {
-                                                snippetSignatures.put(aiCu.getType(0).getNameAsString(), editorText);
+                                            // check if snippet is method otherwise throw exception
+                                            extractMethod(snippetSignatures, editorText);
+                                        } catch (Exception e1) {
+                                            try {
+                                                CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                                extractClasses(aiCu, lines, snippetSignatures, editorText);
+                                                extractMethods(aiCu, lines, snippetSignatures);
+                                            } catch (Exception e2) {
+                                                try {
+                                                    CompilationUnit aiCu = StaticJavaParser.parse(editorText);
+                                                    extractClasses(aiCu, lines, snippetSignatures, editorText);
+                                                    if (aiCu.getTypes().isNonEmpty()) {
+                                                        snippetSignatures.put(aiCu.getType(0).getNameAsString(),
+                                                                editorText);
+                                                    }
+                                                } catch (Exception e3) {
+                                                    // ignore
+                                                }
                                             }
-                                        } catch (Exception e3) {
-                                            // ignore
                                         }
-                                    }
-                                }
-                                return snippetSignatures;
-                            });
+                                        return snippetSignatures;
+                                    });
 
                             Map<String, String> cachedMethods = editorMethodCache.computeIfAbsent(editorPane, ep -> {
                                 Map<String, String> snippetSignatures = new HashMap<>();
@@ -731,23 +807,27 @@ public class AssistantChat extends TopComponent {
                             try {
                                 int menuCreationCount = 0;
                                 for (Map.Entry<String, Integer> signature : fileMethodSignatures.entrySet()) {
-                                    if (createEditorPaneMenus(fileObject, signature.getKey(), signature.getValue(), editorPane, cachedMethodSignatures)) {
+                                    if (createEditorPaneMenus(fileObject, signature.getKey(), signature.getValue(),
+                                            editorPane, cachedMethodSignatures)) {
                                         menuCreationCount++;
                                     }
                                 }
                                 if (menuCreationCount == 0) {
                                     for (String method : fileMethods.keySet()) {
                                         if (fileMethods.get(method) == 1) {
-                                            if (createEditorPaneMenus(fileObject, method, -1, editorPane, cachedMethods)) {
+                                            if (createEditorPaneMenus(fileObject, method, -1, editorPane,
+                                                    cachedMethods)) {
                                                 menuCreationCount++;
                                             }
                                         }
                                     }
                                 }
 
-                                createEditorPaneMenus(fileObject, fileObject.getName(), -1, editorPane, cachedMethodSignatures);
+                                createEditorPaneMenus(fileObject, fileObject.getName(), -1, editorPane,
+                                        cachedMethodSignatures);
                             } catch (Exception e) {
-                                System.out.println("Error parsing single method declaration from editor content: " + e.getMessage());
+                                System.out.println("Error parsing single method declaration from editor content: "
+                                        + e.getMessage());
                             }
                         }
                     }
@@ -775,7 +855,8 @@ public class AssistantChat extends TopComponent {
                         DataObject currentDO = NbEditorUtilities.getDataObject(currentDocument);
                         if (currentDO != null) {
                             FileObject focusedfile = currentDO.getPrimaryFile();
-                            if (focusedfile != null && currentSelectedText != null && !currentSelectedText.trim().isEmpty()) {
+                            if (focusedfile != null && currentSelectedText != null
+                                    && !currentSelectedText.trim().isEmpty()) {
                                 diffActionWithSelected(currentSelectedText, focusedfile, editorPane);
                             } else {
                                 JOptionPane.showMessageDialog(null, "Please select text in the source editor.");
@@ -788,7 +869,6 @@ public class AssistantChat extends TopComponent {
                 }
             }
         }
-
 
         for (Map.Entry<JEditorPane, List<JMenuItem>> entry : menuItems.entrySet()) {
             JPopupMenu mainMenu = menus.get(entry.getKey());
@@ -819,7 +899,8 @@ public class AssistantChat extends TopComponent {
         return method.getNameAsString() + "("
                 + method.getParameters().stream()
                         .map(param -> param.getType().asString())
-                        .collect(Collectors.joining(",")) + ")";
+                        .collect(Collectors.joining(","))
+                + ")";
     }
 
     private void extractClasses(CompilationUnit aiCu, String[] lines,
@@ -864,7 +945,8 @@ public class AssistantChat extends TopComponent {
         return sb.toString();
     }
 
-    private boolean createEditorPaneMenus(FileObject fileObject, String signature, Integer bodyLength, JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
+    private boolean createEditorPaneMenus(FileObject fileObject, String signature, Integer bodyLength,
+            JEditorPane editorPane, Map<String, String> cachedMethodSignatures) {
         boolean classSignature = fileObject.getName().equals(signature);
         if (cachedMethodSignatures.get(signature) != null
                 && (cachedMethodSignatures.get(signature).length() != bodyLength || bodyLength == -1)) {
