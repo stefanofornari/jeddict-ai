@@ -18,17 +18,15 @@ package io.github.jeddict.ai.agent;
 
 import dev.langchain4j.agent.tool.Tool;
 import java.util.List;
-import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.source.ClassIndex;
-import org.netbeans.api.java.source.ClasspathInfo;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
-import org.netbeans.api.java.source.SourceUtils;
 import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.Sources;
 import org.netbeans.modules.refactoring.api.RefactoringSession;
@@ -92,7 +90,7 @@ public class ExplorationTools extends AbstractCodeTool {
      * listClassesInFile("src/main/java/com/example/MyClass.java");
      * // -> "Class: com.example.MyClass"
      * </pre>
-     * 
+     *
      * <p><b>Output format:</b></p>
      * <pre>
      * Class: fully.qualified.ClassName
@@ -140,7 +138,7 @@ public class ExplorationTools extends AbstractCodeTool {
      * listMethodsInFile("src/main/java/com/example/MyClass.java");
      * // -> "Method: public void sayHello()"
      * </pre>
-     * 
+     *
      * <p><b>Output format:</b></p>
      * <pre>
      * Method: methodSignature
@@ -202,7 +200,7 @@ public class ExplorationTools extends AbstractCodeTool {
      * </ul>
      * </li>
      * </ol>
-     * 
+     *
      * <p>
      * The search is performed using the symbol's <b>simple name</b> only. Fully
      * qualified names are not required and are not matched directly.</p>
@@ -216,7 +214,7 @@ public class ExplorationTools extends AbstractCodeTool {
      * <li>Overloaded methods are returned by name only, without signature
      * differentiation.</li>
      * </ul>
-     * 
+     *
      * <p>
      * <b>Examples:</b></p>
      * <pre>
@@ -224,7 +222,7 @@ public class ExplorationTools extends AbstractCodeTool {
      * searchSymbol("findUser");      // Method: com.example.service.UserService.findUser
      * searchSymbol("userRepository");// Field: com.example.service.UserService.userRepository
      * </pre>
-     * 
+     *
      * <p><b>Output format:</b></p>
      * <pre>
      * Class:  fully.qualified.ClassName
@@ -267,65 +265,22 @@ public class ExplorationTools extends AbstractCodeTool {
             return "No Java source roots found in project.";
         }
 
-        ClasspathInfo cpInfo
-                = ClasspathInfo.create(groups[0].getRootFolder());
-        ClassIndex index = cpInfo.getClassIndex();
+        final StringBuffer result = new StringBuffer();
 
-        StringBuilder result = new StringBuilder();
+        final SourceScanner scanner = new SourceScanner(groups[0].getRootFolder());
 
-        Set<ElementHandle<TypeElement>> types
-                = index.getDeclaredTypes(
-                        "",
-                        ClassIndex.NameKind.PREFIX,
-                        Set.of(ClassIndex.SearchScope.SOURCE)
-                );
-
-        for (ElementHandle<TypeElement> h : types) {
-
-            FileObject fo = SourceUtils.getFile(h, cpInfo);
-            if (fo == null) {
-                continue;
-            }
-
-            JavaSource js = JavaSource.forFileObject(fo);
-            if (js == null) {
-                continue;
-            }
-
-            js.runUserActionTask(cc -> {
-                cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                TypeElement type = h.resolve(cc);
-                if (type == null) {
-                    return;
-                }
-
-                if (type.getSimpleName().contentEquals(symbolName)) {
-                    result.append("Class: ")
-                          .append(type.getQualifiedName())
-                          .append("\n");
-                }
-
-                for (Element e : type.getEnclosedElements()) {
-                    if (!e.getSimpleName().contentEquals(symbolName)) {
-                        continue;
-                    }
-
-                    if (e.getKind() == ElementKind.METHOD
-                            || e.getKind() == ElementKind.CONSTRUCTOR) {
-                        result.append("Method: ")
-                              .append(type.getQualifiedName())
-                              .append(".")
-                              .append(e.getSimpleName())
-                              .append("\n");
-                    } else if (e.getKind() == ElementKind.FIELD) {
-                        result.append("Field: ")
-                              .append(type.getQualifiedName())
-                              .append(".")
-                              .append(e.getSimpleName())
-                              .append("\n");
-                    }
-                }
-            }, true);
+        final List<Pair<FileObject, ElementHandle<TypeElement>>> types = scanner.types();
+        for (Pair<FileObject, ElementHandle<TypeElement>> t : types) {
+            final SymbolHunter hunter = new SymbolHunter(t);
+            hunter.onClass((name) -> {
+                result.append("Class: ").append(name).append("\n");
+            }).onMethod((qualifiedName, simpleName) -> {
+                result.append("Method: ").append(qualifiedName)
+                .append(".").append(simpleName).append("\n");
+            }).onField((qualifiedName, simpleName) -> {
+                result.append("Method: ").append(qualifiedName)
+                .append(".").append(simpleName).append("\n");
+            }).hunt(symbolName);
         }
 
         if (result.length() == 0) {
@@ -348,7 +303,7 @@ public class ExplorationTools extends AbstractCodeTool {
      * NetBeans {@code WhereUsedQuery}.
      * If no usages are found, {@code "No usages found."} is returned.
      * </p>
-     * 
+     *
      * @param path relative path to a .java file
      * @param symbolName Java symbol name
      * @return formatted usage list
