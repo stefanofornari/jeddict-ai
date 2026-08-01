@@ -18,6 +18,7 @@ package io.github.jeddict.ai.agent;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.exception.ToolExecutionException;
+import static io.github.jeddict.ai.agent.ToolPolicy.Policy.INTERACTIVE;
 import io.github.jeddict.ai.settings.PreferencesManager;
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +33,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static io.github.jeddict.ai.agent.ToolPolicy.Policy.READONLY;
 import static io.github.jeddict.ai.agent.ToolPolicy.Policy.READWRITE;
+import io.github.jeddict.ai.components.AssistantChat;
+import io.github.jeddict.ai.lang.InteractionMode;
+import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
+import static ste.lloop.Loop.on;
 
 /**
  * Collection of tools that expose file system and editor operations inside
@@ -41,10 +46,10 @@ import org.apache.commons.lang3.StringUtils;
  * These tools allow language models to read, modify, and manage project files
  * in a controlled and safe way.
  */
-public class FileSystemTools extends AbstractCodeTool {
+public class FileSystemTools extends AbstractInteractiveTool {
 
-    public FileSystemTools(final String basedir) throws IOException {
-        super(basedir);
+    public FileSystemTools(final String basedir, final AssistantChat assistantChat) throws IOException {
+        super(basedir, assistantChat);
     }
 
     /**
@@ -146,38 +151,43 @@ public class FileSystemTools extends AbstractCodeTool {
         checkPath(path);
 
         if (fromLine < 1) {
-            throw new ToolExecutionException(
-                    "fromLine must be >= 1, got: " + fromLine);
+            throw new ToolExecutionException("fromLine must be >= 1, got: " + fromLine);
         }
         if (toLine < 1) {
-            throw new ToolExecutionException(
-                    "toLine must be >= 1, got: " + toLine);
+            throw new ToolExecutionException("toLine must be >= 1, got: " + toLine);
         }
         if (fromLine > toLine) {
-            throw new ToolExecutionException(
-                    "fromLine (" + fromLine + ") must be <= toLine (" + toLine + ")");
+            throw new ToolExecutionException("fromLine (" + fromLine + ") must be <= toLine (" + toLine + ")");
         }
 
+        final Path fullPath = fullPath(path);
+
+        final List<String> lines = new ArrayList();
+        final int[] count = new int[] { 0 };
         try {
-            final Path fullPath = fullPath(path);
-            //
-            // Stream line by line: skip to fromLine then take only the needed
-            // lines. Files.lines() is lazy so we never load the whole file;
-            // limit() naturally stops at EOF when toLine exceeds the file length.
-            //
-            try (Stream<String> stream = Files.lines(fullPath, Charset.defaultCharset())) {
-                // (long) cast ensures the arithmetic is done in 64-bit so there is no
-                // int overflow; fromLine >= 1 and toLine >= fromLine so count >= 1.
-                final long count = (long) toLine - fromLine + 1;
-                return stream
-                        .skip(fromLine - 1)
-                        .limit(count)
-                        .collect(Collectors.joining("\n"));
-            }
-        } catch (IOException e) {
-            progress("❌ Failed to read file: " + e);
-            throw new ToolExecutionException("failed to read file: " + e);
+            on(fullPath).to(toLine-1).loop((i, line) -> {
+                // (note: we can't use from because we want to get the line number)
+                count[0] = i+1;
+                if ((count[0]) >= fromLine) {
+                    lines.add(line);
+                }
+            });
+        } catch (IllegalArgumentException x) { // invalid Path
+            progress("❌ Failed to read file: " + x);
+            throw new ToolExecutionException("failed to read file: " + x);
         }
+
+        //
+        // if not lines have been added it'sbecause fromLine is after the
+        // end of the file
+        //
+        if (lines.isEmpty()) {
+            throw new ToolExecutionException(
+                "fromLine must be <= %d, got: %d".formatted(count[0], fromLine)
+            );
+        }
+
+        return String.join("\n", lines.toArray(new String[0]));
     }
 
     /**
@@ -285,12 +295,28 @@ public class FileSystemTools extends AbstractCodeTool {
      * @param replacement the replacement text
      * @return a status message
      */
-    @Tool(
-    """
-    Replace parts of a file content matching a literal string with replacement text
-    with no user interaction. Special regex characters are escaped.
+    @Tool("""
+        **Replace a literal text snippet within a file.**
+        Use this tool to edit a file by providing exact target text and replacement text.
+        ### Returns
+
+        A string structured as:
+        ```
+        [STATUS]
+        [FINAL_CONTENT]
+        ```
+
+        Where `[STATUS]` is one of:
+        * `DONE`: Replacement applied as requested; no [FINAL_CONTENT] is provided.
+        * `UPDATED`: Replacement applied, but additional system changes (e.g., auto-formatting)
+          were automatically incorporated. Treat `[FINAL_CONTENT]` as the new source of truth.
+        * `UNCHANGED': if no match was found
+        * `REJECTED`: the user rejected the changes
+
+        ### Notes
+        * Always consider `[FINAL_CONTENT]` as the definitive state after a `DONE` or `UPDATED` status.
     """)
-    @ToolPolicy(READWRITE)
+    @ToolPolicy(INTERACTIVE)
     public String replaceSnippetByLiteral(
         @P("the file pathname")
         final String path,
@@ -311,8 +337,28 @@ public class FileSystemTools extends AbstractCodeTool {
      * @param replacement the replacement text
      * @return a status message
      */
-    @Tool("Replace parts of a file content matching a regex pattern with replacement text  with no user interaction")
-    @ToolPolicy(READWRITE)
+    @Tool("""
+        **Replace a regex pattern snippet within a file.**
+        Use this tool to edit a file by providing exact target text and replacement text.
+        ### Returns
+
+        A string structured as:
+        ```
+        [STATUS]
+        [FINAL_CONTENT]
+        ```
+
+        Where `[STATUS]` is one of:
+        * `DONE`: Replacement applied as requested; no [FINAL_CONTENT] is provided.
+        * `UPDATED`: Replacement applied, but additional system changes (e.g., auto-formatting)
+          were automatically incorporated. Treat `[FINAL_CONTENT]` as the new source of truth.
+        * `UNCHANGED': if no match was found
+        * `REJECTED`: the user rejected the changes
+
+        ### Notes
+        * Always consider `[FINAL_CONTENT]` as the definitive state after a `DONE` or `UPDATED` status.
+    """)
+    @ToolPolicy(INTERACTIVE)
     public String replaceSnippetByRegex(
         @P("the file pathname")
         final String path,
@@ -328,20 +374,47 @@ public class FileSystemTools extends AbstractCodeTool {
         try {
             final Path filePath = fullPath(path).toRealPath();
 
-            String original = Files.readString(filePath);
-            String modified = original.replaceAll(regexPattern, replacement);
+            final String original = Files.readString(filePath);
+            final String modified = original.replaceAll(regexPattern, replacement);
 
-            if (original.equals(modified)) {
-                progress("❌ No matches found for regex '" + regexPattern + "' in " + path);
-                return "No matches found for pattern";
+            ModificationStatus status = ModificationStatus.UNCHANGED;
+
+            //
+            // if no changes have been applied, no need to continue, otherwise
+            // let's see what happens
+            //
+            String updated = null;
+            if (!original.equals(modified)) {
+                //
+                // If the tool is invoched in iteraction mode INTERACTIVE, use the
+                // interactive tool instead.
+                //
+                if ((interaction == InteractionMode.INTERACTIVE) && (assistantChat != null)) {
+                    InteractiveFileEditor delegate = new InteractiveFileEditor(basedir, assistantChat);
+                    delegate.interaction(interaction);
+                    updated = delegate.editFile(path, modified);
+
+                    status = (!modified.equals(updated)) ?
+                        ModificationStatus.UPDATED : ModificationStatus.UPDATED;
+                } else {
+                    status = ModificationStatus.DONE;
+                    Files.writeString(filePath, modified, StandardOpenOption.TRUNCATE_EXISTING);
+                }
             }
 
-            Files.writeString(filePath, modified, StandardOpenOption.TRUNCATE_EXISTING);
-            progress("✅ Snippet replaced");
-            return "Snippet replaced";
+            if (status == ModificationStatus.UNCHANGED) {
+                progress("❌ No matches found or applied for regex '" + regexPattern + "' in " + path);
+            } else {
+                progress("✅ Snippet replaced");
+            }
+
+            return (status == ModificationStatus.UPDATED) ? (status.value + '\n' + updated) : status.value;
         } catch (IOException e) {
             progress("❌ Replacement failed: " + e);
             throw new ToolExecutionException("replacement failed: " + e);
+        } catch (ToolExecutionRejected x) {
+            progress("❌ Replacement rejected by the user: " + x);
+            throw x;
         }
     }
 
@@ -352,8 +425,27 @@ public class FileSystemTools extends AbstractCodeTool {
      * @param newContent the new content to write
      * @return a status message
      */
-    @Tool("Replace the full content of a file by path with new text with no user interaction")
-    @ToolPolicy(READWRITE)
+        @Tool("""
+        **Replace the full content of a file with the given text.**
+        ### Returns
+
+        A string structured as:
+        ```
+        [STATUS]
+        [FINAL_CONTENT]
+        ```
+
+        Where `[STATUS]` is one of:
+        * `DONE`: Replacement applied as requested; no [FINAL_CONTENT] is provided.
+        * `UPDATED`: Replacement applied, but additional system changes (e.g., auto-formatting)
+          were automatically incorporated. Treat `[FINAL_CONTENT]` as the new source of truth.
+        * `UNCHANGED`: if the new content is the same as the original content
+        * `REJECTED`: the user rejected the changes
+
+        ### Notes
+        * Always consider `[FINAL_CONTENT]` as the definitive state after an `UPDATED` status.
+    """)
+    @ToolPolicy(INTERACTIVE)
     public String replaceFileContent(
         @P("the file pathname")
         final String path,
@@ -365,14 +457,47 @@ public class FileSystemTools extends AbstractCodeTool {
         checkPath(path);
 
         try {
-            Files.writeString(fullPath(path), newContent, StandardOpenOption.TRUNCATE_EXISTING);
-            progress("✅ File content replaced");
-            return "File updated";
+            final Path filePath = fullPath(path).toRealPath();
+            final String original = Files.readString(filePath);
+
+            ModificationStatus status = ModificationStatus.UNCHANGED;
+            String updated = null;
+
+            // Check if the requested content actually changes anything
+            if (!original.equals(newContent)) {
+                if ((interaction == InteractionMode.INTERACTIVE) && (assistantChat != null)) {
+                    InteractiveFileEditor delegate = new InteractiveFileEditor(basedir, assistantChat);
+                    delegate.interaction(interaction);
+                    updated = delegate.editFile(path, newContent);
+
+                    if (!newContent.equals(updated)) {
+                        status = ModificationStatus.UPDATED;
+                    } else {
+                        status = ModificationStatus.DONE;
+                    }
+                } else {
+                    status = ModificationStatus.DONE;
+                    Files.writeString(filePath, newContent, StandardOpenOption.TRUNCATE_EXISTING);
+                }
+            }
+
+            if (status == ModificationStatus.UNCHANGED) {
+                progress("❌ File content matches new content; unchanged " + path);
+            } else {
+                progress("✅ File content replaced");
+            }
+
+            return (status == ModificationStatus.UPDATED) ? (status.value + '\n' + updated) : status.value;
+
         } catch (IOException e) {
             progress("❌ Replacement failed: " + e);
             throw new ToolExecutionException("replacement failed: " + e);
+        } catch (ToolExecutionRejected x) {
+            progress("❌ Replacement rejected by the user: " + x);
+            throw x;
         }
     }
+
 
     /**
      * Creates a new file at the given path.

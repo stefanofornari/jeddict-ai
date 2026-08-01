@@ -6,12 +6,14 @@
     <version>3.5.0</version>
     <packaging>nbm</packaging>
     <name>Jeddict AI Assistant</name>
-    <description>Jeddict AI Assistant is a powerful and intuitive plugin designed for Apache NetBeans IDE.
+    <description>
+        Jeddict AI Assistant is a powerful and intuitive plugin designed for Apache NetBeans IDE.
         It integrates AI-powered assistance to help developers work more efficiently with Jakarta EE.
         This plugin provides real-time code suggestions, documentation insights, and best practices,
         significantly reducing development time. It is ideal for developers working on complex enterprise
         applications using Jakarta EE technologies, offering tailored recommendations based on the context
-        of the code and project structure.</description>
+        of the code and project structure.
+    </description>
     <url>https://jeddict.github.io/page.html?l=tutorial/AI</url>
     <scm>
         <connection>scm:git:https://github.com/jeddict/jeddict-ai/</connection>
@@ -44,9 +46,12 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>17</maven.compiler.release>
-        <langchain4j.version>1.11.0</langchain4j.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <langchain4j.version>1.18.1</langchain4j.version>
+        <langchain4j.beta>beta28</langchain4j.beta>
         <netbeans.version>RELEASE300</netbeans.version>
+        <javafx-toolkit.version>0.0.9</javafx-toolkit.version>
+        <testfx.version>4.0.18</testfx.version>
     </properties>
 
     <build>
@@ -231,6 +236,15 @@
                         --add-exports=java.desktop/java.awt.peer=ALL-UNNAMED
                         --add-exports=java.desktop/sun.awt.event=ALL-UNNAMED
                         --add-exports=java.base/sun.security.action=ALL-UNNAMED
+                        -Dmonocle.platform.headless.width=1024
+                        -Dmonocle.platform.headless.height=768
+                        -Dprism.order=sw
+                        -Dtestfx.robot=glass
+                        -Dtestfx.headless=true      <!-- false to show UI -->
+                        <!-- comment out to show UI -->
+                        -Dglass.platform=Monocle
+                        -Dmonocle.platform=Headless
+                        <!-- -->
                     </argLine>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
@@ -296,7 +310,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-local-ai</artifactId>
-            <version>${langchain4j.version}-beta19</version>
+            <version>${langchain4j.version}-${langchain4j.beta}</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
@@ -316,7 +330,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-agentic</artifactId>
-            <version>${langchain4j.version}-beta19</version>
+            <version>${langchain4j.version}-${langchain4j.beta}</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -337,17 +351,17 @@
         <dependency>
             <groupId>org.commonmark</groupId>
             <artifactId>commonmark</artifactId>
-            <version>0.27.1</version>
+            <version>0.28.0</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20251224</version>
         </dependency>
+        <!--
+            TOON
+        -->
         <dependency>
-            <!--
-                TOON
-            -->
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>3.1.0</version>
@@ -362,7 +376,6 @@
             <artifactId>jackson-annotations</artifactId>
             <version>2.21</version>
         </dependency>
-
         <dependency>
             <groupId>dev.toonformat</groupId>
             <artifactId>jtoon</artifactId>
@@ -377,8 +390,23 @@
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
-            <version>3.26.2</version>
+            <version>3.28.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.stefanofornari</groupId>
+            <artifactId>nb-javafx-toolkit</artifactId>
+            <version>${javafx-toolkit.version}</version>
+        </dependency>
+
+        <!--dependency>
+            <groupId>io.github.palexdev</groupId>
+            <artifactId>scenicview</artifactId>
+            <version>17.0.2</version>
+        </dependency-->
+
+        <!--
+            Netbeans
+        -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
@@ -539,7 +567,6 @@
             <artifactId>org-openide-util</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
@@ -717,9 +744,15 @@
             <version>${netbeans.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-libs-flexmark</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <!-- -->
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.21.0</version>
+            <version>2.22.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -729,12 +762,17 @@
         <dependency>
             <groupId>com.github.stefanofornari</groupId>
             <artifactId>lambda-loop</artifactId>
-            <version>0.6.1</version>
+            <version>0.6.3</version>
         </dependency>
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.18.2</version>
+            <version>1.18.8</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>4.0.0</version>
         </dependency>
 
         <!--
@@ -744,31 +782,31 @@
         <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
-            <version>3.3.1</version>
+            <version>3.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>4.7.6</version>
+            <version>4.7.7</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.13.4</version>
+            <version>6.0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.13.4</version>
+            <version>6.0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>5.13.4</version>
+            <version>6.0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -778,9 +816,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.ws.rs</groupId>
-            <artifactId>jakarta.ws.rs-api</artifactId>
-            <version>4.0.0</version>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-lambda</artifactId>
+            <version>1.2.1</version>
+            <scope>test</scope>
         </dependency>
 
         <!--
@@ -799,9 +838,27 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.stefanbirkner</groupId>
-            <artifactId>system-lambda</artifactId>
-            <version>1.2.1</version>
+            <groupId>org.testfx</groupId>
+            <artifactId>testfx-core</artifactId>
+            <version>${testfx.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testfx</groupId>
+            <artifactId>testfx-junit5</artifactId>
+            <version>${testfx.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testfx</groupId>
+            <artifactId>openjfx-monocle</artifactId>
+            <version>21.0.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>4.0.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -824,7 +881,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.4.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -837,7 +894,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>3.12.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -847,14 +904,14 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <source>17</source>
-                            <doclint>none</doclint>
+                            <source>21</source>
+                             <doclint>none</doclint>
                         </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-deploy-plugin</artifactId>
-                        <version>3.0.0-M1</version>
+                        <version>3.1.4</version>
                         <executions>
                             <execution>
                                 <id>default-deploy</id>
@@ -872,7 +929,7 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.8.0</version>
+                        <version>0.10.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
@@ -882,7 +939,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -917,7 +974,7 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <version>5.1.0</version>
+                <version>7.0.0</version>
                 <scope>compile</scope>
             </dependency>
         </dependencies>

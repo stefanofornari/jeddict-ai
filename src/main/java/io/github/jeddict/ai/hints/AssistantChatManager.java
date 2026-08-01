@@ -28,10 +28,10 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import io.github.jeddict.ai.JeddictUpdateManager;
 import io.github.jeddict.ai.agent.AbstractTool;
-import io.github.jeddict.ai.agent.InteractiveFileEditor;
 import io.github.jeddict.ai.agent.ExplorationTools;
 import io.github.jeddict.ai.agent.FileSystemTools;
 import io.github.jeddict.ai.agent.GradleTools;
+import io.github.jeddict.ai.agent.InteractiveFileEditor;
 import io.github.jeddict.ai.agent.MavenTools;
 import io.github.jeddict.ai.agent.project.JakartaEEAdvisorMavenPluginTools;
 import io.github.jeddict.ai.agent.project.ProjectTools;
@@ -102,6 +102,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.event.HyperlinkEvent;
+import org.apache.commons.lang3.StringUtils;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.api.java.source.WorkingCopy;
@@ -735,7 +736,9 @@ public class AssistantChatManager extends JavaFix {
             public void onChatCompleted(final ChatResponse response) {
                 super.onChatCompleted(response);
 
-                final StringBuilder textResponse = new StringBuilder(response.aiMessage().text());
+                final StringBuilder textResponse = new StringBuilder(
+                    StringUtils.defaultString(response.aiMessage().text())
+                );
 
                 final Response res = chat.response();
                 res.getMessageContext().clear(); res.addContext(messageContext);
@@ -963,15 +966,8 @@ public class AssistantChatManager extends JavaFix {
         try {
             final List<AbstractTool> toolsList = new ArrayList();
 
-            //
-            // Tools for interactive mode
-            //
             toolsList.add(new InteractiveFileEditor(basedir, ac));
-
-            //
-            // Tools commmon to both AGENT and INTERACTIVE mode
-            //
-            toolsList.add(new FileSystemTools(basedir));
+            toolsList.add(new FileSystemTools(basedir, ac));
             toolsList.add(new MavenTools(project));
             toolsList.add(new ExplorationTools(basedir, project.getLookup()));
             // Add the project-type-specific tool (Maven, Gradle, or generic)
