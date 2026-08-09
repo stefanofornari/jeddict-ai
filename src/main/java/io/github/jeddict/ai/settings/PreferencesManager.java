@@ -971,7 +971,7 @@ public class PreferencesManager {
     }
 
     public Integer getMaxTokens() {
-        return preferences.getInteger(MAX_TOKENS_PREFERENCE, Defaults.MAX_TOKEN);
+        return preferences.getInteger(MAX_TOKENS_PREFERENCE, null);
     }
 
     public void setMaxTokens(Integer maxTokens) {
@@ -987,7 +987,7 @@ public class PreferencesManager {
     }
 
     public Integer getMaxOutputTokens() {
-        return preferences.getInteger(MAX_OUTPUT_TOKENS_PREFERENCE, Defaults.MAX_TOKEN);
+        return preferences.getInteger(MAX_OUTPUT_TOKENS_PREFERENCE, null);
     }
 
     public void setMaxOutputTokens(Integer maxOutputTokens) {

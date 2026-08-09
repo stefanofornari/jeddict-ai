@@ -377,7 +377,7 @@ public class JeddictPreferencesUITest extends ApplicationTest {
     }
 
     @Test
-    public void use_default_values_when_settings_are_missing() throws Exception {
+    public void use_default_values_when_settings_are_missing_mandatory() throws Exception {
         Files.delete(configFile);
         Files.copy(
             Path.of("src/test/resources/settings/jeddict_minimal.json"), configFile
@@ -393,13 +393,27 @@ public class JeddictPreferencesUITest extends ApplicationTest {
         then(getFieldDouble("AIAssistancePanel.presencePenaltyLabel.text")).isEqualTo(0);
         then(getFieldDouble("AIAssistancePanel.frequencyPenaltyLabel.text")).isEqualTo(0);
         then(getFieldText("AIAssistancePanel.seedLabel.text")).isEqualTo("123");
-        then(getFieldText("AIAssistancePanel.maxTokensLabel.text")).isEqualTo("4096");
-        then(getFieldText("AIAssistancePanel.maxOutputTokensLabel.text")).isEqualTo("4096");
-        then(getFieldText("AIAssistancePanel.maxCompletionTokensLabel.text")).isEqualTo("");
 
         clickOn(preferences.asset("AIAssistancePanel.providerSettingsPane.TabConstraints.tabTitle")); waitForFxEvents();
         then(getFieldText("AIAssistancePanel.maxRetriesLabel.text")).isEqualTo("2");
         then(getFieldText("AIAssistancePanel.timeoutLabel.text")).isEqualTo("60");
+    }
+
+    @Test
+    public void keep_blank_when_optional_settings_are_missing() throws Exception {
+        Files.delete(configFile);
+        Files.copy(
+            Path.of("src/test/resources/settings/jeddict_minimal.json"), configFile
+        );
+        PreferencesManager.getInstance(true);
+        preferences.refresh();
+
+        waitForFxEvents();
+        clickOn(preferences.asset("AIAssistancePanel.settings.inference.title")); waitForFxEvents();
+
+        then(getFieldText("AIAssistancePanel.maxTokensLabel.text")).isEqualTo("");
+        then(getFieldText("AIAssistancePanel.maxOutputTokensLabel.text")).isEqualTo("");
+        then(getFieldText("AIAssistancePanel.maxCompletionTokensLabel.text")).isEqualTo("");
     }
 
 
