@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import static ste.lloop.Loop.on;
 
 @EnabledOnOs(OS.LINUX) // neded because on WINDOWS the temp directory can not be deleted...
 public class JeddictPreferencesTest extends TestBase {
@@ -158,5 +159,19 @@ public class JeddictPreferencesTest extends TestBase {
         ui.save();
 
         then(preferences.getExcludeDirs()).containsExactly("a", "b", "c", "d");
+    }
+
+
+    @Test
+    public void refresh_loads_development_flag_from_preferences_manager() {
+        on(true, false).loop((devMode) -> {
+            preferences.setDevelopment(true);
+
+            JeddictPreferences ui = new JeddictPreferences();
+
+            ui.refresh();
+
+            then(ui.settings.bool("development").get()).isTrue();
+        });
     }
 }

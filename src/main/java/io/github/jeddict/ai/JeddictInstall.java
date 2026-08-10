@@ -95,6 +95,34 @@ public class JeddictInstall extends ModuleInstall {
                 prefs.remove(DAILY_INPUT_TOKEN_STATS_KEY);
                 prefs.remove(DAILY_OUTPUT_TOKEN_STATS_KEY);
 
+                //
+                // Migrate legacy logRequests / logResponses to development flag.
+                // If any legacy flag is true, development is set to true.
+                // If none exists or both are false, development is set to false.
+                // The legacy flags are then removed from the config.
+                //
+                final org.json.JSONObject root = new org.json.JSONObject(
+                    Files.readString(configFile)
+                );
+                boolean hasLogRequests = root.has("logRequests");
+                boolean hasLogResponses = root.has("logResponses");
+                if (hasLogRequests || hasLogResponses) {
+                    boolean logRequests = root.optBoolean("logRequests", false);
+                    boolean logResponses = root.optBoolean("logResponses", false);
+                    boolean development = logRequests || logResponses;
+                    LOG.info(() -> String.format(
+                        "Migrating legacy logRequests=%s, logResponses=%s to development=%s",
+                        logRequests, logResponses, development
+                    ));
+                    if (hasLogRequests) {
+                        prefs.remove("logRequests");
+                    }
+                    if (hasLogResponses) {
+                        prefs.remove("logResponses");
+                    }
+                    prefs.putBoolean("development", development);
+                }
+
                 LOG.info("Successfully migrated old config file.");
             }
         } catch (IOException e) {

@@ -921,19 +921,23 @@ public class PreferencesManager {
     }
 
     public boolean isLogRequestsEnabled() {
-        return preferences.getBoolean(LOG_REQUESTS_PREFERENCE, false);
+        // Logging is now controlled by the global development flag only
+        return isDevelopment();
     }
 
     public void setLogRequestsEnabled(boolean enabled) {
-        preferences.putBoolean(LOG_REQUESTS_PREFERENCE, enabled);
+        // Keep method for compatibility, but route to development flag
+        setDevelopment(enabled);
     }
 
     public boolean isLogResponsesEnabled() {
-        return preferences.getBoolean(LOG_RESPONSES_PREFERENCE, false);
+        // Logging is now controlled by the global development flag only
+        return isDevelopment();
     }
 
     public void setLogResponsesEnabled(boolean enabled) {
-        preferences.putBoolean(LOG_RESPONSES_PREFERENCE, enabled);
+        // Keep method for compatibility, but route to development flag
+        setDevelopment(enabled);
     }
 
     public boolean isDevelopment() {
@@ -941,9 +945,8 @@ public class PreferencesManager {
     }
 
     public void setDevelopment(boolean enabled) {
+        // Single source of truth for development / logging behaviour
         preferences.putBoolean(DEVELOPMENT_PREFERENCE, enabled);
-        setLogRequestsEnabled(enabled);
-        setLogResponsesEnabled(enabled);
     }
 
     public Double getRepeatPenalty() {

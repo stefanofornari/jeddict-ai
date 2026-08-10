@@ -273,6 +273,8 @@ public class JeddictPreferences {
         settings.bool("enableInlinePromptHint").set(pm.isInlinePromptHintEnabled());
         settings.bool("enableInlineHintOnEnter").set(pm.isInlineHintEnabled());
         settings.bool("enableInlineHint").set(pm.isHintsEnabled());
+        // development / diagnostics mode
+        settings.bool("development").set(pm.isDevelopment());
         settings.object("classContext").set(pm.getClassContext());
         settings.object("varClassContext").set(pm.getVarContext());
         settings.object("provider").set(pm.getProvider());
