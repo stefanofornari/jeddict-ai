@@ -168,7 +168,7 @@ public class JeddictChatModelBuilder {
         setIfValid(builder::listeners, listeners, new ArrayList());
         setIfPredicate(builder::organizationId, pm.getOrganizationId(), String::isEmpty);
 
-        builder.logRequestsResponses(pm.isLogRequestsEnabled(), pm.isLogResponsesEnabled())
+        builder.logRequestsResponses(pm.isDevelopment(), pm.isDevelopment())
                 .includeCodeExecutionOutput(pm.isIncludeCodeExecutionOutput())
                 .allowCodeExecution(pm.isAllowCodeExecution());
 
