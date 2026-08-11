@@ -594,7 +594,6 @@ public class AssistantChatManager extends JavaFix {
         ac.startLoading();
         result = executorService.submit(() -> {
             // Check for cancellation at the start
-            LOG.info("current thread in handlePrompt: " + Thread.currentThread());
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("Task was interrupted");
             }
