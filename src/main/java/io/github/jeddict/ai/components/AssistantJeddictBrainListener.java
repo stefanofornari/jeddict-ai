@@ -53,9 +53,7 @@ import org.openide.util.NbBundle;
  *
  * @author Shiwani Gupta
  */
-public class AssistantJeddictBrainListener
-    implements JeddictBrainListener
-{
+public class AssistantJeddictBrainListener implements JeddictBrainListener {
 
     protected final AssistantChat assistantChat;
     protected JTextArea textArea;
@@ -198,6 +196,13 @@ public class AssistantJeddictBrainListener
             showError(String.valueOf(throwable.getMessage()));
         }
     }
+
+    @Override
+    public boolean isCanceled() {
+        return assistantChat.canceled;
+    }
+
+    // --------------------------------------------------------- private methods
 
     private void confirmApiKey() {
         JTextField apiKeyField = new JTextField(20);

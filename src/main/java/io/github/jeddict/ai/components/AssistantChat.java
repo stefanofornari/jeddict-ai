@@ -178,6 +178,7 @@ public abstract class AssistantChat extends TopComponent {
     private JScrollPane questionScrollPane;
 
     protected ProgressHandle handle;
+    public volatile boolean canceled = false;
 
     // confirmation pane
     private ToolExecutionConfirmationPane confirmationPane;
@@ -242,12 +243,16 @@ public abstract class AssistantChat extends TopComponent {
         timer.restart();
         LOG.finest(() -> "startLoading with handle %s".formatted(handle));
         SwingUtilities.invokeLater(() -> {
-            LOG.finest(() -> ("updpating task loader with handle " + handle));
+            LOG.finest(() -> ("updating task loader with handle " + handle));
             if (handle != null) {
                 handle.finish();
             } else {
-                handle = ProgressHandle.createHandle(NbBundle.getMessage(JeddictUpdateManager.class, "PROGRESS_TASK_1"));
-                //handle.setDisplayName(taskName);
+                handle = ProgressHandle.createHandle(
+                    NbBundle.getMessage(JeddictUpdateManager.class, "PROGRESS_TASK_1"),
+                    () -> {
+                        cancelLoading(); return true;
+                    }
+                );
                 handle.start();
                 LOG.finest(() -> ("new task loader with handle %s created and started ".formatted(handle)));
             }
@@ -260,7 +265,7 @@ public abstract class AssistantChat extends TopComponent {
         }
 
         SwingUtilities.invokeLater(() -> {
-            LOG.finest(() -> "updpating task loader with handle %s and progress %s".formatted(handle, progress));
+            LOG.finest(() -> "updating task loader with handle %s and progress %s".formatted(handle, progress));
             if (handle != null) {
                 handle.setDisplayName(progress);
             }
@@ -279,6 +284,12 @@ public abstract class AssistantChat extends TopComponent {
         buttonPanelResized();
     }
 
+    public void cancelLoading() {
+        LOG.finest(() -> "canceling loading");
+        canceled = true;
+        stopLoading();
+    }
+
     public boolean isLoading() {
         return (handle != null);
     }
@@ -286,7 +297,7 @@ public abstract class AssistantChat extends TopComponent {
    public String getModelName() {
         String modelName = (String) models.getSelectedItem();
         if (modelName == null || modelName.isEmpty()) {
-            return pm.getModel();
+            return pm.getModelName();
         }
         return modelName;
     }
@@ -307,7 +318,7 @@ public abstract class AssistantChat extends TopComponent {
         return (InteractionMode)actionComboBox.getSelectedItem();
     }
 
-    public JPanel createBottomPanel(String type, String fileName, Consumer<String> action) {
+    public JPanel createBottomPanel(String type, String fileName, Consumer<String> action, Runnable cancelAction) {
         JPanel bottomPanel = new JPanel(new BorderLayout());
 
         Color backgroundColor = getBackgroundColorFromMimeType(MIME_PLAIN_TEXT);
@@ -439,9 +450,6 @@ public abstract class AssistantChat extends TopComponent {
                 updateButton(prevButton, showOnlyIcons, ICON_PREV, Labels.PREV + " " + ICON_PREV);
                 updateButton(nextButton, showOnlyIcons, ICON_NEXT, Labels.NEXT + " " + ICON_NEXT);
                 updateButton(openInBrowserButton, showOnlyIcons, ICON_WEB, Labels.VIEW + " " + ICON_WEB);
-//                updateButton(copyButton, showOnlyIcons, ICON_COPY, Labels.COPY + " " + ICON_COPY);
-//                updateButton(saveButton, showOnlyIcons, ICON_SAVE, Labels.SAVE + " " + ICON_SAVE);
-//                updateButton(saveToEditorButton, showOnlyIcons, ICON_UPDATE, Labels.UPDATE + " " + ICON_UPDATE);
                 updateButton(newChatButton, showOnlyIcons, ICON_NEW_CHAT, Labels.NEW_CHAT + " " + ICON_NEW_CHAT);
                 updateButton(showChartsButton, showOnlyIcons, ICON_STATS, Labels.STATS + " " + ICON_STATS);
                 updateButton(optionsButton, showOnlyIcons, ICON_SETTINGS, Labels.SETTINGS + " " + ICON_SETTINGS);

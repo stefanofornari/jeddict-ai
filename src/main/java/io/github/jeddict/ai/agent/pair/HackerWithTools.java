@@ -138,9 +138,13 @@ public interface HackerWithTools extends Hacker {
                 listener.onError(error);
             }
         })
-        .onPartialResponse(progress -> {
+        .onPartialResponseWithContext((response, context) -> {
             if (listener != null) {
-                listener.onProgress(progress);
+                listener.onProgress(response.text());
+                if (listener.isCanceled()) {
+                    context.streamingHandle().cancel();
+                    listener.onProgress("\n-- chat interrupted");
+                }
             }
         })
         .start();

@@ -32,6 +32,8 @@ public class DummyJeddictBrainListener implements JeddictBrainListener {
 
     public final List<Pair<String, Object>> collector = new ArrayList();
 
+    public boolean canceled = false;
+
     @Override
     public void onChatStarted(final SystemMessage system, final UserMessage user) {
         collector.add(Pair.of("onChatStarted", new Object[] { system, user }));
@@ -68,5 +70,10 @@ public class DummyJeddictBrainListener implements JeddictBrainListener {
                   + progress.trim()
                   ;
         collector.add(Pair.of("onProgress", msg));
+    }
+
+    @Override
+    public boolean isCanceled() {
+        return canceled;
     }
 }

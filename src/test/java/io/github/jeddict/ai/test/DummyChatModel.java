@@ -44,6 +44,9 @@ import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.chat.request.ToolChoice;
+import dev.langchain4j.model.chat.response.PartialResponse;
+import dev.langchain4j.model.chat.response.PartialResponseContext;
+import dev.langchain4j.model.chat.response.StreamingHandle;
 import java.nio.file.Paths;
 import static ste.lloop.Loop._break_;
 import static ste.lloop.Loop.on;
@@ -64,6 +67,8 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
      * related events.
      */
     private final List<ChatModelListener> listeners;
+
+    public final DummyStreamingHandle streamingHandle = new DummyStreamingHandle();
 
     public ToolChoice toolChoice = ToolChoice.AUTO;
 
@@ -240,7 +245,15 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
 
         if (answer != null) {
             for(String m: answer.trim().split("\n")) {
-                handler.onPartialResponse(m.trim());
+                if (streamingHandle.isCancelled()) {
+                    final String msg = "the chat has been canceled!";
+                    LOG.info(msg);
+                    throw new RuntimeException(msg);
+                }
+                handler.onPartialResponse(
+                    new PartialResponse(m.trim()),
+                    new PartialResponseContext(streamingHandle)
+                );
             }
         }
 
@@ -367,5 +380,21 @@ public class DummyChatModel implements ChatModel, StreamingChatModel {
         final String lowerText = text.toLowerCase();
         return lowerText.toLowerCase().contains("use mock")
             || lowerText.toLowerCase().contains("execute tool");
+    }
+
+    // ---------------------------------------------------- DummyStreamingHandle
+
+    public static class DummyStreamingHandle implements StreamingHandle {
+        boolean canceled = false;
+
+        @Override
+        public void cancel() {
+            canceled = true;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return canceled;
+        }
     }
 }

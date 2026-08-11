@@ -34,8 +34,8 @@ import org.apache.commons.lang3.StringUtils;
  */
 public interface Assistant extends PairProgrammer {
 
-    public static final String SYSTEM_MESSAGE =
-    """
+    public static final String SYSTEM_MESSAGE
+        = """
     You are an expert software developer that can address complex questions and resolve
     problems, proposing solutions, writing and correcting code.
     Take into account the following rules and project information.
@@ -57,22 +57,22 @@ public interface Assistant extends PairProgrammer {
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
     String chat(
-        @V("prompt")       final String prompt,
-        @V("code")         final String code,
-        @UserMessage       List<ImageContent> images,
-        @V("projectInfo")      final String projectInfo,
-        @V("globalRules")  final String globalRules,
+        @V("prompt") final String prompt,
+        @V("code") final String code,
+        @UserMessage List<ImageContent> images,
+        @V("projectInfo") final String projectInfo,
+        @V("globalRules") final String globalRules,
         @V("projectRules") final String projectRules
     );
 
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
     TokenStream chatstream(
-        @V("prompt")       final String prompt,
-        @V("code")         final String code,
-        @UserMessage       List<ImageContent> images,
-        @V("projectInfo")      final String projectInfo,
-        @V("globalRules")  final String globalRules,
+        @V("prompt") final String prompt,
+        @V("code") final String code,
+        @UserMessage List<ImageContent> images,
+        @V("projectInfo") final String projectInfo,
+        @V("globalRules") final String globalRules,
         @V("projectRules") final String projectRules
     );
 
@@ -104,7 +104,7 @@ public interface Assistant extends PairProgrammer {
     }
 
     default String chat(final String prompt) {
-        return chat(prompt, (TreePath)null, null, null, null);
+        return chat(prompt, (TreePath) null, null, null, null);
     }
 
     default String chat(
@@ -130,7 +130,6 @@ public interface Assistant extends PairProgrammer {
     }
 
     // ----------------------------------------------------- streaming interface
-
     default void chat(
         final JeddictBrainListener listener,
         final String prompt,
@@ -157,17 +156,21 @@ public interface Assistant extends PairProgrammer {
             StringUtils.defaultIfBlank(globalRules, ""),
             StringUtils.defaultIfBlank(projectRules, "")
         )
-        .onError(error -> {
-            if (listener != null) {
-                listener.onError(error);
-            }
-        })
-        .onPartialResponse(progress -> {
-            if (listener != null) {
-                listener.onProgress(progress);
-            }
-        })
-        .start();
+            .onError(error -> {
+                if (listener != null) {
+                    listener.onError(error);
+                }
+            })
+            .onPartialResponseWithContext((response, context) -> {
+                if (listener != null) {
+                    listener.onProgress(response.text());
+                    if (listener.isCanceled()) {
+                        context.streamingHandle().cancel();
+                        listener.onProgress("\n-- chat interrupted");
+                    }
+                }
+            })
+            .start();
     }
 
     default void chat(
@@ -194,25 +197,29 @@ public interface Assistant extends PairProgrammer {
             StringUtils.defaultIfBlank(globalRules, ""),
             StringUtils.defaultIfBlank(projectRules, "")
         )
-        .onError(error -> {
-            if (listener != null) {
-                listener.onError(error);
-            }
-        })
-        .onPartialResponse(progress -> {
-            if (listener != null) {
-                listener.onProgress(progress);
-            }
-        })
-        .start();
+            .onError(error -> {
+                if (listener != null) {
+                    listener.onError(error);
+                }
+            })
+            .onPartialResponseWithContext((response, context) -> {
+                LOG.info("onPartialResponseWithContext: " + response + ", " + context);
+                if (listener != null) {
+                    listener.onProgress(response.text());
+                    if (listener.isCanceled()) {
+                        context.streamingHandle().cancel();
+                        listener.onProgress("\n-- chat interrupted");
+                    }
+                }
+            })
+            .start();
     }
 
     default void chat(final JeddictBrainListener listener, final String prompt) {
-        chat(listener, prompt, (TreePath)null, null, null, null);
+        chat(listener, prompt, (TreePath) null, null, null, null);
     }
 
     // -------------------------------------------------------------------------
-
     default String code(final TreePath code) {
         final StringBuffer sb = new StringBuffer();
 
