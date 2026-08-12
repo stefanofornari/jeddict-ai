@@ -17,6 +17,7 @@
 
 package io.github.jeddict.ai.hints;
 
+import com.github.caciocavallosilano.cacio.ctc.junit.CacioTest;
 import io.github.jeddict.ai.components.AssistantChat;
 import io.github.jeddict.ai.components.AssistantJeddictBrainListener;
 import static org.assertj.core.api.BDDAssertions.then;
@@ -26,6 +27,7 @@ import org.openide.filesystems.FileObject;
 /**
  *
  */
+@CacioTest
 public class AssistantJeddictBrainListenerTest {
 
     final AssistantChat assistantChat = new AssistantChat("name", "type", null) {
