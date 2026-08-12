@@ -358,7 +358,7 @@ public class AssistantChatManager extends JavaFix {
                     );
                     Object answer = DialogDisplayer.getDefault().notify(confirmDialog);
                     if (NotifyDescriptor.YES_OPTION.equals(answer)) {
-                        result.cancel(true); result = null;
+                        cancelCurrentTask();
                         stopLoading();
                     }
                 } else {
@@ -476,7 +476,7 @@ public class AssistantChatManager extends JavaFix {
         ac.putClientProperty(ASSISTANT_CHAT_MANAGER_KEY, new WeakReference<>(AssistantChatManager.this));
         JScrollPane scrollPane = new JScrollPane(ac.getParentPanel());
         ac.add(scrollPane, BorderLayout.CENTER);
-        ac.add(ac.createBottomPanel(null, filename, null), BorderLayout.SOUTH);
+        ac.add(ac.createBottomPanel(null, filename, null, this::cancelCurrentTask), BorderLayout.SOUTH);
         ac.open();
         ac.requestActive();
         ac.updateButtons(currentResponseIndex > 0, currentResponseIndex < responseHistory.size() - 1);
@@ -504,7 +504,7 @@ public class AssistantChatManager extends JavaFix {
                 scrollPane.getHorizontalScrollBar().setUI(new CustomScrollBarUI());
             }
             ac.add(scrollPane, BorderLayout.CENTER);
-            ac.add(ac.createBottomPanel(type, fileName, action), BorderLayout.SOUTH);
+            ac.add(ac.createBottomPanel(type, fileName, action, this::cancelCurrentTask), BorderLayout.SOUTH);
             if (PreferencesManager.getInstance().getChatPlacement().equals("Left")) {
                 WindowManager.getDefault()
                         .findMode("explorer")
@@ -530,6 +530,15 @@ public class AssistantChatManager extends JavaFix {
 
     public void addToSessionContext(List<FileObject> files) {
         sessionContext.addAll(files);
+    }
+
+    public void cancelCurrentTask() {
+        if (result != null && !result.isDone()) {
+            result.cancel(true);
+        }
+        if (ac != null) {
+            ac.cancelLoading();
+        }
     }
 
     // --------------------------------------------------------- private methods
@@ -584,6 +593,10 @@ public class AssistantChatManager extends JavaFix {
         this.question = question;
         ac.startLoading();
         result = executorService.submit(() -> {
+            // Check for cancellation at the start
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException("Task was interrupted");
+            }
             //
             // Note thay history is not the same think as memory. The former
             // is applicaiton specific and has the purpose of reconstruct
@@ -726,6 +739,7 @@ public class AssistantChatManager extends JavaFix {
                 Exceptions.printStackTrace(e);
                 ac.buttonPanelResized();
             }
+            return null;
         });
     }
 

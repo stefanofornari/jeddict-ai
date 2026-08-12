@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  */
 public interface PairProgrammer {
 
-    final Logger LOG = Logger.getLogger(PairProgrammer.class.getCanonicalName());
+    final Logger LOG = Logger.getLogger(PairProgrammer.class.getName());
 
     public static enum Specialist {
         ADVISOR(CodeAdvisor.class),
