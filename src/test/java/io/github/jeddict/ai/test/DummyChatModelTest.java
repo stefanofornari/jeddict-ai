@@ -24,10 +24,8 @@ import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ToolChoice;
 import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.BDDAssertions.thenThrownBy;
@@ -309,26 +307,11 @@ public class DummyChatModelTest {
     @Test
     public void simulate_streaming() throws IOException {
         final DummyChatModel chat = new DummyChatModel();
+        final DummyStreamingChatResponseHandler handler = new DummyStreamingChatResponseHandler();
 
-        final List<String> messages = new ArrayList();
-        chat.chat("use mock 'hello world.txt'", new StreamingChatResponseHandler() {
-            @Override
-            public void onPartialResponse(final String partialResponse) {
-                messages.add(partialResponse);
-            }
+        chat.chat("use mock 'hello world.txt'", handler);
 
-            @Override
-            public void onCompleteResponse(final ChatResponse res) {
-                // .trim() to make it platform independent (i.e. \n vs \r\n)
-                messages.add(res.aiMessage().text().trim());
-            }
-
-            @Override
-            public void onError(Throwable thrwbl) {
-            }
-        });
-
-        then(messages).containsExactly("hello world", "hello world");
+        then(handler.messages).containsExactly("hello world", "hello world");
     }
 
     @Test
@@ -344,6 +327,21 @@ public class DummyChatModelTest {
         //
         // TODO: add error handling when streaming
         //
+    }
+
+    @Test
+    public void interrupt_streaming_chat() throws Exception {
+        final DummyChatModel chat = new DummyChatModel();
+         final DummyStreamingChatResponseHandler handler = new DummyStreamingChatResponseHandler();
+
+        chat.streamingHandle.cancel();
+
+        thenThrownBy(() ->
+            chat.chat("use mock 'multiline hello world.txt'", handler)
+        ).isInstanceOf(RuntimeException.class).hasMessage("the chat has been canceled!");
+
+        then(handler.messages).isEmpty();
+
     }
 
     // --------------------------------------------------------- private methods

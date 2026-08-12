@@ -82,12 +82,16 @@ public interface JeddictBrainListener {
      * On any progress from a tool (or any other emitter)
      *
      * @param progress
-     * @param newSection true if the progress is intended to start a new thread
+     * @param newThread true if the progress is intended to start a new thread
      */
     default void onProgress(final String progress, final boolean newThread) {
     }
-    
+
     default void onProgress(final String progress) {
         this.onProgress(progress, false);
+    }
+
+    default boolean isCanceled() {
+        return false;
     }
 }

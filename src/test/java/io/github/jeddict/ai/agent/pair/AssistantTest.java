@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright 2025 the original author or authors from the Jeddict project (https://jeddict.github.io/).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -50,7 +50,6 @@ public class AssistantTest extends PairProgrammerTestBase {
     private static final String GLOBAL_RULES = "global rules";
     private static final String PROJECT_RULES = "project rules";
 
-
     private Assistant pair;
 
     @BeforeEach
@@ -76,15 +75,15 @@ public class AssistantTest extends PairProgrammerTestBase {
         final TreePath tree = codeFromSayHello();
 
         final String expectedSystem = Assistant.SYSTEM_MESSAGE
-                .replace("{{globalRules}}", GLOBAL_RULES)
-                .replace("{{projectRules}}", PROJECT_RULES)
-                .replace("{{projectInfo}}", PROJECT);
+            .replace("{{globalRules}}", GLOBAL_RULES)
+            .replace("{{projectRules}}", PROJECT_RULES)
+            .replace("{{projectInfo}}", PROJECT);
         final String expectedUser = Assistant.USER_MESSAGE
-                .replace("{{prompt}}", PROMPT)
-                .replace("{{code}}", tree.getCompilationUnit().toString());
+            .replace("{{prompt}}", PROMPT)
+            .replace("{{code}}", tree.getCompilationUnit().toString());
 
-        final String answer =
-                pair.chat(PROMPT, tree, PROJECT, GLOBAL_RULES, PROJECT_RULES);
+        final String answer
+            = pair.chat(PROMPT, tree, PROJECT, GLOBAL_RULES, PROJECT_RULES);
 
         final ChatModelRequestContext request = listener.lastRequestContext.get();
         thenMessagesMatch(
@@ -110,7 +109,7 @@ public class AssistantTest extends PairProgrammerTestBase {
             .registerListeners(new AiServiceCompletedListener() {
                 @Override
                 public void onEvent(final AiServiceCompletedEvent e) {
-                    final ChatResponse res = (ChatResponse)e.result().get();
+                    final ChatResponse res = (ChatResponse) e.result().get();
                     ret.append(res.aiMessage().text());
                 }
             })
@@ -128,9 +127,8 @@ public class AssistantTest extends PairProgrammerTestBase {
             .replace("{{projectRules}}", PROJECT_RULES)
             .replace("{{projectInfo}}", PROJECT);
         final String expectedUser = Assistant.USER_MESSAGE
-                .replace("{{prompt}}", PROMPT)
-                .replace("{{code}}", "");
-
+            .replace("{{prompt}}", PROMPT)
+            .replace("{{code}}", "");
 
         final FileObject imgFO = FileUtil.toFileObject(
             FileUtil.normalizeFile(new File(".", "src/test/resources/images/4x4.png"))
@@ -148,10 +146,10 @@ public class AssistantTest extends PairProgrammerTestBase {
         //
         // System message
         //
-        then(((SystemMessage)messages.get(0)).text())
+        then(((SystemMessage) messages.get(0)).text())
             .isEqualTo(expectedSystem);
 
-        final UserMessage userMessage = (UserMessage)messages.get(1);
+        final UserMessage userMessage = (UserMessage) messages.get(1);
         then(userMessage.contents()).containsExactly(
             TextContent.from(expectedUser),
             ImageContent.from(images.get(0))
@@ -169,7 +167,7 @@ public class AssistantTest extends PairProgrammerTestBase {
             .registerListeners(new AiServiceCompletedListener() {
                 @Override
                 public void onEvent(final AiServiceCompletedEvent e) {
-                    final ChatResponse res = (ChatResponse)e.result().get();
+                    final ChatResponse res = (ChatResponse) e.result().get();
                     result.append(res.aiMessage().text());
                 }
             })
@@ -190,7 +188,7 @@ public class AssistantTest extends PairProgrammerTestBase {
             .registerListeners(new AiServiceCompletedListener() {
                 @Override
                 public void onEvent(final AiServiceCompletedEvent e) {
-                    final ChatResponse res = (ChatResponse)e.result().get();
+                    final ChatResponse res = (ChatResponse) e.result().get();
                     result.append(res.aiMessage().text());
                 }
             })
@@ -210,7 +208,7 @@ public class AssistantTest extends PairProgrammerTestBase {
             .registerListeners(new AiServiceCompletedListener() {
                 @Override
                 public void onEvent(final AiServiceCompletedEvent e) {
-                    final ChatResponse res = (ChatResponse)e.result().get();
+                    final ChatResponse res = (ChatResponse) e.result().get();
                     result.append(res.aiMessage().text());
                 }
             })
@@ -227,8 +225,30 @@ public class AssistantTest extends PairProgrammerTestBase {
         then(result).isEqualToIgnoringNewLines("hello world");
     }
 
-    // --------------------------------------------------------- private methods
+    @Test
+    public void chat_with_canceled_streaming() throws Exception {
+        final DummyJeddictBrainListener canceledAwareListener = new DummyJeddictBrainListener();
+        pair = AiServices.builder(Assistant.class)
+            .streamingChatModel(model)
+            .build();
 
+        canceledAwareListener.canceled = true;
+        org.assertj.core.api.BDDAssertions.thenThrownBy(
+            () -> pair.chat(
+                canceledAwareListener,
+                "use mock 'multiline hello world.txt'"
+            )
+        )
+            .isInstanceOf(RuntimeException.class)
+            .hasMessage("the chat has been canceled!");
+
+        then(canceledAwareListener.collector).containsExactly(
+            org.apache.commons.lang3.tuple.Pair.of("onProgress", "hello"),
+            org.apache.commons.lang3.tuple.Pair.of("onProgress", "-- chat interrupted")
+        );
+    }
+
+    // --------------------------------------------------------- private methods
     private TreePath codeFromSayHello() throws IOException {
         final JavacTask task = parseSayHello();
         final Iterable<? extends CompilationUnitTree> ast = task.parse();

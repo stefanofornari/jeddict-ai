@@ -22,10 +22,13 @@ import dev.langchain4j.observability.api.event.AiServiceResponseReceivedEvent;
 import dev.langchain4j.observability.api.listener.AiServiceCompletedListener;
 import dev.langchain4j.observability.api.listener.AiServiceResponseReceivedListener;
 import dev.langchain4j.service.AiServices;
+import io.github.jeddict.ai.lang.DummyJeddictBrainListener;
 import io.github.jeddict.ai.test.DummyTool;
 import java.io.IOException;
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.BDDAssertions.thenThrownBy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -121,5 +124,22 @@ public class HackerWithToolsTest extends PairProgrammerTestBase {
 
         then(tool.executed()).isTrue();
         then(result.toString()).isEqualTo("dummyTool=true");
+    }
+
+    @Test
+    public void hack_with_canceled_streaming() throws IOException {
+        final DummyJeddictBrainListener canceledAwareListener = new DummyJeddictBrainListener();
+        pair = AiServices.builder(HackerWithTools.class)
+            .streamingChatModel(model)
+            .build();
+
+        canceledAwareListener.canceled = true;
+        thenThrownBy(
+            () -> pair.hack(canceledAwareListener, "use mock 'multiline hello world.txt'", "", "", "")
+        ).isInstanceOf(RuntimeException.class).hasMessage("the chat has been canceled!");
+
+        then(canceledAwareListener.collector).containsExactly(
+            Pair.of("onProgress", "hello"), Pair.of("onProgress", "-- chat interrupted")
+        );
     }
 }
